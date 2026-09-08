@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>One Question — Wallpaper Engine</title>
+<link rel="stylesheet" href="style.css?v=2.16.7">
+</head>
+<body>
+<main id="app">
+  <div id="customBackground" class="customBackground" aria-hidden="true"></div>
+  <div id="customBackgroundOverlay" class="customBackgroundOverlay" aria-hidden="true"></div>
+  <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
+  <header class="topbar">
+    <button id="date" class="dateButton" type="button" aria-haspopup="dialog" aria-expanded="false" title="Open calendar"></button>
+    <section id="calendarPanel" class="calendarPanel" aria-hidden="true">
+      <div class="calendarHeader">
+        <button id="calendarPrev" type="button" class="calendarNav" aria-label="Previous month">‹</button>
+        <div id="calendarMonth" class="calendarMonth"></div>
+        <button id="calendarNext" type="button" class="calendarNav" aria-label="Next month">›</button>
+      </div>
+      <div class="calendarWeekdays" aria-hidden="true">
+        <span>sun</span><span>mon</span><span>tue</span><span>wed</span><span>thu</span><span>fri</span><span>sat</span>
+      </div>
+      <div id="calendarGrid" class="calendarGrid" role="grid" aria-label="Calendar"></div>
+      <div class="calendarHint">click a date to view or add its todos</div>
+    </section>
+  </header>
+  <div class="modePicker" id="modePicker">
+    <button id="modeToggle" class="focusModeToggle" type="button" aria-label="Switch between question mode and focus mode" aria-pressed="false">question mode</button>
+  </div>
+
+  <section class="focus" id="focus" aria-live="polite">
+    <div class="eyebrowRow">
+      <button id="category" class="categoryButton" aria-haspopup="true" aria-expanded="false">life</button>
+      <div id="categoryMenu" class="categoryMenu" aria-hidden="true"></div>
+    </div>
+    <h1 id="question"></h1>
+    <div class="answerRow">
+      <div class="answerWrap">
+        <div id="answer" class="answer" contenteditable="true"
+          data-placeholder="type your answer…" role="textbox"
+          aria-label="Your answer" spellcheck="true"></div>
+        <div class="answerRule"></div>
+      </div>
+      <button id="cycleToggle" class="cycleToggle" aria-label="Pause question cycling" title="Pause question cycling">
+        <span class="pauseIcon" aria-hidden="true"><i></i><i></i></span>
+        <span class="playIcon" aria-hidden="true"></span>
+      </button>
+    </div>
+    <div id="focusModeActions" class="focusModeActions" aria-hidden="true">
+      <button id="focusNotNow">not right now</button>
+    </div>
+    <div class="answerMeta"><span id="answerMetaHint">enter to save · shift + enter for a new line</span><span id="cycleStatus">cycling</span></div>
+  </section>
+
+  <div class="controlsZone" aria-hidden="true">
+    <nav class="centerControls" aria-label="Question controls">
+      <div class="navPair">
+        <button id="previousQuestion">previous</button>
+        <span aria-hidden="true">—</span>
+        <button id="newQuestion">next</button>
+        <span aria-hidden="true">|</span>
+        <button id="history" class="historyControl">history</button></div>
+    </nav>
+  </div>
+
+  <aside id="todoPanel" class="todoPanel" aria-hidden="true">
+    <div class="todoHeader"><span>to do</span></div>
+    <div id="todoList"></div>
+  </aside>
+  <div class="todoZone" id="todoZone">
+    <button id="todoDock" class="todoDock" aria-expanded="false" aria-controls="todoFullscreen" title="Open Today">
+      <span class="todoDockDot" aria-hidden="true"></span>
+      <span class="todoDockLabel">to do</span>
+      <span id="todoDockCount" class="todoDockCount">0</span>
+    </button>
+  </div>
+
+  <section id="todoFullscreen" class="todoFullscreen" aria-hidden="true">
+    <div class="todoFullscreenInner">
+      <button id="closeTodoFullscreen" class="todoFullscreenBack" type="button">← return to reflection</button>
+      <div class="todoFullscreenKicker">to do</div>
+      <h2>What needs your attention?</h2>
+      <div id="todoFullscreenList" class="todoFullscreenList"></div>
+      <div id="todoFullscreenEmpty" class="todoFullscreenEmpty">nothing here yet.</div>
+      <div class="todoFullscreenComposer">
+        <input id="todoFullscreenInput" class="todoFullscreenInput" type="text" placeholder="add something…" autocomplete="off" aria-label="Add a todo">
+        <button id="todoFullscreenAdd" type="button">add</button>
+      </div>
+      <div class="todoFullscreenHint">enter to add · escape to return</div>
+    </div>
+  </section>
+
+  <button id="settings" class="settingsFab" aria-label="Open settings" title="Settings">⚙</button>
+
+  <section id="settingsPanel" class="settingsPanel" aria-hidden="true">
+    <div class="settingsInner">
+      <button id="closeSettings" class="closeButton">×</button>
+      <div class="historyKicker">settings</div>
+      <h2>Shape your questions</h2>
+
+      <section class="settingSection">
+        <div class="settingTitle">categories</div>
+        <div class="settingHint">Choose what you want to see. Select more than one.</div>
+        <div id="categoryOptions" class="categoryOptions"></div>
+      </section>
+
+      <section class="settingSection questionLibrarySection">
+        <div class="settingTitle">question library</div>
+        <div class="settingHint">Switch tabs to edit the questions in each category. Changes save as you type.</div>
+        <div id="questionEditorTabs" class="questionEditorTabs" role="tablist" aria-label="Question categories"></div>
+        <div id="questionEditor" class="questionEditor"></div>
+      </section>
+
+      <section class="settingSection appearanceSection">
+        <div class="settingTitle">appearance</div>
+        <div class="settingHint">Make the reflection space yours. Colors and background effects are saved on this device.</div>
+
+        <div class="appearanceGrid">
+          <label class="colorSetting">
+            <span>background color</span>
+            <input id="backgroundColor" type="color" value="#10100f" aria-label="Background color">
+          </label>
+          <label class="colorSetting">
+            <span>text color</span>
+            <input id="textColor" type="color" value="#ebe8e0" aria-label="Text color">
+          </label>
+          <label class="colorSetting">
+            <span>accent color</span>
+            <input id="accentColor" type="color" value="#aaa69d" aria-label="Accent color">
+          </label>
+          <label class="colorSetting">
+            <span>overlay color</span>
+            <input id="overlayColor" type="color" value="#10100f" aria-label="Overlay color">
+          </label>
+        </div>
+
+        <div class="appearancePresets" aria-label="Appearance presets">
+          <button type="button" class="appearancePreset" data-preset="midnight">midnight</button>
+          <button type="button" class="appearancePreset" data-preset="paper">paper</button>
+          <button type="button" class="appearancePreset" data-preset="forest">forest</button>
+          <button type="button" class="appearancePreset" data-preset="ocean">ocean</button>
+          <button type="button" class="appearancePreset" data-preset="rose">rose</button>
+        </div>
+
+        <div class="backgroundPickerRow">
+          <label class="backgroundUploadButton" for="backgroundImage">choose background image</label>
+          <input id="backgroundImage" type="file" accept="image/*" hidden>
+          <button id="removeBackground" type="button" class="textButton">remove image</button>
+        </div>
+        <div id="backgroundFileName" class="backgroundFileName">no custom background</div>
+
+        <div class="appearanceControl">
+          <div class="appearanceControlHead"><span>image opacity</span><output id="backgroundOpacityValue">35%</output></div>
+          <input id="backgroundOpacity" type="range" min="0" max="100" step="0.1" aria-label="Background image opacity">
+        </div>
+        <div class="appearanceControl">
+          <div class="appearanceControlHead"><span>overlay opacity</span><output id="overlayOpacityValue">30%</output></div>
+          <input id="overlayOpacity" type="range" min="0" max="100" step="1" aria-label="Overlay opacity">
+        </div>
+        <div class="appearanceControl">
+          <div class="appearanceControlHead"><span>blur</span><output id="backgroundBlurValue">0px</output></div>
+          <input id="backgroundBlur" type="range" min="0" max="24" step="1" aria-label="Background blur">
+        </div>
+        <div class="appearanceControl">
+          <div class="appearanceControlHead"><span>greyscale</span><output id="backgroundGrayscaleValue">0%</output></div>
+          <input id="backgroundGrayscale" type="range" min="0" max="100" step="1" aria-label="Background greyscale">
+        </div>
+        <div class="appearanceControl">
+          <div class="appearanceControlHead"><span>saturation</span><output id="backgroundSaturationValue">100%</output></div>
+          <input id="backgroundSaturation" type="range" min="0" max="180" step="1" aria-label="Background saturation">
+        </div>
+        <div class="appearanceControl">
+          <div class="appearanceControlHead"><span>brightness</span><output id="backgroundBrightnessValue">100%</output></div>
+          <input id="backgroundBrightness" type="range" min="40" max="160" step="1" aria-label="Background brightness">
+        </div>
+        <div class="appearanceControl">
+          <div class="appearanceControlHead"><span>contrast</span><output id="backgroundContrastValue">100%</output></div>
+          <input id="backgroundContrast" type="range" min="50" max="160" step="1" aria-label="Background contrast">
+        </div>
+        <div class="appearanceControl">
+          <div class="appearanceControlHead"><span>sepia</span><output id="backgroundSepiaValue">0%</output></div>
+          <input id="backgroundSepia" type="range" min="0" max="100" step="1" aria-label="Background sepia">
+        </div>
+
+        <div class="settingSubsection">
+          <div class="settingTitle">hover parallax</div>
+          <div class="settingHint">Move your pointer around the screen to gently shift the text and background. Set each amount independently.</div>
+
+          <div class="appearanceControl">
+            <div class="appearanceControlHead"><span>text movement</span><output id="parallaxTextValue">10px</output></div>
+            <input id="parallaxText" type="range" min="0" max="40" step="1" aria-label="Text parallax movement">
+          </div>
+          <div class="appearanceControl">
+            <div class="appearanceControlHead"><span>background movement</span><output id="parallaxBackgroundValue">18px</output></div>
+            <input id="parallaxBackground" type="range" min="0" max="80" step="1" aria-label="Background parallax movement">
+          </div>
+          <div class="appearanceControl">
+            <div class="appearanceControlHead"><span>background scale</span><output id="parallaxScaleValue">108%</output></div>
+            <input id="parallaxScale" type="range" min="100" max="125" step="1" aria-label="Parallax background scale">
+          </div>
+        </div>
+
+        <button id="resetAppearance" type="button" class="resetAppearance">reset appearance</button>
+      </section>
+
+      <section class="settingSection dataSection">
+        <div class="settingTitle">data & storage</div>
+        <div class="settingHint">Your questions, answers, todos, settings, and background image are stored locally in this extension. Export a backup anytime or import one on another Zen/Firefox profile.</div>
+        <div class="dataActions">
+          <button id="exportData" type="button" class="dataButton">export backup</button>
+          <label for="importData" class="dataButton">import backup</label>
+          <input id="importData" type="file" accept="application/json,.json" hidden>
+        </div>
+        <div id="dataStatus" class="dataStatus" aria-live="polite">storage: browser extension storage</div>
+      </section>
+
+      <section class="settingSection">
+        <div class="settingTitle">question cycle</div>
+        <div class="settingHint">How long a question stays before the next one appears.</div>
+        <div class="rangeRow">
+          <input id="cycleSeconds" type="range" min="3" max="30" step="0.5" aria-label="Question cycle duration">
+          <span id="cycleSecondsValue">6.5s</span>
+        </div>
+      </section>
+
+      <section class="settingSection settingToggleRow">
+        <div><div class="settingTitle">soft animation</div><div class="settingHint">Fade, blur and gently move between questions.</div></div>
+        <label class="switch"><input id="animationEnabled" type="checkbox"><span></span></label>
+      </section>
+
+      <div class="settingsNote">More controls can live here later — without adding clutter to the main screen.</div>
+    </div>
+  </section>
+
+  <section id="historyPanel" class="historyPanel" aria-hidden="true">
+    <div class="historyView">
+      <div class="eyebrowRow historyEyebrow">
+        <span class="historyKicker">history</span>
+        <span id="historyCategory" class="historyCategory"></span>
+      </div>
+      <h1 id="historyQuestion"></h1>
+      <div class="answerRow historyAnswerRow">
+        <div class="answerWrap">
+          <div id="historyAnswer" class="answer historyAnswer"></div>
+          <div class="answerRule"></div>
+        </div>
+      </div>
+      <div class="answerMeta historyMeta">
+        <span id="historyDate"></span>
+        <span id="historyPosition"></span>
+      </div>
+      <div class="historyNav" aria-label="History navigation">
+        <button id="historyPrevious" type="button">previous</button>
+        <span aria-hidden="true">—</span>
+        <button id="historyNext" type="button">next</button>
+        <span aria-hidden="true">—</span>
+        <button id="closeHistory" aria-label="Close history" type="button">close</button>
+      </div>
+    </div>
+  </section>
+  <div id="cycleHint">questions change quietly · move toward an edge</div>
+</main>
+<script src="app.js?v=2.16.7"></script>
+</body>
+</html>

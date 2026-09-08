@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "One Question — Zen",
+  "version": "2.16.4",
+  "description": "A quiet reflective new-tab for Zen Browser and Firefox with question, focus, fullscreen Today modes, and optional shared local storage.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "one-question@local.zen",
+      "strict_min_version": "140.0",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
+    },
+    "gecko_android": {
+      "strict_min_version": "142.0"
+    }
+  },
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  },
+  "icons": {
+    "16": "icon-16.png",
+    "32": "icon-32.png",
+    "48": "icon-48.png",
+    "96": "icon-96.png",
+    "128": "icon-128.png"
+  },
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
+  },
+  "chrome_settings_overrides": {
+    "homepage": "newtab.html"
+  },
+  "permissions": [
+    "storage",
+    "unlimitedStorage"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:8765/*",
+    "http://localhost:8765/*"
+  ]
+}

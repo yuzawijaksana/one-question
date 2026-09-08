@@ -1,0 +1,46 @@
+{
+  "file": "index.html",
+  "general": {
+    "properties": {
+      "answer": {
+        "text": "Answer",
+        "type": "textinput",
+        "value": ""
+      },
+      "text_parallax": {
+        "text": "Text parallax",
+        "type": "slider",
+        "value": 10,
+        "min": 0,
+        "max": 40,
+        "editable": true
+      },
+      "background_parallax": {
+        "text": "Background parallax",
+        "type": "slider",
+        "value": 18,
+        "min": 0,
+        "max": 80,
+        "editable": true
+      },
+      "background_scale": {
+        "text": "Background scale",
+        "type": "slider",
+        "value": 108,
+        "min": 100,
+        "max": 140,
+        "editable": true
+      },
+      "question_cycle": {
+        "text": "Question cycle (seconds)",
+        "type": "slider",
+        "value": 6.5,
+        "min": 3,
+        "max": 30,
+        "editable": true
+      }
+    }
+  },
+  "title": "One Question — Parallax",
+  "type": "web"
+}

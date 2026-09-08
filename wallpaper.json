@@ -1,0 +1,9 @@
+{
+  "title": "One Question — Parallax",
+  "description": "A quiet reflective web wallpaper with adjustable text/background parallax and background scale.",
+  "type": "web",
+  "entry": "index.html",
+  "version": "1.1.0",
+  "mobile": false,
+  "notes": "Use Wallpaper Engine Properties on the right to enter Answer and adjust parallax. In-wallpaper HTML textboxes are intentionally not used for Wallpaper Engine keyboard input."
+}
