@@ -57,7 +57,7 @@ const extensionStorage=(typeof browser!=="undefined"&&browser.storage&&browser.s
   : null;
 const STORAGE_KEYS=[
   "oneQuestionQuestionBank","oneQuestionFocusQuestions","oneQuestionSettings",
-  "oneQuestionHistory","oneQuestionRecent","oneQuestionTodos"
+  "oneQuestionHistory","oneQuestionRecent","oneQuestionTodos","oneQuestionNote"
 ];
 
 function cacheSet(key,value){
@@ -164,6 +164,199 @@ function applyWallpaperEngineProperties(properties){
 }
 window.wallpaperPropertyListener={applyUserProperties:applyWallpaperEngineProperties};
 
+
+// Hydration reminder is shared through the local One Question server so the
+// browser wallpaper/web page can keep the same reminder state across tabs.
+const SYNC_BASE="http://127.0.0.1:8765";
+const HYDRATION_KEY="oneQuestionHydration";
+const DEFAULT_HYDRATION_MINUTES=60;
+const DEFAULT_HYDRATION_SECONDS=DEFAULT_HYDRATION_MINUTES*60;
+const DEFAULT_HYDRATION_SIZE=24;
+const DEFAULT_HYDRATION_HOVER_SCALE=1.5;
+const DEFAULT_SCREEN_SCALE=1;
+let hydrationState={lastDrinkAt:0,drinkCount:0,lastDate:"",drinkHistory:[]};
+let hydrationTimer=null;
+let hydrationServerBusy=false;
+
+function hydrationInterval(){
+  const legacySeconds=Number(settings.hydrationMinutes)*60;
+  const seconds=Math.min(86400,Math.max(1,Number(settings.hydrationSeconds)||legacySeconds||DEFAULT_HYDRATION_SECONDS));
+  return seconds*1000;
+}
+function hydrationDurationParts(){
+  const total=Math.min(86400,Math.max(1,Math.round(hydrationInterval()/1000)));
+  return {hours:Math.floor(total/3600),minutes:Math.floor((total%3600)/60),seconds:total%60};
+}
+function updateHydrationDuration(){
+  const hours=Math.min(24,Math.max(0,Number($("hydrationHours").value)||0));
+  const minutes=Math.min(59,Math.max(0,Number($("hydrationMinutesPart").value)||0));
+  const seconds=Math.min(59,Math.max(0,Number($("hydrationSeconds").value)||0));
+  settings.hydrationSeconds=Math.min(86400,Math.max(1,hours*3600+minutes*60+seconds));
+  const parts=hydrationDurationParts();
+  $("hydrationHours").value=parts.hours;
+  $("hydrationMinutesPart").value=parts.minutes;
+  $("hydrationSeconds").value=parts.seconds;
+  saveSettings();
+  scheduleHydrationReminder();
+}
+function hydrationHistory(){
+  return Array.isArray(hydrationState.drinkHistory)
+    ? hydrationState.drinkHistory.filter(value=>Number.isFinite(Number(value))).map(Number).sort((a,b)=>a-b)
+    : [];
+}
+function hydrationAverageInterval(){
+  const history=hydrationHistory();
+  if(history.length<2)return 0;
+  const total=history.slice(1).reduce((sum,value,index)=>sum+value-history[index],0);
+  return total/(history.length-1);
+}
+function formatHydrationDuration(milliseconds){
+  if(!milliseconds)return "not enough data";
+  const minutes=Math.round(milliseconds/60000);
+  if(minutes<60)return `${minutes}m`;
+  const hours=Math.floor(minutes/60);
+  const remainder=minutes%60;
+  return remainder?`${hours}h ${remainder}m`:`${hours}h`;
+}
+function updateHydrationHistoryUI(){
+  const average=$("hydrationAverage");
+  if(average)average.textContent=`average time: ${formatHydrationDuration(hydrationAverageInterval())}`;
+  const list=$("hydrationHistory");
+  if(!list)return;
+  const history=hydrationHistory().slice(-10).reverse();
+  list.innerHTML=history.length?history.map(timestamp=>`<div class="hydrationHistoryItem"><span>${new Date(timestamp).toLocaleDateString()} ${new Date(timestamp).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})}</span><span>${formatHydrationDuration(Date.now()-timestamp)} ago</span></div>`).join(""):"<div class=\"hydrationHistoryEmpty\">no drinks recorded yet</div>";
+}
+function shakeHydrationReminder(){
+  const el=$("hydrationReminder");
+  if(!el)return;
+  el.classList.remove("shake");
+  void el.offsetWidth;
+  el.classList.add("shake");
+  setTimeout(()=>el.classList.remove("shake"),500);
+}
+function applyHydrationAppearance(){
+  const size=Math.min(48,Math.max(12,Number(settings.hydrationSize)||DEFAULT_HYDRATION_SIZE));
+  const hoverScale=Math.min(2.5,Math.max(1.1,Number(settings.hydrationHoverScale)||DEFAULT_HYDRATION_HOVER_SCALE));
+  document.documentElement.style.setProperty("--hydration-size",`${size}px`);
+  document.documentElement.style.setProperty("--hydration-hover-scale",hoverScale.toFixed(2));
+  document.body.classList.toggle("hydration-wave-off",settings.hydrationWave===false);
+  document.body.classList.toggle("hydration-hover-off",settings.hydrationHoverEnabled!==true);
+}
+function applyScreenScale(){
+  const scale=Math.min(1.2,Math.max(.8,Number(settings.screenScale)||DEFAULT_SCREEN_SCALE));
+  document.documentElement.style.setProperty("--screen-scale",scale.toFixed(2));
+}
+
+function readHydrationLocal(){
+  try{
+    const value=JSON.parse(localStorage.getItem(HYDRATION_KEY)||"null");
+    return value&&typeof value==="object"?{...value,drinkHistory:Array.isArray(value.drinkHistory)?value.drinkHistory:[]}:{lastDrinkAt:0,drinkCount:0,lastDate:"",drinkHistory:[]};
+  }catch{return {lastDrinkAt:0,drinkCount:0,lastDate:"",drinkHistory:[]};}
+}
+function writeHydrationLocal(value){
+  hydrationState=value&&typeof value==="object"?value:{lastDrinkAt:0,drinkCount:0,lastDate:""};
+  try{localStorage.setItem(HYDRATION_KEY,JSON.stringify(hydrationState))}catch{}
+}
+async function fetchHydrationState(){
+  try{
+    const response=await fetch(`${SYNC_BASE}/api/state`,{cache:"no-store"});
+    if(!response.ok)throw new Error(`server returned ${response.status}`);
+    const data=await response.json();
+    const entry=data?.keys?.[HYDRATION_KEY];
+    if(entry&&entry.value&&typeof entry.value==="object") writeHydrationLocal(entry.value);
+  }catch(e){
+    // The wallpaper still works without the local server.
+    console.warn("One Question: hydration sync unavailable",e);
+  }
+}
+async function saveHydrationState(){
+  if(hydrationServerBusy)return;
+  hydrationServerBusy=true;
+  try{
+    await fetch(`${SYNC_BASE}/api/state`,{
+      method:"PUT",headers:{"Content-Type":"application/json"},cache:"no-store",
+      body:JSON.stringify({changes:{[HYDRATION_KEY]:{value:hydrationState,updatedAt:Date.now()}}})
+    });
+  }catch(e){
+    console.warn("One Question: hydration could not sync",e);
+  }finally{hydrationServerBusy=false}
+}
+function updateHydrationFill(){
+  const el=$("hydrationReminder");
+  if(!el)return;
+  const elapsed=Date.now()-Number(hydrationState.lastDrinkAt||0);
+  const fill=Math.min(1,elapsed/hydrationInterval());
+  el.style.setProperty("--hydration-fill",fill.toFixed(3));
+
+  const p=$("hydrationPercent");
+  if(p)p.textContent=`${Math.round(fill*100)}%`;
+
+  const c=$("hydrationCount");
+  if(c){
+    const average=hydrationAverageInterval();
+    c.textContent=average?`average: ${formatHydrationDuration(average)}`:"average: not enough data";
+  }
+  updateHydrationHistoryUI();
+}
+function hideHydrationReminder(){
+  const el=$("hydrationReminder");
+  if(!el)return;
+  el.classList.remove("show","done");
+  el.classList.add("hydrating");
+  el.setAttribute("aria-hidden","false");
+  setTimeout(()=>el.classList.add("done"),650);
+  setTimeout(()=>{
+    el.classList.remove("done","hydrating");
+    updateHydrationFill();
+  },850);
+}
+function showHydrationReminder(){
+  const el=$("hydrationReminder");
+  if(!el)return;
+  el.classList.remove("done","hydrating");
+  el.classList.add("show");
+  el.setAttribute("aria-hidden","false");
+}
+function scheduleHydrationReminder(){
+  clearTimeout(hydrationTimer);
+  const el=$("hydrationReminder");
+  if(el){el.classList.add("show");el.classList.remove("done");el.setAttribute("aria-hidden","false");}
+  updateHydrationFill();
+  const elapsed=Date.now()-Number(hydrationState.lastDrinkAt||0);
+  const delay=hydrationState.lastDrinkAt>0
+    ? Math.max(0,hydrationInterval()-elapsed)
+    : hydrationInterval();
+  hydrationTimer=setTimeout(()=>{showHydrationReminder();updateHydrationFill();},delay);
+}
+function markHydrated(){
+  const elapsed=Date.now()-Number(hydrationState.lastDrinkAt||0);
+  if(!hydrationState.lastDrinkAt||elapsed<hydrationInterval()){
+    shakeHydrationReminder();
+    return;
+  }
+  const today=todayKey();
+  if(hydrationState.lastDate!==today){
+    hydrationState.drinkCount=0;
+    hydrationState.lastDate=today;
+  }
+  hydrationState.drinkCount=(hydrationState.drinkCount||0)+1;
+  hydrationState.lastDrinkAt=Date.now();
+  hydrationState.drinkHistory=[...hydrationHistory(),hydrationState.lastDrinkAt].slice(-100);
+
+  writeHydrationLocal(hydrationState);
+  hideHydrationReminder();
+  saveHydrationState();
+  scheduleHydrationReminder();
+}
+function initHydrationReminder(){
+  hydrationState=readHydrationLocal();
+  applyHydrationAppearance();
+  applyScreenScale();
+  $("hydrationDone")?.addEventListener("click",markHydrated);
+  fetchHydrationState().finally(()=>scheduleHydrationReminder());
+  setInterval(updateHydrationFill,1000);
+}
+
 let currentIndex=null,currentQuestion=null,cycleTimer=null,isAnswering=false,cyclePaused=false;
 let currentMode="question",returnMode="question";
 let historyIndex=0,historyReturnMode="question";
@@ -188,7 +381,7 @@ const DEFAULT_APPEARANCE={
   parallaxBackground:18,
   parallaxScale:108
 };
-const DEFAULT_SETTINGS={categories:["all"],cycleSeconds:6.5,animation:true,appearance:{...DEFAULT_APPEARANCE}};
+const DEFAULT_SETTINGS={categories:["all"],cycleSeconds:6.5,hydrationMinutes:DEFAULT_HYDRATION_MINUTES,hydrationSize:DEFAULT_HYDRATION_SIZE,hydrationWave:true,hydrationHoverEnabled:false,hydrationHoverScale:DEFAULT_HYDRATION_HOVER_SCALE,screenScale:DEFAULT_SCREEN_SCALE,animation:true,timerAnimation:true,lowercase:false,appearance:{...DEFAULT_APPEARANCE}};
 let settings=loadSettings();
 
 function loadSettings(){
@@ -198,7 +391,7 @@ function loadSettings(){
     return {...DEFAULT_SETTINGS,...saved,categories,appearance:{...DEFAULT_APPEARANCE,...(saved.appearance||{})}};
   }catch{return {...DEFAULT_SETTINGS,appearance:{...DEFAULT_APPEARANCE}}}
 }
-function saveSettings(){cacheSet("oneQuestionSettings",settings)}
+function saveSettings(){cacheSet("oneQuestionSettings",settings);document.body.classList.toggle("lowercase",!!settings.lowercase)}
 function selectedCategories(){return settings.categories.includes("all")?new Set(uniqueCategories()):new Set(settings.categories)}
 function uniqueCategories(){return [...new Set(questions.map(q=>q[0]))].sort((a,b)=>a.localeCompare(b))}
 const todayKey=()=>new Date().toLocaleDateString("en-CA");
@@ -256,14 +449,16 @@ function updateCycleToggle(){
   btn.setAttribute("title",active?"Pause question cycling":"Continue question cycling");
 }
 function updateModeUI(){
-  const label=currentMode==="focus"?"focus mode":"question mode";
   const btn=$("modeToggle");
   if(btn){
-    btn.textContent=label;
     btn.classList.toggle("active",currentMode==="focus");
     btn.setAttribute("aria-pressed",String(currentMode==="focus"));
+    btn.setAttribute("title",currentMode==="focus"?"question mode":"focus mode");
   }
   document.body.classList.toggle("todayMode",currentMode==="today");
+  document.body.classList.toggle("focusModeVisual",currentMode==="focus");
+  updateFocusModePreview();
+  updateTimerUI();
 }
 function closeModeMenu(){}
 function toggleModeMenu(){
@@ -327,6 +522,166 @@ function showFocusQuestion(i){
     setTimeout(()=>focusEl.classList.remove("questionIn"),1100);
     startCycle();
   },delay);
+}
+
+
+let wheelM=null,wheelAnims=[],wheelRAF=null;
+function wheelMetrics(el){
+  if(wheelM)return wheelM;
+  const cs=getComputedStyle(el);
+  const fs=parseFloat(cs.fontSize);
+  const c=document.createElement("canvas").getContext("2d");
+  c.font=`${cs.fontWeight} ${fs}px ${cs.fontFamily}`;
+  let inkAsc=0,inkDesc=0;
+  for(const d of "0123456789"){
+    const m=c.measureText(d);
+    inkAsc=Math.max(inkAsc,m.actualBoundingBoxAscent/fs);
+    inkDesc=Math.max(inkDesc,m.actualBoundingBoxDescent/fs);
+  }
+  const fAsc=c.measureText("0").fontBoundingBoxAscent/fs,fDesc=c.measureText("0").fontBoundingBoxDescent/fs;
+  const baseline=(1+(fAsc-fDesc))/2;
+  wheelM={h:inkAsc+inkDesc,top:baseline-inkAsc};
+  return wheelM;
+}
+function wheelLoop(ts){
+  if(!wheelLoop.last)wheelLoop.last=ts;
+  const rawDt=(ts-wheelLoop.last)/1000;
+  const dt=Math.min(rawDt,.1);
+  wheelLoop.last=ts;
+  for(const w of wheelAnims){
+    if(rawDt>.5&&w.rolling){w.rows[1].textContent=w.rows[0].textContent;w.idx=1;w.rolling=false;}
+    if(w.rolling&&w.idx>0){
+      w.idx=Math.max(0,w.idx-dt*2.2);
+      if(w.idx===0){w.rows[1].textContent=w.rows[0].textContent;w.idx=1;w.rolling=false;}
+    }
+    if(w.pending!=null&&w.idx===1&&!w.rolling){
+      if(w.rows[1].textContent!==w.pending){w.rows[0].textContent=w.pending;w.rolling=true;}
+      w.pending=null;
+    }
+    w.strip.style.transform=`translateY(${-(w.idx)-wheelM.top}em)`;
+    const p=1-w.idx;
+    w.wrap.style.transform=`scale(${(.6+.4*Math.abs(1-2*p)).toFixed(3)})`;
+  }
+  wheelRAF=requestAnimationFrame(wheelLoop);
+}
+function buildDigitWheel(el,ch){
+  const M=wheelMetrics(el);
+  const wrap=document.createElement("span");
+  wrap.style.cssText=`display:inline-block;position:relative;height:${M.h}em;overflow:hidden;vertical-align:baseline`;
+  const strip=document.createElement("span");
+  strip.style.cssText="display:block;will-change:transform";
+  const rows=[ch,ch,ch].map(d=>{const s=document.createElement("span");s.style.cssText="display:block;height:1em;line-height:1em";s.textContent=d;strip.appendChild(s);return s;});
+  wrap.appendChild(strip);
+  const w={strip,wrap,rows,idx:1,rolling:false,pending:null};
+  wrap._w=w;wheelAnims.push(w);
+  strip.style.transform=`translateY(${-1-wheelM.top}em)`;
+  if(!wheelRAF)wheelRAF=requestAnimationFrame(wheelLoop);
+  return wrap;
+}
+function rollDigitWheel(wrap,ch){
+  const w=wrap._w;
+  if(w.rows[1].textContent===ch)return;
+  if(w.idx===1&&!w.rolling){w.rows[0].textContent=ch;w.rolling=true;}
+  else w.pending=ch;
+}
+let timerMode="focus",timerSeconds=25*60,timerRunning=false,timerInterval=null,timerEndsAt=0;
+const TIMER_LENGTHS={focus:25*60,short:5*60,long:15*60};
+const TIMER_KEY="oneQuestionTimer";
+function saveTimerState(){
+  try{localStorage.setItem(TIMER_KEY,JSON.stringify({timerMode,timerRunning,timerEndsAt,timerSeconds}))}catch{}
+}
+function restoreTimerState(){
+  try{
+    const s=JSON.parse(localStorage.getItem(TIMER_KEY)||"null");
+    if(!s||typeof s!=="object")return;
+    if(s.timerMode&&TIMER_LENGTHS[s.timerMode])timerMode=s.timerMode;
+    if(s.timerRunning&&Number(s.timerEndsAt)>Date.now()){
+      timerEndsAt=Number(s.timerEndsAt);
+      timerSeconds=Math.max(0,Math.round((timerEndsAt-Date.now())/1000));
+      timerRunning=true;
+    }else if(Number.isFinite(Number(s.timerSeconds))){
+      timerSeconds=Math.max(0,Math.min(TIMER_LENGTHS[timerMode]*2,Math.round(Number(s.timerSeconds))));
+      timerRunning=false;timerEndsAt=0;
+    }
+  }catch{}
+}
+function updateTimerUI(){
+  const active=currentMode==="focus";
+  ["focusTimerControls","focusTimer","focusTimerButtons","focusQuote","focusTodoPreview"].forEach(id=>{const el=$(id);if(el)el.setAttribute("aria-hidden",String(!active));});
+  const badgeTime=$("focusRunningTime");
+  if(badgeTime){
+    const badge=badgeTime.parentElement;
+    const show=timerRunning&&currentMode!=="focus";
+    badge.classList.toggle("visible",show);
+    if(show){
+      const m=Math.floor(timerSeconds/60),s=timerSeconds%60;
+      badgeTime.textContent=`focus ${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+    }
+  }
+  if(!active)return;
+  const m=Math.floor(timerSeconds/60),s=timerSeconds%60;
+  const el=$("focusTimer");
+  if(el){
+    const txt=`${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+    if(settings.timerAnimation===false){
+      if(el.dataset.wheels){delete el.dataset.wheels;el.textContent="";}
+      el.textContent=txt;
+    }else if(el.dataset.wheels!=="1"||el.children.length!==txt.length){
+      el.textContent="";el.dataset.wheels="1";
+      [...txt].forEach(ch=>{if(/\d/.test(ch)){el.appendChild(buildDigitWheel(el,ch));}else{const sp=document.createElement("span");sp.textContent=ch;el.appendChild(sp);}});
+    }else{
+      [...el.children].forEach((sp,i)=>{if(/\d/.test(txt[i]))rollDigitWheel(sp,txt[i]);});
+    }
+    el.classList.toggle("running",timerRunning);
+  }
+  document.querySelectorAll(".timerMode").forEach(b=>b.classList.toggle("active",b.dataset.timer===timerMode));
+  const start=$("focusTimerStart");if(start)start.textContent=timerRunning?"pause":"start";
+}
+function setTimerMode(mode){timerMode=mode;timerRunning=false;clearInterval(timerInterval);timerEndsAt=0;timerSeconds=TIMER_LENGTHS[mode]||TIMER_LENGTHS.focus;saveTimerState();updateTimerUI();}
+function tickTimer(){
+  if(!timerRunning)return;
+  timerSeconds=Math.max(0,Math.round((timerEndsAt-Date.now())/1000));
+  if(timerSeconds<=0){timerRunning=false;clearInterval(timerInterval);timerEndsAt=0;saveTimerState();updateTimerUI();return}
+  updateTimerUI();
+}
+function toggleTimer(){
+  if(timerRunning){timerSeconds=Math.max(0,Math.round((timerEndsAt-Date.now())/1000));timerRunning=false;clearInterval(timerInterval);timerEndsAt=0}
+  else{timerRunning=true;timerEndsAt=Date.now()+timerSeconds*1000;clearInterval(timerInterval);timerInterval=setInterval(tickTimer,1000)}
+  saveTimerState();updateTimerUI();
+}
+function resetTimer(){timerRunning=false;clearInterval(timerInterval);timerEndsAt=0;timerSeconds=TIMER_LENGTHS[timerMode]||TIMER_LENGTHS.focus;saveTimerState();updateTimerUI();}
+function updateFocusModePreview(){
+  const quote=$("focusQuote"),todo=$("focusTodoPreview");
+  if(currentMode!=="focus")return;
+  if(quote)quote.textContent=focusQuestions[focusIndex]||"";
+  const pending=getTodos().find(t=>!t.completed&&t.date===todayKey());
+  if(todo){todo.textContent=pending?pending.text:"";todo.classList.toggle("hasTodo",!!pending);}
+}
+function loadNote(){
+  try{
+    const saved=localStorage.getItem("oneQuestionNote");
+    const textarea=$("noteText");
+    if(textarea){
+      textarea.value=saved!==null?JSON.parse(saved):"";
+    }
+  }catch(e){
+    console.warn("One Question: failed to load note",e);
+  }
+}
+function saveNote(value){
+  cacheSet("oneQuestionNote",value);
+}
+function toggleNote(){
+  const p=$("notePanel"),b=$("noteDock");
+  if(!p)return;
+  const open=!p.classList.contains("open");
+  p.classList.toggle("open",open);
+  p.setAttribute("aria-hidden",String(!open));
+  b?.setAttribute("aria-expanded",String(open));
+  if(open){
+    closeToday();
+    $("noteText")?.focus();
+  }
 }
 
 function startCycle(){
@@ -434,7 +789,7 @@ function renderTodos(dateKey=todoViewDate||todayKey()){
     const futureKeys=[...new Set(getTodos().filter(t=>!t.completed&&t.date>=today).map(t=>t.date))].sort();
     groups=futureKeys.map(key=>({key,items:getTodos().filter(t=>!t.completed&&t.date===key)}));
     groups.forEach(g=>{
-      const groupHeading=document.createElement("div");groupHeading.className="todoDateGroupHeading";groupHeading.textContent=g.key===today?"Today":formatTodoDate(g.key,true);list.append(groupHeading);
+      const groupHeading=document.createElement("div");groupHeading.className="todoDateGroupHeading";groupHeading.textContent=g.key===today?"":formatTodoDate(g.key,true);list.append(groupHeading);
       addGroup(g.items,false);
     });
   }else{
@@ -497,42 +852,28 @@ function addTodoText(text,dateKey=todoViewDate||todayKey()){
   return true;
 }
 function openToday(){
-  clearTimeout(cycleTimer);
+  const p=$("notePanel"),b=$("noteDock");
+  if(p&&p.classList.contains("open")){
+    p.classList.remove("open");
+    p.setAttribute("aria-hidden","true");
+    b?.setAttribute("aria-expanded","false");
+  }
   todoViewDate=todayKey();
   todoViewScope="upcoming";
-  if(currentMode!=="today")returnMode=currentMode;
-  currentMode="today";
-  todoViewDate=todayKey();
-  calendarSelectedDate=todayKey();
-  closeModeMenu();
-  updateModeUI();
   renderTodos(todoViewDate);
   const screen=$("todoFullscreen");
   screen.classList.add("open");
   screen.setAttribute("aria-hidden","false");
-  setCycleStatus("today",false);
-  setTimeout(()=>{$("todoFullscreenInput").focus()},80);
+  $("todoDock")?.setAttribute("aria-expanded","true");
+  setTimeout(()=>{$("todoFullscreenInput").focus()},120);
 }
 function closeToday(){
   todoViewScope="date";
   const screen=$("todoFullscreen");
   screen.classList.remove("open");
   screen.setAttribute("aria-hidden","true");
+  $("todoDock")?.setAttribute("aria-expanded","false");
   $("todoFullscreenInput").value="";
-  currentMode=returnMode||"question";
-  returnMode="question";
-  updateModeUI();
-
-  if(currentMode==="focus"){
-    isAnswering=false;
-    cyclePaused=true;
-    showFocusQuestion(chooseFreshFocusIndex());
-    answerEl.focus();
-  }else{
-    isAnswering=false;
-    cyclePaused=false;
-    showQuestion(chooseFreshIndex());
-  }
 }
 function addFullscreenTodo(){
   const input=$("todoFullscreenInput");
@@ -917,12 +1258,42 @@ function renderSettings(){
   wrap.querySelectorAll("input").forEach(b=>b.checked=chosen.has(b.value));
   $("cycleSeconds").value=settings.cycleSeconds;
   $("cycleSecondsValue").textContent=`${Number(settings.cycleSeconds).toFixed(1)}s`;
+  const hydrationParts=hydrationDurationParts();
+  $("hydrationHours").value=hydrationParts.hours;
+  $("hydrationMinutesPart").value=hydrationParts.minutes;
+  $("hydrationSeconds").value=hydrationParts.seconds;
+  $("hydrationSize").value=Math.min(48,Math.max(12,Number(settings.hydrationSize)||DEFAULT_HYDRATION_SIZE));
+  $("hydrationSizeValue").textContent=`${$("hydrationSize").value}px`;
+  $("hydrationWave").checked=settings.hydrationWave!==false;
+  $("hydrationHoverEnabled").checked=settings.hydrationHoverEnabled===true;
+  $("hydrationHoverScale").value=Math.min(2.5,Math.max(1.1,Number(settings.hydrationHoverScale)||DEFAULT_HYDRATION_HOVER_SCALE));
+  $("hydrationHoverScaleValue").textContent=`${Math.round(Number($("hydrationHoverScale").value)*100)}%`;
+  $("screenScale").value=Math.min(1.2,Math.max(.8,Number(settings.screenScale)||DEFAULT_SCREEN_SCALE));
+  $("screenScaleValue").textContent=`${Math.round(Number($("screenScale").value)*100)}%`;
   $("animationEnabled").checked=!!settings.animation;
+  $("timerAnimationEnabled").checked=settings.timerAnimation!==false;
+  $("lowercaseEnabled").checked=!!settings.lowercase;
+  document.body.classList.toggle("lowercase",!!settings.lowercase);
+  setSettingsTab("questions");
+  applyHydrationAppearance();
+  applyScreenScale();
+  updateHydrationHistoryUI();
   applyAppearance();
   renderQuestionEditor();
 }
 function openSettings(){renderSettings();$("settingsPanel").classList.add("open");}
 function closeSettings(){$("settingsPanel").classList.remove("open")}
+function setSettingsTab(tab){
+  const validTabs=["questions","appearance","reminders","data"];
+  const activeTab=validTabs.includes(tab)?tab:"questions";
+  const inner=document.querySelector(".settingsInner");
+  if(inner)inner.dataset.settingsCategory=activeTab;
+  document.querySelectorAll(".settingsTab").forEach(button=>{
+    const active=button.dataset.settingsTab===activeTab;
+    button.classList.toggle("active",active);
+    button.setAttribute("aria-selected",String(active));
+  });
+}
 function normalizeCategories(values){
   const cats=[...new Set(values.filter(v=>v!=="all"))];
   return (!cats.length||values.includes("all"))?["all"]:cats;
@@ -1024,11 +1395,21 @@ $("historyNext").onclick=historyNext;
 $("newQuestion").onclick=nextQuestion;
 $("settings").onclick=openSettings;
 $("category").onclick=toggleCategoryMenu;
+$("todoDock").onclick=openToday;
 
 $("modeToggle").onclick=toggleModeMenu;
+$("lowercaseEnabled").addEventListener("change",e=>{settings.lowercase=e.target.checked;saveSettings();});
+$("noteDock").addEventListener("click",e=>{e.preventDefault();e.stopPropagation();toggleNote();});
+$("noteText")?.addEventListener("input",e=>saveNote(e.target.value));
+document.querySelectorAll(".timerMode").forEach(b=>b.onclick=()=>setTimerMode(b.dataset.timer));
+$("focusTimerStart").onclick=toggleTimer;
+$("focusTimerReset").onclick=resetTimer;
+$("focusTimerPnp").onclick=()=>{try{document.documentElement.requestPictureInPicture?.()}catch{}};
+
 
 $("closeSettings").onclick=closeSettings;
 $("settingsPanel").addEventListener("click",e=>{if(e.target===$("settingsPanel"))closeSettings()});
+document.querySelectorAll(".settingsTab").forEach(button=>button.addEventListener("click",()=>setSettingsTab(button.dataset.settingsTab)));
 
 $("categoryOptions").addEventListener("change",e=>{
   const target=e.target;
@@ -1049,9 +1430,43 @@ $("cycleSeconds").addEventListener("input",e=>{
   saveSettings();
   if(currentMode==="question"&&!cyclePaused&&!isAnswering)startCycle();
 });
+["hydrationHours","hydrationMinutesPart","hydrationSeconds"].forEach(id=>$(id).addEventListener("change",updateHydrationDuration));
+$("hydrationSize").addEventListener("input",e=>{
+  settings.hydrationSize=Math.min(48,Math.max(12,Number(e.target.value)||DEFAULT_HYDRATION_SIZE));
+  $("hydrationSizeValue").textContent=`${settings.hydrationSize}px`;
+  saveSettings();
+  applyHydrationAppearance();
+});
+$("hydrationWave").addEventListener("change",e=>{
+  settings.hydrationWave=e.target.checked;
+  saveSettings();
+  applyHydrationAppearance();
+});
+$("hydrationHoverEnabled").addEventListener("change",e=>{
+  settings.hydrationHoverEnabled=e.target.checked;
+  saveSettings();
+  applyHydrationAppearance();
+});
+$("hydrationHoverScale").addEventListener("input",e=>{
+  settings.hydrationHoverScale=Math.min(2.5,Math.max(1.1,Number(e.target.value)||DEFAULT_HYDRATION_HOVER_SCALE));
+  $("hydrationHoverScaleValue").textContent=`${Math.round(settings.hydrationHoverScale*100)}%`;
+  saveSettings();
+  applyHydrationAppearance();
+});
+$("screenScale").addEventListener("input",e=>{
+  settings.screenScale=Math.min(1.2,Math.max(.8,Number(e.target.value)||DEFAULT_SCREEN_SCALE));
+  $("screenScaleValue").textContent=`${Math.round(settings.screenScale*100)}%`;
+  saveSettings();
+  applyScreenScale();
+});
 $("animationEnabled").addEventListener("change",e=>{
   settings.animation=e.target.checked;
   saveSettings();
+});
+$("timerAnimationEnabled").addEventListener("change",e=>{
+  settings.timerAnimation=e.target.checked;
+  saveSettings();
+  updateTimerUI();
 });
 
 [["backgroundColor","backgroundColor"],["textColor","textColor"],["accentColor","accentColor"],["overlayColor","overlayColor"]].forEach(([id,key])=>{
@@ -1099,7 +1514,10 @@ $("importData").addEventListener("change",async e=>{
 $("date").onclick=toggleCalendar;
 $("calendarPrev").onclick=()=>{calendarMonthDate=new Date(calendarMonthDate.getFullYear(),calendarMonthDate.getMonth()-1,1);renderCalendar()};
 $("calendarNext").onclick=()=>{calendarMonthDate=new Date(calendarMonthDate.getFullYear(),calendarMonthDate.getMonth()+1,1);renderCalendar()};
-$("todoDock").onclick=openToday;
+$("todoDock").onclick=()=>{
+  if($("todoFullscreen").classList.contains("open")) closeToday();
+  else openToday();
+};
 $("closeTodoFullscreen").onclick=closeToday;
 $("todoFullscreenAdd").onclick=addFullscreenTodo;
 $("todoFullscreenInput").addEventListener("keydown",e=>{
@@ -1146,10 +1564,14 @@ document.addEventListener("keydown",e=>{
 
 applyAppearance();
 dateEl.textContent=new Intl.DateTimeFormat(undefined,{weekday:"long",month:"long",day:"numeric"}).format(new Date());
+restoreTimerState();
+if(timerRunning)timerInterval=setInterval(tickTimer,1000);
 renderTodos();
 renderCalendar();
 updateModeUI();
 updateCycleToggle();
+initHydrationReminder();
+loadNote();
 
 const initial=chooseFreshIndex();
 viewedQuestions=[initial];
@@ -1167,6 +1589,7 @@ hydrateBrowserStorage().then(()=>{
   renderSettings();
   renderTodos();
   applyAppearance();
+  loadNote();
   const refreshed=chooseFreshIndex();
   viewedQuestions=[refreshed];
   viewedPosition=0;
