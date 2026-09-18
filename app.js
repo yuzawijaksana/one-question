@@ -452,18 +452,30 @@ function updateModeUI(){
   const btn=$("modeToggle");
   if(btn){
     btn.classList.toggle("active",currentMode==="focus");
-    btn.setAttribute("aria-pressed",String(currentMode==="focus"));
-    btn.setAttribute("title",currentMode==="focus"?"question mode":"focus mode");
+    btn.classList.toggle("schedulerActive",currentMode==="scheduler");
+    btn.setAttribute("aria-pressed",String(currentMode!=="question"));
+    btn.setAttribute("title",currentMode==="focus"?"question mode":currentMode==="scheduler"?"question mode":"focus mode");
   }
   document.body.classList.toggle("todayMode",currentMode==="today");
   document.body.classList.toggle("focusModeVisual",currentMode==="focus");
+  document.body.classList.toggle("schedulerVisual",currentMode==="scheduler");
+  const sched=$("scheduler");
+  if(sched)sched.setAttribute("aria-hidden",String(currentMode!=="scheduler"));
+  if(currentMode==="scheduler")renderScheduler();
   updateFocusModePreview();
   updateTimerUI();
 }
 function closeModeMenu(){}
-function toggleModeMenu(){
-  if(currentMode==="question") enterFocusMode();
-  else if(currentMode==="focus") enterQuestionMode();
+function toggleModeMenu(e){
+  const icon=e&&e.target&&e.target.closest?e.target.closest(".modeIcon"):null;
+  if(icon){
+    if(icon.classList.contains("modeQuestion")){enterQuestionMode();return;}
+    if(icon.classList.contains("modeFocus")){enterFocusMode();return;}
+    if(icon.classList.contains("modeScheduler")){enterSchedulerMode();return;}
+  }
+  if(currentMode==="question")enterFocusMode();
+  else if(currentMode==="focus")enterSchedulerMode();
+  else enterQuestionMode();
 }
 function renderQuestion(i){
   currentIndex=i;
@@ -1181,7 +1193,8 @@ function buildBackup(){
       settings:JSON.parse(JSON.stringify(settings)),
       history:getHistory(),
       recent:getRecent(),
-      todos:getTodos()
+      todos:getTodos(),
+      schedule:schedulerBlocks.slice()
     }
   };
 }
@@ -1225,6 +1238,12 @@ async function importBackup(file){
     saveHistory(Array.isArray(d.history)?d.history:[]);
     saveRecent(Array.isArray(d.recent)?d.recent:[]);
     saveTodos(Array.isArray(d.todos)?d.todos:[]);
+    if(Array.isArray(d.schedule)){
+      schedulerBlocks.length=0;
+      d.schedule.forEach(b=>{if(Number.isFinite(b.start)&&Number.isFinite(b.end)&&b.label)schedulerBlocks.push({start:b.start,end:b.end,label:String(b.label),color:String(b.color||SCHEDULER_PALETTE[0])})});
+      saveSchedule();
+      renderScheduler();
+    }
     applyAppearance();
     renderSettings();
     renderTodos();
@@ -1370,6 +1389,288 @@ function enterFocusMode(){
   updateModeUI();updateFocusUI();showFocusQuestion(chooseFreshFocusIndex());
   setCycleStatus("cycling",true);answerEl.focus();
 }
+// ---- day circle (time scheduler) mode --------------------------------
+const SCHEDULE_KEY="oneQuestionSchedule";
+const SCHEDULER_PALETTE=["#7d8c7c","#8c7d8c","#7c829c","#9c8d7c","#7c9c95","#9c7c86"];
+const schedulerBlocks=(()=>{
+  try{
+    const saved=JSON.parse(localStorage.getItem(SCHEDULE_KEY)||"[]");
+    return Array.isArray(saved)?saved.filter(b=>Number.isFinite(b.start)&&Number.isFinite(b.end)&&b.label).map(b=>({start:b.start,end:b.end,label:String(b.label),color:String(b.color||SCHEDULER_PALETTE[0])})).filter(b=>b.end>b.start&&b.start>=0&&b.end<=1440):[];
+  }catch{return[]}
+})();
+function saveSchedule(){cacheSet(SCHEDULE_KEY,schedulerBlocks)}
+let schedulerSelection=null; // {start,end,label,color} being drawn or edited
+let schedulerEditingIndex=-1; // -1 while drawing a new block
+let schedulerDrag=null; // {startMin} while dragging on the ring
+
+const SCHED={cx:200,cy:200,rOuter:170,rInner:118};
+function schedPoint(min,r){
+  // noon (12:00) at the top, midnight (00:00) at the bottom
+  const a=(((min-720)/1440)%1+1)%1*Math.PI*2;
+  return [SCHED.cx+r*Math.sin(a),SCHED.cy-r*Math.cos(a)];
+}
+function wedgePath(start,end,rOuter=SCHED.rOuter,rInner=SCHED.rInner){
+  const s=Math.max(-720,Math.min(start,1439.9)),e=Math.max(s+.01,Math.min(end,2160));
+  const [x1,y1]=schedPoint(s,rOuter),[x2,y2]=schedPoint(e,rOuter);
+  const [x3,y3]=schedPoint(e,rInner),[x4,y4]=schedPoint(s,rInner);
+  const large=(e-s)>720?1:0;
+  return `M${x1.toFixed(2)} ${y1.toFixed(2)} A${rOuter} ${rOuter} 0 ${large} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} L${x3.toFixed(2)} ${y3.toFixed(2)} A${rInner} ${rInner} 0 ${large} 0 ${x4.toFixed(2)} ${y4.toFixed(2)} Z`;
+}
+// a block may cross midnight (e.g. 23:00–01:00); split it into two arcs
+function wedgePaths(start,end,rOuter=SCHED.rOuter,rInner=SCHED.rInner){
+  const ds=[];
+  let s=start,e=end;
+  if(e-s>=1440){ds.push(wedgePath(0,1440,rOuter,rInner));return ds;}
+  if(s<0){ds.push(wedgePath(s+1440,1440,rOuter,rInner));s=0;}
+  if(e>1440){ds.push(wedgePath(0,e-1440,rOuter,rInner));e=1440;}
+  if(e-s>=1)ds.push(wedgePath(s,e,rOuter,rInner));
+  return ds;
+}
+function formatMinutes(min){
+  const m=((Math.round(min)%1440)+1440)%1440;
+  return `${String(Math.floor(m/60)).padStart(2,"0")}:${String(m%60).padStart(2,"0")}`;
+}
+function schedulerEventPoint(e){
+  const svg=$("schedulerClock");
+  const rect=svg.getBoundingClientRect();
+  const x=(e.clientX-rect.left)/rect.width*400-SCHED.cx;
+  const y=(e.clientY-rect.top)/rect.height*400-SCHED.cy;
+  const r=Math.hypot(x,y);
+  let min=Math.atan2(x,-y)/(Math.PI*2)*1440;
+  // dial is reversed (noon at top): shift the raw pointer angle by 12h so
+  // blocks land where the user actually dragged
+  min=(((Math.round(min)+720)%1440)+1440)%1440;
+  return {min,inRing:r>=SCHED.rInner-6&&r<=SCHED.rOuter+6};
+}
+function renderSchedulerTicks(){
+  const g=$("schedulerTicks");
+  g.textContent="";
+  // bezel
+  const bezel=document.createElementNS("http://www.w3.org/2000/svg","circle");
+  bezel.setAttribute("cx",SCHED.cx);bezel.setAttribute("cy",SCHED.cy);
+  bezel.setAttribute("r",SCHED.rOuter+8);bezel.setAttribute("class","schedulerBezel");
+  g.append(bezel);
+  // 48 minor ticks (every 30 minutes) and 24 hour ticks
+  for(let i=0;i<48;i++){
+    const min=i*30,isHour=i%2===0,isMajor=isHour&&i%6===0;
+    const [x1,y1]=schedPoint(min,SCHED.rOuter+4);
+    const [x2,y2]=schedPoint(min,isMajor?SCHED.rOuter-14:isHour?SCHED.rOuter-9:SCHED.rOuter-4);
+    const line=document.createElementNS("http://www.w3.org/2000/svg","line");
+    line.setAttribute("x1",x1.toFixed(1));line.setAttribute("y1",y1.toFixed(1));
+    line.setAttribute("x2",x2.toFixed(1));line.setAttribute("y2",y2.toFixed(1));
+    line.setAttribute("class",isMajor?"schedTickMajor":isHour?"schedTickHour":"schedTickMinor");
+    g.append(line);
+  }
+  // numerals every 2 hours, midnight at the top like a 24-hour clock
+  for(let h=0;h<24;h+=2){
+    const [tx,ty]=schedPoint(h*60,SCHED.rOuter-30);
+    const text=document.createElementNS("http://www.w3.org/2000/svg","text");
+    text.setAttribute("x",tx.toFixed(1));text.setAttribute("y",ty.toFixed(1));
+    text.setAttribute("class","schedHourLabel"+(h%6===0?" schedHourBig":""));
+    text.setAttribute("text-anchor","middle");
+    text.setAttribute("dominant-baseline","middle");
+    text.textContent=String(h).padStart(2,"0");
+    g.append(text);
+  }
+}
+function schedulerSorted(){return schedulerBlocks.map((b,i)=>({...b,i})).sort((a,b)=>a.start-b.start)}
+function renderScheduler(){
+  if(!$("schedulerClock"))return;
+  renderSchedulerTicks();
+  const g=$("schedulerWedges");
+  g.textContent="";
+  schedulerSorted().forEach(b=>{
+    const group=document.createElementNS("http://www.w3.org/2000/svg","g");
+    group.setAttribute("data-block-index",String(b.i));
+    group.setAttribute("class","schedBlock");
+    wedgePaths(b.start,b.end).forEach(d=>{
+      const path=document.createElementNS("http://www.w3.org/2000/svg","path");
+      path.setAttribute("d",d);
+      path.setAttribute("fill",b.color);
+      path.setAttribute("class","schedWedge");
+      group.append(path);
+    });
+    const label=document.createElementNS("http://www.w3.org/2000/svg","title");
+    label.textContent=`${formatMinutes(b.start)}–${formatMinutes(b.end)} ${b.label}`;
+    group.append(label);
+    g.append(group);
+  });
+  updateSchedulerDrag();
+  updateSchedulerNow();
+  updateSchedulerCenter();
+}
+function updateSchedulerDrag(){
+  const g=$("schedulerDrag");
+  g.textContent="";
+  if(!schedulerDrag)return;
+  const start=Math.min(schedulerDrag.start,schedulerDrag.cur);
+  const end=Math.max(schedulerDrag.start,schedulerDrag.cur);
+  wedgePaths(start,end).forEach(d=>{
+    const path=document.createElementNS("http://www.w3.org/2000/svg","path");
+    path.setAttribute("d",d);
+    path.setAttribute("class","schedWedgeDrag");
+    g.append(path);
+  });
+}
+function updateSchedulerNow(){
+  const now=new Date();
+  const nowMin=now.getHours()*60+now.getMinutes()+now.getSeconds()/60;
+  const minuteMin=now.getMinutes()+now.getSeconds()/60;
+  // use the same angle helper as the dial ticks so hands always line up
+  // with the printed hours: the hour hand points at "now" on the 24h dial
+  // (one revolution per day), the minute hand turns once per hour
+  const setHand=(id,angleMin,len)=>{
+    const hand=$(id);
+    if(!hand)return;
+    const [sx,sy]=schedPoint(angleMin,92);
+    const [tx,ty]=schedPoint(angleMin,len);
+    hand.setAttribute("x1",sx.toFixed(2));hand.setAttribute("y1",sy.toFixed(2));
+    hand.setAttribute("x2",tx.toFixed(2));hand.setAttribute("y2",ty.toFixed(2));
+  };
+  setHand("schedulerHourHand",nowMin,132);
+  setHand("schedulerMinuteHand",minuteMin*24+720,162);
+}
+function updateSchedulerCenter(){
+  const now=new Date();
+  const min=now.getHours()*60+now.getMinutes()+now.getSeconds()/60;
+  $("schedulerNowTime").textContent=now.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+  const blocks=schedulerSorted();
+  const current=blocks.find(b=>(min>=b.start&&min<b.end)||(min+1440>=b.start&&min+1440<b.end));
+  $("schedulerCurrent").textContent=current?current.label:"free time";
+  $("schedulerCurrent").style.color=current?current.color:"";
+  const next=blocks.find(b=>b.start>min);
+  $("schedulerNext").textContent=next?`next: ${next.label} at ${formatMinutes(next.start)}`:"nothing planned next";
+}
+function closeSchedulerEditor(){
+  schedulerSelection=null;schedulerEditingIndex=-1;
+  const ed=$("schedulerEditor");
+  ed.classList.remove("open");ed.setAttribute("aria-hidden","true");
+}
+function parseTimeInput(value,fallback){
+  const m=/^(\d{1,2}):(\d{2})$/.exec(String(value||"").trim());
+  if(!m)return fallback;
+  const min=Number(m[1])*60+Number(m[2]);
+  return Number.isFinite(min)?min:fallback;
+}
+function openSchedulerEditor(index=-1,selection=null){
+  schedulerEditingIndex=index;
+  schedulerSelection=index>=0?{...schedulerBlocks[index]}:selection;
+  const ed=$("schedulerEditor");
+  ed.classList.add("open");ed.setAttribute("aria-hidden","false");
+  $("schedulerStart").value=formatMinutes(schedulerSelection.start);
+  $("schedulerEnd").value=formatMinutes(schedulerSelection.end);
+  syncEditorTimes();
+  $("schedulerLabel").value=schedulerSelection.label||"";
+  renderSchedulerColors();
+  $("schedulerDelete").style.display=index>=0?"":"none";
+  $("schedulerLabel").focus();
+}
+function renderSchedulerColors(){
+  const wrap=$("schedulerColors");
+  wrap.textContent="";
+  SCHEDULER_PALETTE.forEach(color=>{
+    const b=document.createElement("button");
+    b.type="button";b.className="schedulerColor"+(schedulerSelection&&schedulerSelection.color===color?" active":"");
+    b.style.background=color;b.setAttribute("aria-label",`color ${color}`);
+    b.onclick=()=>{schedulerSelection.color=color;renderSchedulerColors();previewSchedulerSelection();};
+    wrap.append(b);
+  });
+}
+function previewSchedulerSelection(){
+  const g=$("schedulerDrag");
+  g.textContent="";
+  if(!schedulerSelection)return;
+  wedgePaths(schedulerSelection.start,schedulerSelection.end).forEach(d=>{
+    const path=document.createElementNS("http://www.w3.org/2000/svg","path");
+    path.setAttribute("d",d);
+    path.setAttribute("fill",schedulerSelection.color);
+    path.setAttribute("class","schedWedgeDrag");
+    g.append(path);
+  });
+}
+// keep the range text, the preview wedge and the selection in sync while
+// the user edits the exact from/to times
+function syncEditorTimes(){
+  if(!schedulerSelection)return;
+  const start=parseTimeInput($("schedulerStart").value,schedulerSelection.start);
+  let end=parseTimeInput($("schedulerEnd").value,schedulerSelection.end);
+  const startNorm=((start%1440)+1440)%1440;
+  let endNorm=((end%1440)+1440)%1440;
+  if(endNorm<=startNorm)endNorm+=1440;
+  schedulerSelection={...schedulerSelection,start:startNorm,end:endNorm};
+  $("schedulerEditorTime").textContent=`${formatMinutes(startNorm)} – ${formatMinutes(endNorm)} (${Math.round(endNorm-startNorm)} min)`;
+  previewSchedulerSelection();
+}
+function commitSchedulerBlock(){
+  if(!schedulerSelection)return;
+  syncEditorTimes();
+  const label=$("schedulerLabel").value.trim()||"unnamed";
+  const block={...schedulerSelection,label};
+  if(schedulerEditingIndex>=0)schedulerBlocks[schedulerEditingIndex]=block;
+  else schedulerBlocks.push(block);
+  saveSchedule();closeSchedulerEditor();renderScheduler();
+}
+function deleteSchedulerBlock(){
+  if(schedulerEditingIndex>=0)schedulerBlocks.splice(schedulerEditingIndex,1);
+  saveSchedule();closeSchedulerEditor();renderScheduler();
+}
+function initSchedulerMode(){
+  const svg=$("schedulerClock");
+  if(!svg)return;
+  renderScheduler();
+  svg.addEventListener("pointerdown",e=>{
+    if(schedulerSelection){closeSchedulerEditor();renderScheduler();}
+    const p=schedulerEventPoint(e);
+    if(!p.inRing)return;
+    try{svg.setPointerCapture(e.pointerId);}catch{}
+    schedulerDrag={start:p.min,cur:p.min};
+    updateSchedulerDrag();
+  });
+  svg.addEventListener("pointermove",e=>{
+    if(!schedulerDrag)return;
+    const p=schedulerEventPoint(e);
+    if(p.inRing||e.buttons){schedulerDrag.cur=p.min;updateSchedulerDrag();}
+  });
+  svg.addEventListener("pointerup",e=>{
+    if(!schedulerDrag)return;
+    const start=Math.min(schedulerDrag.start,schedulerDrag.cur);
+    let end=Math.max(schedulerDrag.start,schedulerDrag.cur);
+    schedulerDrag=null;
+    if(end-start<10){
+      // pointer capture swallows the click, so find the wedge by position
+      updateSchedulerDrag();
+      const el=document.elementFromPoint(e.clientX,e.clientY);
+      const group=el&&el.closest?el.closest("[data-block-index]"):null;
+      if(group)openSchedulerEditor(Number(group.dataset.blockIndex));
+      return;
+    }
+    // wrap around midnight when dragging across 00:00
+    let s=start,en=end;
+    if(end-start>720){s=end-1440;en=start;}
+    openSchedulerEditor(-1,{start:Math.round(s),end:Math.round(en),label:"",color:SCHEDULER_PALETTE[schedulerBlocks.length%SCHEDULER_PALETTE.length]});
+  });
+  svg.addEventListener("pointercancel",()=>{schedulerDrag=null;updateSchedulerDrag();});
+  $("schedulerSave").onclick=commitSchedulerBlock;
+  $("schedulerDelete").onclick=deleteSchedulerBlock;
+  $("schedulerCancel").onclick=()=>{closeSchedulerEditor();renderScheduler();};
+  $("schedulerStart").addEventListener("input",syncEditorTimes);
+  $("schedulerEnd").addEventListener("input",syncEditorTimes);
+  $("schedulerLabel").addEventListener("keydown",e=>{
+    if(e.key==="Enter"){e.preventDefault();commitSchedulerBlock();}
+    else if(e.key==="Escape"){e.preventDefault();closeSchedulerEditor();renderScheduler();}
+  });
+  setInterval(()=>{
+    if(currentMode==="scheduler"){updateSchedulerNow();updateSchedulerCenter();}
+  },30000);
+}
+function enterSchedulerMode(){
+  clearTimeout(cycleTimer);closeCategoryMenu();
+  currentMode="scheduler";cyclePaused=false;isAnswering=false;
+  document.body.classList.remove("focusModeVisual");
+  updateModeUI();updateFocusUI();
+  setCycleStatus("day circle",false);
+  answerEl.blur();
+}
 function enterQuestionMode(){
   clearTimeout(cycleTimer);
   currentMode="question";
@@ -1397,7 +1698,7 @@ $("settings").onclick=openSettings;
 $("category").onclick=toggleCategoryMenu;
 $("todoDock").onclick=openToday;
 
-$("modeToggle").onclick=toggleModeMenu;
+$("modeToggle").onclick=e=>toggleModeMenu(e);
 $("lowercaseEnabled").addEventListener("change",e=>{settings.lowercase=e.target.checked;saveSettings();});
 $("noteDock").addEventListener("click",e=>{e.preventDefault();e.stopPropagation();toggleNote();});
 $("noteText")?.addEventListener("input",e=>saveNote(e.target.value));
@@ -1558,6 +1859,7 @@ document.addEventListener("keydown",e=>{
   if($("todoFullscreen").classList.contains("open")){closeToday();return;}
   if($("calendarPanel").classList.contains("open")){closeCalendar();return;}
   if($("settingsPanel").classList.contains("open")){closeSettings();return;}
+  if(schedulerSelection){closeSchedulerEditor();renderScheduler();return;}
   if($("historyPanel").classList.contains("open")){closeHistory();return;}
   closeCategoryMenu();
 });
@@ -1568,6 +1870,7 @@ restoreTimerState();
 if(timerRunning)timerInterval=setInterval(tickTimer,1000);
 renderTodos();
 renderCalendar();
+initSchedulerMode();
 updateModeUI();
 updateCycleToggle();
 initHydrationReminder();

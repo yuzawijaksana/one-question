@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>One Question</title>
-  <link rel="stylesheet" href="style.css?v=2.17.2">
+  <link rel="stylesheet" href="style.css?v=2.18.7">
 </head>
 
 <body>
@@ -35,7 +35,8 @@
           id="focusRunningTime"></span></span>
       <button id="modeToggle" class="focusModeToggle" type="button" aria-label="switch mode" aria-pressed="false"
         title="switch mode"><span class="modeIcon modeQuestion" aria-hidden="true">◈</span><span
-          class="modeIcon modeFocus" aria-hidden="true">◒</span></button>
+          class="modeIcon modeFocus" aria-hidden="true">◒</span><span class="modeIcon modeScheduler"
+          aria-hidden="true">◔</span></button>
     </div>
 
     <section class="focus" id="focus" aria-live="polite">
@@ -72,6 +73,48 @@
       </div>
       <div class="answerMeta"><span id="answerMetaHint">enter to save · shift + enter for a new line</span><span
           id="cycleStatus">cycling</span></div>
+    </section>
+
+    <section id="scheduler" class="scheduler" aria-hidden="true">
+      <div id="schedulerKicker" class="schedulerKicker">day circle</div>
+      <div class="schedulerClockWrap">
+        <svg id="schedulerClock" class="schedulerClock" viewBox="0 0 400 400" role="img"
+          aria-label="24 hour schedule circle">
+          <g id="schedulerTicks" aria-hidden="true"></g>
+          <circle class="schedulerBezel" cx="200" cy="200" r="184" aria-hidden="true"></circle>
+          <circle class="schedulerBezelInner" cx="200" cy="200" r="176" aria-hidden="true"></circle>
+          <circle class="schedulerHub" cx="200" cy="200" r="88" aria-hidden="true"></circle>
+          <g id="schedulerWedges" aria-hidden="true"></g>
+          <g id="schedulerDrag" aria-hidden="true"></g>
+          <line id="schedulerHourHand" class="schedulerHourHand" x1="200" y1="200" x2="200" y2="96"
+            aria-hidden="true"></line>
+          <line id="schedulerMinuteHand" class="schedulerMinuteHand" x1="200" y1="200" x2="200" y2="62"
+            aria-hidden="true"></line>
+          <circle class="schedulerCap" cx="200" cy="200" r="5" aria-hidden="true"></circle>
+        </svg>
+        <div id="schedulerCenter" class="schedulerCenter">
+          <div id="schedulerNowTime" class="schedulerNowTime"></div>
+          <div id="schedulerCurrent" class="schedulerCurrent"></div>
+          <div id="schedulerNext" class="schedulerNext"></div>
+        </div>
+      </div>
+      <div id="schedulerEditor" class="schedulerEditor" aria-hidden="true">
+        <div class="schedulerTimeInputs">
+          <label>from <input id="schedulerStart" type="time" step="60" aria-label="Block start time"></label>
+          <span aria-hidden="true">→</span>
+          <label>to <input id="schedulerEnd" type="time" step="60" aria-label="Block end time"></label>
+        </div>
+        <div id="schedulerEditorTime" class="schedulerEditorTime"></div>
+        <input id="schedulerLabel" class="schedulerLabelInput" type="text" placeholder="what is this time for?"
+          autocomplete="off" aria-label="Block label">
+        <div id="schedulerColors" class="schedulerColors" aria-label="Block color"></div>
+        <div class="schedulerEditorButtons">
+          <button id="schedulerSave" type="button">save</button>
+          <button id="schedulerDelete" type="button">delete</button>
+          <button id="schedulerCancel" type="button">cancel</button>
+        </div>
+      </div>
+      <div class="schedulerHint">drag on the circle to plan a block of time · click a block to edit it</div>
     </section>
 
     <div class="controlsZone" aria-hidden="true">
@@ -413,7 +456,7 @@
     </section>
     <div id="cycleHint">questions change quietly · move toward an edge</div>
   </main>
-  <script src="app.js?v=2.17.3"></script>
+  <script src="app.js?v=2.18.7"></script>
 </body>
 
 </html>

@@ -14,19 +14,25 @@ exit /b
 :admin
 cd /d "%~dp0"
 
-where py.exe >nul 2>&1
-if not errorlevel 1 (
-    py.exe -3 "%~dp0OneQuestionServer.py"
-    exit /b %errorlevel%
+set PY_CMD=
+
+py.exe --version >nul 2>&1
+if not errorlevel 1 set PY_CMD=py.exe -3
+
+if not defined PY_CMD (
+    python.exe --version >nul 2>&1
+    if not errorlevel 1 set PY_CMD=python.exe
 )
 
-where python.exe >nul 2>&1
-if not errorlevel 1 (
-    python.exe "%~dp0OneQuestionServer.py"
+if defined PY_CMD (
+    %PY_CMD% "%~dp0OneQuestionServer.py"
+    echo.
+    echo Server exited with code %errorlevel%.
+    pause
     exit /b %errorlevel%
 )
 
 echo.
-echo Python 3 was not found.
-echo Please install Python 3 and run this again.
+echo Python 3 was not found on this system.
+echo Run install-python.bat first, then try again.
 pause
