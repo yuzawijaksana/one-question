@@ -133,7 +133,7 @@ async function pushSyncToServer(){
       if(raw===null)continue;
       let value;
       try{value=JSON.parse(raw)}catch{continue}
-      changes[key]={value,updatedAt:times[key]||Date.now()};
+      changes[key]={value,updatedAt:times[key]||Date.now()-60000};
     }
     if(!Object.keys(changes).length)return;
     await fetch(`${syncBase()}/api/state`,{
@@ -152,21 +152,34 @@ async function pullSyncFromServer(){
     const data=await res.json();
     const entries=data&&data.keys||{};
     const times=readSyncTimes();
-    let adopted=false;
+    let adopted=false,touched=false;
+    const isEmptyValue=v=>v==null||v===""||(Array.isArray(v)&&!v.length)||(typeof v==="object"&&v!==null&&!Object.keys(v).length);
     for(const key of SYNC_KEYS){
       const entry=entries[key];
-      if(entry&&entry.value!=null&&(entry.updatedAt||0)>(times[key]||0)){
-        try{
-          localStorage.setItem(key,JSON.stringify(entry.value));
-          times[key]=entry.updatedAt;
-          adopted=true;
-        }catch{}
+      if(!entry||entry.value==null)continue;
+      if((entry.updatedAt||0)<=(times[key]||0))continue;
+      // first sync on this device: if the server is empty but this device
+      // has real data, trust the device instead of wiping it
+      const raw=localStorage.getItem(key);
+      let localEmpty=true;
+      try{
+        const v=raw===null?null:JSON.parse(raw);
+        localEmpty=isEmptyValue(v);
+      }catch{}
+      if(times[key]===undefined&&!localEmpty){
+        times[key]=Date.now();
+        touched=true;
+        continue;
       }
+      try{
+        localStorage.setItem(key,JSON.stringify(entry.value));
+        times[key]=entry.updatedAt;
+        adopted=true;
+      }catch{}
     }
-    if(adopted){
+    if(adopted||touched){
       try{localStorage.setItem("oneQuestionSyncTimes",JSON.stringify(times))}catch{}
-      // restart once so everything renders from the freshly synced data
-      if(!sessionStorage.getItem("oneQuestionSyncReload")){
+      if(adopted&&!sessionStorage.getItem("oneQuestionSyncReload")){
         sessionStorage.setItem("oneQuestionSyncReload","1");
         location.reload();
       }
@@ -2371,6 +2384,9 @@ setTimeout(()=>focusEl.classList.remove("questionIn"),1100);
 startCycle();
 
 pullSyncFromServer();
+// initial migration: push everything this device has (history, todos, notes,
+// stickies…) so the server and the export file get the full picture
+pushSyncToServer();
 hydrateBrowserStorage().then(()=>{
   questions=loadQuestionBank();
   focusQuestions=loadFocusQuestions();

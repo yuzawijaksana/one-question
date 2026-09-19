@@ -1,7 +1,7 @@
 {
   "format": "one-question-zen-backup",
   "version": "2.21.3",
-  "exportedAt": "2026-09-19T10:28:52Z",
+  "exportedAt": "2026-09-19T10:40:09Z",
   "data": {
     "questions": [
       [
@@ -214,22 +214,132 @@
     },
     "history": [],
     "recent": [
-      22,
-      17,
-      20,
-      28,
-      38,
-      1,
-      12,
+      10,
+      9,
+      33,
+      13,
+      31,
+      29,
       14,
-      16,
-      15,
-      4,
-      3
+      8,
+      39,
+      28,
+      12,
+      4
     ],
     "todos": [],
-    "note": null,
-    "schedule": null,
-    "stickies": null
+    "note": "",
+    "schedule": [
+      {
+        "start": 270,
+        "end": 300,
+        "label": "subuh",
+        "color": "#7d8c7c"
+      },
+      {
+        "start": 719,
+        "end": 780,
+        "label": "dzuhur/lunch",
+        "color": "#7d8c7c"
+      },
+      {
+        "start": 555,
+        "end": 720,
+        "label": "focus",
+        "color": "#7c829c"
+      },
+      {
+        "start": 780,
+        "end": 900,
+        "label": "focus",
+        "color": "#7c829c"
+      },
+      {
+        "start": 899,
+        "end": 915,
+        "label": "ashar",
+        "color": "#7d8c7c"
+      },
+      {
+        "start": 1080,
+        "end": 1110,
+        "label": "magrhib",
+        "color": "#7d8c7c"
+      },
+      {
+        "start": 1140,
+        "end": 1170,
+        "label": "isya",
+        "color": "#7d8c7c"
+      },
+      {
+        "start": 1200,
+        "end": 1320,
+        "label": "focus / gaming",
+        "color": "#8c7d8c"
+      },
+      {
+        "start": 300,
+        "end": 405,
+        "label": "book reading",
+        "color": "#7c829c"
+      },
+      {
+        "start": 420,
+        "end": 540,
+        "label": "focus",
+        "color": "#9c7c86"
+      },
+      {
+        "start": 540,
+        "end": 555,
+        "label": "rehat",
+        "color": "#7c9c95"
+      },
+      {
+        "start": 405,
+        "end": 420,
+        "label": "rehat",
+        "color": "#9c7c86"
+      },
+      {
+        "start": 1320,
+        "end": 1350,
+        "label": "screen detox",
+        "color": "#7d8c7c"
+      }
+    ],
+    "stickies": [
+      {
+        "id": "d2aa6165-ef4f-401b-aa4e-632a62f4f344",
+        "text": "tugas akhir",
+        "created": 1789804934229,
+        "done": false
+      },
+      {
+        "id": "75377e88-0d60-4cea-b81f-de50d2302ad7",
+        "text": "read",
+        "created": 1789804405987,
+        "done": false,
+        "z": "23",
+        "x": 36.8,
+        "y": 23.2
+      },
+      {
+        "id": "3eae8be6-1583-4a1a-b46e-d046b7660d37",
+        "text": "motion graphics",
+        "created": 1789804390454,
+        "done": false,
+        "z": "24",
+        "x": 36.7,
+        "y": 57
+      },
+      {
+        "id": "c010f708-0a89-4668-b137-cd18c56794d7",
+        "text": "what i can do",
+        "created": 1789804250810,
+        "done": true
+      }
+    ]
   }
 }
