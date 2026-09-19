@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>One Question</title>
-  <link rel="stylesheet" href="style.css?v=2.18.7">
+  <link rel="stylesheet" href="style.css?v=2.21.0">
 </head>
 
 <body>
@@ -17,6 +17,10 @@
     <header class="topbar">
       <button id="date" class="dateButton" type="button" aria-haspopup="dialog" aria-expanded="false"
         title="Open calendar"></button>
+      <button id="miniClock" class="miniClock" type="button" title="day circle" aria-label="Open day circle">
+        <svg viewBox="0 0 400 400" aria-hidden="true"></svg>
+        <span id="miniClockTime"></span>
+      </button>
       <section id="calendarPanel" class="calendarPanel" aria-hidden="true">
         <div class="calendarHeader">
           <button id="calendarPrev" type="button" class="calendarNav" aria-label="Previous month">‹</button>
@@ -34,9 +38,9 @@
       <span id="focusRunningBadge" class="focusRunningBadge"><i aria-hidden="true"></i><span
           id="focusRunningTime"></span></span>
       <button id="modeToggle" class="focusModeToggle" type="button" aria-label="switch mode" aria-pressed="false"
-        title="switch mode"><span class="modeIcon modeQuestion" aria-hidden="true">◈</span><span
-          class="modeIcon modeFocus" aria-hidden="true">◒</span><span class="modeIcon modeScheduler"
-          aria-hidden="true">◔</span></button>
+        title="switch mode"><span class="modeIcon modeQuestion" aria-hidden="true">?</span><span
+          class="modeIcon modeFocus" aria-hidden="true">#</span><span class="modeIcon modeScheduler"
+          aria-hidden="true">%</span></button>
     </div>
 
     <section class="focus" id="focus" aria-live="polite">
@@ -77,7 +81,8 @@
 
     <section id="scheduler" class="scheduler" aria-hidden="true">
       <div id="schedulerKicker" class="schedulerKicker">day circle</div>
-      <div class="schedulerClockWrap">
+      <div class="schedulerLayout">
+        <div class="schedulerClockWrap">
         <svg id="schedulerClock" class="schedulerClock" viewBox="0 0 400 400" role="img"
           aria-label="24 hour schedule circle">
           <g id="schedulerTicks" aria-hidden="true"></g>
@@ -90,6 +95,8 @@
             aria-hidden="true"></line>
           <line id="schedulerMinuteHand" class="schedulerMinuteHand" x1="200" y1="200" x2="200" y2="62"
             aria-hidden="true"></line>
+          <line id="schedulerSecondHand" class="schedulerSecondHand" x1="200" y1="200" x2="200" y2="52"
+            aria-hidden="true"></line>
           <circle class="schedulerCap" cx="200" cy="200" r="5" aria-hidden="true"></circle>
         </svg>
         <div id="schedulerCenter" class="schedulerCenter">
@@ -97,6 +104,8 @@
           <div id="schedulerCurrent" class="schedulerCurrent"></div>
           <div id="schedulerNext" class="schedulerNext"></div>
         </div>
+      </div>
+      <aside id="scheduleList" class="scheduleList" aria-label="Schedule list"></aside>
       </div>
       <div id="schedulerEditor" class="schedulerEditor" aria-hidden="true">
         <div class="schedulerTimeInputs">
@@ -115,6 +124,8 @@
         </div>
       </div>
       <div class="schedulerHint">drag on the circle to plan a block of time · click a block to edit it</div>
+      <button id="scheduleListToggle" class="scheduleListToggle" type="button" aria-pressed="true"
+        title="show or hide the schedule list">☰</button>
     </section>
 
     <div class="controlsZone" aria-hidden="true">
@@ -171,7 +182,8 @@
     </section>
 
     <section id="notePanel" class="notePanel" aria-hidden="true">
-      <textarea id="noteText" placeholder="" aria-label="notepad"></textarea>
+      <div class="noteHeader"><span class="noteTitle">notepad</span><span id="noteStatus" class="noteStatus">saved</span></div>
+      <textarea id="noteText" placeholder="write anything — it saves as you type…" aria-label="notepad"></textarea>
     </section>
 
     <div id="hydrationReminder" class="hydrationReminder" aria-live="polite" aria-hidden="true">
@@ -191,6 +203,7 @@
       </button>
     </div>
 
+    <button id="themeToggle" class="settingsFab themeToggleFab" aria-label="Toggle light mode" title="light / dark mode">☀</button>
     <button id="settings" class="settingsFab" aria-label="Open settings" title="Settings">⚙</button>
 
     <section id="settingsPanel" class="settingsPanel" aria-hidden="true">
@@ -230,8 +243,21 @@
 
         <section class="settingSection appearanceSection" data-settings-category="appearance">
           <div class="settingTitle">appearance</div>
+          <label class="settingCheck"><input id="lightModeEnabled" type="checkbox"><span>light mode</span></label>
           <div class="settingHint">Make the reflection space yours. Colors and background effects are saved on this
             device.</div>
+
+          <div class="appearanceControl textSizeControl">
+            <div class="appearanceControlHead"><span>text size</span><output id="textSizeValue">100%</output>
+            </div>
+            <input id="textSize" type="range" min="85" max="130" step="5" value="100" aria-label="Text size">
+          </div>
+
+          <div class="appearanceControl fontWeightControl">
+            <div class="appearanceControlHead"><span>font weight</span><output id="fontWeightValue">400</output>
+            </div>
+            <input id="fontWeight" type="range" min="300" max="700" step="50" value="400" aria-label="Font weight">
+          </div>
 
           <div class="appearanceControl screenScaleControl">
             <div class="appearanceControlHead"><span>screen scale</span><output id="screenScaleValue">100%</output>
@@ -456,7 +482,7 @@
     </section>
     <div id="cycleHint">questions change quietly · move toward an edge</div>
   </main>
-  <script src="app.js?v=2.18.7"></script>
+  <script src="app.js?v=2.20.2"></script>
 </body>
 
 </html>

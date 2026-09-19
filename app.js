@@ -379,9 +379,11 @@ const DEFAULT_APPEARANCE={
   sepia:0,
   parallaxText:10,
   parallaxBackground:18,
-  parallaxScale:108
+  parallaxScale:108,
+  textSize:100,
+  fontWeight:400
 };
-const DEFAULT_SETTINGS={categories:["all"],cycleSeconds:6.5,hydrationMinutes:DEFAULT_HYDRATION_MINUTES,hydrationSize:DEFAULT_HYDRATION_SIZE,hydrationWave:true,hydrationHoverEnabled:false,hydrationHoverScale:DEFAULT_HYDRATION_HOVER_SCALE,screenScale:DEFAULT_SCREEN_SCALE,animation:true,timerAnimation:true,lowercase:false,appearance:{...DEFAULT_APPEARANCE}};
+const DEFAULT_SETTINGS={categories:["all"],cycleSeconds:6.5,hydrationMinutes:DEFAULT_HYDRATION_MINUTES,hydrationSize:DEFAULT_HYDRATION_SIZE,hydrationWave:true,hydrationHoverEnabled:false,hydrationHoverScale:DEFAULT_HYDRATION_HOVER_SCALE,screenScale:DEFAULT_SCREEN_SCALE,animation:true,timerAnimation:true,lowercase:false,schedulerListVisible:true,appearance:{...DEFAULT_APPEARANCE}};
 let settings=loadSettings();
 
 function loadSettings(){
@@ -596,6 +598,19 @@ function rollDigitWheel(wrap,ch){
   if(w.idx===1&&!w.rolling){w.rows[0].textContent=ch;w.rolling=true;}
   else w.pending=ch;
 }
+// render txt in an element as rolling digit wheels (same animation as the focus timer)
+function setWheelText(el,txt){
+  if(!el)return;
+  if(settings.timerAnimation===false){
+    if(el.dataset.wheels){delete el.dataset.wheels;el.textContent="";}
+    el.textContent=txt;
+  }else if(el.dataset.wheels!=="1"||el.children.length!==txt.length){
+    el.textContent="";el.dataset.wheels="1";
+    [...txt].forEach(ch=>{if(/\d/.test(ch)){el.appendChild(buildDigitWheel(el,ch));}else{const sp=document.createElement("span");sp.textContent=ch;el.appendChild(sp);}});
+  }else{
+    [...el.children].forEach((sp,i)=>{if(/\d/.test(txt[i]))rollDigitWheel(sp,txt[i]);});
+  }
+}
 let timerMode="focus",timerSeconds=25*60,timerRunning=false,timerInterval=null,timerEndsAt=0;
 const TIMER_LENGTHS={focus:25*60,short:5*60,long:15*60};
 const TIMER_KEY="oneQuestionTimer";
@@ -635,15 +650,7 @@ function updateTimerUI(){
   const el=$("focusTimer");
   if(el){
     const txt=`${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
-    if(settings.timerAnimation===false){
-      if(el.dataset.wheels){delete el.dataset.wheels;el.textContent="";}
-      el.textContent=txt;
-    }else if(el.dataset.wheels!=="1"||el.children.length!==txt.length){
-      el.textContent="";el.dataset.wheels="1";
-      [...txt].forEach(ch=>{if(/\d/.test(ch)){el.appendChild(buildDigitWheel(el,ch));}else{const sp=document.createElement("span");sp.textContent=ch;el.appendChild(sp);}});
-    }else{
-      [...el.children].forEach((sp,i)=>{if(/\d/.test(txt[i]))rollDigitWheel(sp,txt[i]);});
-    }
+    setWheelText(el,txt);
     el.classList.toggle("running",timerRunning);
   }
   document.querySelectorAll(".timerMode").forEach(b=>b.classList.toggle("active",b.dataset.timer===timerMode));
@@ -682,6 +689,12 @@ function loadNote(){
 }
 function saveNote(value){
   cacheSet("oneQuestionNote",value);
+  const status=$("noteStatus");
+  if(status){
+    status.textContent="saving…";
+    clearTimeout(saveNote._t);
+    saveNote._t=setTimeout(()=>{status.textContent="saved";},600);
+  }
 }
 function toggleNote(){
   const p=$("notePanel"),b=$("noteDock");
@@ -1106,6 +1119,7 @@ function applyAppearance(){
   root.style.setProperty("--muted",a.accentColor);
   root.style.setProperty("--line",hexToRgba(a.textColor,.16));
   root.style.setProperty("--accent",a.accentColor);
+  root.style.setProperty("--user-font-weight",Math.max(300,Math.min(700,Number(a.fontWeight)||400)));
   root.style.setProperty("--overlay",hexToRgba(a.overlayColor,(Number(a.overlayOpacity)||0)/100));
 
   const bg=$("customBackground");
@@ -1126,15 +1140,26 @@ function applyAppearance(){
     ["backgroundColor","backgroundColor"],["textColor","textColor"],["accentColor","accentColor"],["overlayColor","overlayColor"],
     ["backgroundOpacity","backgroundOpacity"],["overlayOpacity","overlayOpacity"],["backgroundBlur","blur"],["backgroundGrayscale","grayscale"],
     ["backgroundSaturation","saturation"],["backgroundBrightness","brightness"],["backgroundContrast","contrast"],["backgroundSepia","sepia"],
-    ["parallaxText","parallaxText"],["parallaxBackground","parallaxBackground"],["parallaxScale","parallaxScale"]
+    ["parallaxText","parallaxText"],["parallaxBackground","parallaxBackground"],["parallaxScale","parallaxScale"],["textSize","textSize"],["fontWeight","fontWeight"]
   ].forEach(([id,key])=>{const el=$(id);if(el)el.value=a[key]});
+  const lightMode=$("lightModeEnabled");
+  if(lightMode)lightMode.checked=!!a.lightMode;
+  const themeToggle=$("themeToggle");
+  if(themeToggle){
+    // show the mode you would switch to: sun in dark mode, moon in light
+    themeToggle.textContent=a.lightMode?"☾":"☀";
+    themeToggle.setAttribute("aria-label",a.lightMode?"Switch to dark mode":"Switch to light mode");
+  }
+  document.body.style.zoom=(Math.max(85,Math.min(130,Number(a.textSize)||100))/100);
   const labels={
     backgroundOpacity:`${formatPercent(a.backgroundOpacity)}`,overlayOpacity:`${formatPercent(a.overlayOpacity)}`,backgroundBlur:`${a.blur}px`,
     backgroundGrayscale:`${a.grayscale}%`,backgroundSaturation:`${a.saturation}%`,backgroundBrightness:`${a.brightness}%`,
     backgroundContrast:`${a.contrast}%`,backgroundSepia:`${a.sepia}%`,
     parallaxText:`${Math.round(Number(a.parallaxText)||0)}px`,
     parallaxBackground:`${Math.round(Number(a.parallaxBackground)||0)}px`,
-    parallaxScale:`${Math.round(Number(a.parallaxScale)||100)}%`
+    parallaxScale:`${Math.round(Number(a.parallaxScale)||100)}%`,
+    textSize:`${Math.round(Number(a.textSize)||100)}%`,
+    fontWeight:`${Math.round(Number(a.fontWeight)||400)}`
   };
   Object.entries(labels).forEach(([id,value])=>{const el=$(id+"Value");if(el)el.textContent=value});
   const name=$("backgroundFileName");
@@ -1150,6 +1175,22 @@ function applyAppearancePreset(name){
   const preset=APPEARANCE_PRESETS[name];
   if(!preset)return;
   settings.appearance={...settings.appearance,...preset};
+  saveSettings();
+  applyAppearance();
+}
+const LIGHT_MODE_PRESET={...APPEARANCE_PRESETS.paper,backgroundOpacity:12,overlayOpacity:8};
+// snapshot of the user's look, so light mode can be undone cleanly
+function setLightMode(on){
+  const a=settings.appearance;
+  if(on&&!a.lightMode){
+    const snapshot={...a};
+    delete snapshot.lightMode;delete snapshot.lightModeRestore;
+    Object.assign(a,LIGHT_MODE_PRESET,{lightMode:true,lightModeRestore:snapshot});
+  }else if(!on&&a.lightMode){
+    const restore=a.lightModeRestore||{...DEFAULT_APPEARANCE};
+    delete restore.lightMode;delete restore.lightModeRestore;
+    Object.assign(a,restore,{lightMode:false,lightModeRestore:null});
+  }
   saveSettings();
   applyAppearance();
 }
@@ -1395,7 +1436,7 @@ const SCHEDULER_PALETTE=["#7d8c7c","#8c7d8c","#7c829c","#9c8d7c","#7c9c95","#9c7
 const schedulerBlocks=(()=>{
   try{
     const saved=JSON.parse(localStorage.getItem(SCHEDULE_KEY)||"[]");
-    return Array.isArray(saved)?saved.filter(b=>Number.isFinite(b.start)&&Number.isFinite(b.end)&&b.label).map(b=>({start:b.start,end:b.end,label:String(b.label),color:String(b.color||SCHEDULER_PALETTE[0])})).filter(b=>b.end>b.start&&b.start>=0&&b.end<=1440):[];
+    return Array.isArray(saved)?saved.filter(b=>Number.isFinite(b.start)&&Number.isFinite(b.end)&&b.label).map(b=>({start:b.start,end:b.end,label:String(b.label),color:String(b.color||SCHEDULER_PALETTE[0])})).filter(b=>b.end>b.start&&b.start>=-720&&b.end<=2880):[];
   }catch{return[]}
 })();
 function saveSchedule(){cacheSet(SCHEDULE_KEY,schedulerBlocks)}
@@ -1445,28 +1486,23 @@ function schedulerEventPoint(e){
 function renderSchedulerTicks(){
   const g=$("schedulerTicks");
   g.textContent="";
-  // bezel
-  const bezel=document.createElementNS("http://www.w3.org/2000/svg","circle");
-  bezel.setAttribute("cx",SCHED.cx);bezel.setAttribute("cy",SCHED.cy);
-  bezel.setAttribute("r",SCHED.rOuter+8);bezel.setAttribute("class","schedulerBezel");
-  g.append(bezel);
-  // 48 minor ticks (every 30 minutes) and 24 hour ticks
-  for(let i=0;i<48;i++){
-    const min=i*30,isHour=i%2===0,isMajor=isHour&&i%6===0;
-    const [x1,y1]=schedPoint(min,SCHED.rOuter+4);
-    const [x2,y2]=schedPoint(min,isMajor?SCHED.rOuter-14:isHour?SCHED.rOuter-9:SCHED.rOuter-4);
+  // sparse hour ticks; a bolder tick only at 00 / 06 / 12 / 18
+  for(let h=0;h<24;h++){
+    const major=h%6===0;
+    const [x1,y1]=schedPoint(h*60,SCHED.rOuter-2);
+    const [x2,y2]=schedPoint(h*60,major?SCHED.rOuter-18:SCHED.rOuter-10);
     const line=document.createElementNS("http://www.w3.org/2000/svg","line");
     line.setAttribute("x1",x1.toFixed(1));line.setAttribute("y1",y1.toFixed(1));
     line.setAttribute("x2",x2.toFixed(1));line.setAttribute("y2",y2.toFixed(1));
-    line.setAttribute("class",isMajor?"schedTickMajor":isHour?"schedTickHour":"schedTickMinor");
+    line.setAttribute("class",major?"schedTickMajor":"schedTickMinor");
     g.append(line);
   }
-  // numerals every 2 hours, midnight at the top like a 24-hour clock
-  for(let h=0;h<24;h+=2){
-    const [tx,ty]=schedPoint(h*60,SCHED.rOuter-30);
+  // only the four anchors get a numeral
+  for(const h of [0,6,12,18]){
+    const [tx,ty]=schedPoint(h*60,SCHED.rOuter-32);
     const text=document.createElementNS("http://www.w3.org/2000/svg","text");
     text.setAttribute("x",tx.toFixed(1));text.setAttribute("y",ty.toFixed(1));
-    text.setAttribute("class","schedHourLabel"+(h%6===0?" schedHourBig":""));
+    text.setAttribute("class","schedHourLabel schedHourBig");
     text.setAttribute("text-anchor","middle");
     text.setAttribute("dominant-baseline","middle");
     text.textContent=String(h).padStart(2,"0");
@@ -1483,11 +1519,17 @@ function renderScheduler(){
     const group=document.createElementNS("http://www.w3.org/2000/svg","g");
     group.setAttribute("data-block-index",String(b.i));
     group.setAttribute("class","schedBlock");
+    const now=new Date();
+    const nowMin=now.getHours()*60+now.getMinutes();
+    const active=(nowMin>=b.start&&nowMin<b.end)||(nowMin+1440>=b.start&&nowMin+1440<b.end);
+    if(active)group.setAttribute("data-now","1");
     wedgePaths(b.start,b.end).forEach(d=>{
       const path=document.createElementNS("http://www.w3.org/2000/svg","path");
       path.setAttribute("d",d);
       path.setAttribute("fill",b.color);
+      path.setAttribute("stroke",b.color);
       path.setAttribute("class","schedWedge");
+      path.dataset.tip=`${b.label} · ${formatMinutes(b.start)} – ${formatMinutes(b.end)}`;
       group.append(path);
     });
     const label=document.createElementNS("http://www.w3.org/2000/svg","title");
@@ -1498,6 +1540,73 @@ function renderScheduler(){
   updateSchedulerDrag();
   updateSchedulerNow();
   updateSchedulerCenter();
+  renderScheduleList();
+}
+function renderScheduleList(){
+  const list=$("scheduleList");
+  if(!list)return;
+  list.textContent="";
+  const blocks=schedulerSorted();
+  if(!blocks.length){
+    const empty=document.createElement("div");
+    empty.className="scheduleListEmpty";
+    empty.textContent="nothing planned yet — drag on the clock";
+    list.append(empty);
+    return;
+  }
+  const now=new Date();
+  const nowMin=now.getHours()*60+now.getMinutes();
+  blocks.forEach(b=>{
+    const active=(nowMin>=b.start&&nowMin<b.end)||(nowMin+1440>=b.start&&nowMin+1440<b.end);
+    const item=document.createElement("button");
+    item.type="button";
+    item.className="scheduleListItem"+(active?" now":"");
+    const dot=document.createElement("span");dot.className="scheduleListDot";dot.style.background=b.color;
+    const time=document.createElement("span");time.className="scheduleListTime";time.textContent=`${formatMinutes(b.start)} – ${formatMinutes(b.end)}`;
+    const label=document.createElement("span");label.className="scheduleListLabel";label.textContent=b.label;
+    const dur=document.createElement("span");dur.className="scheduleListDuration";dur.textContent=formatDuration(b.end-b.start);
+    item.append(dot,time,label,dur);
+    item.title=`${b.label} · ${Math.round(b.end-b.start)} min — click to edit`;
+    item.onclick=()=>openSchedulerEditor(b.i);
+    list.append(item);
+  });
+}
+// small clock preview shown in the reflection mode: wedges + hands + time
+function renderMiniClock(){
+  const wrap=$("miniClock");
+  if(!wrap)return;
+  const svg=wrap.querySelector("svg");
+  if(!svg)return;
+  const NS="http://www.w3.org/2000/svg";
+  svg.textContent="";
+  const el=(tag,attrs)=>{const n=document.createElementNS(NS,tag);for(const k in attrs)n.setAttribute(k,attrs[k]);svg.append(n);return n;};
+  el("circle",{cx:200,cy:200,r:186,class:"miniBezel"});
+  for(let h=0;h<24;h++){
+    const [x1,y1]=schedPoint(h*60,182),[x2,y2]=schedPoint(h*60,h%6===0?158:168);
+    el("line",{x1:x1.toFixed(1),y1:y1.toFixed(1),x2:x2.toFixed(1),y2:y2.toFixed(1),class:h%6===0?"miniTickBig":"miniTick"});
+  }
+  schedulerBlocks.forEach(b=>{
+    const tip=`${b.label} · ${formatMinutes(b.start)} – ${formatMinutes(b.end)}`;
+    wedgePaths(b.start,b.end).forEach(d=>{
+      const p=el("path",{d,fill:b.color,class:"miniWedge"});
+      const t=document.createElementNS(NS,"title");
+      t.textContent=tip;
+      p.append(t);
+      p.dataset.tip=tip;
+    });
+  });
+  const now=new Date();
+  const nowMin=now.getHours()*60+now.getMinutes()+now.getSeconds()/60;
+  const minuteMin=now.getMinutes()+now.getSeconds()/60;
+  const hand=(angleMin,len,width)=>{
+    const [sx,sy]=schedPoint(angleMin,40),[tx,ty]=schedPoint(angleMin,len);
+    el("line",{x1:sx.toFixed(1),y1:sy.toFixed(1),x2:tx.toFixed(1),y2:ty.toFixed(1),class:width});
+  };
+  hand(nowMin,120,"miniHourHand");
+  hand(minuteMin*24+720,168,"miniMinuteHand");
+  el("circle",{cx:200,cy:200,r:14,class:"miniCap"});
+  const timeLabel=$("miniClockTime");
+  if(timeLabel)timeLabel.textContent=now.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
 }
 function updateSchedulerDrag(){
   const g=$("schedulerDrag");
@@ -1516,9 +1625,11 @@ function updateSchedulerNow(){
   const now=new Date();
   const nowMin=now.getHours()*60+now.getMinutes()+now.getSeconds()/60;
   const minuteMin=now.getMinutes()+now.getSeconds()/60;
+  const secondMin=now.getSeconds();
   // use the same angle helper as the dial ticks so hands always line up
   // with the printed hours: the hour hand points at "now" on the 24h dial
   // (one revolution per day), the minute hand turns once per hour
+  // and the second hand turns once per minute
   const setHand=(id,angleMin,len)=>{
     const hand=$(id);
     if(!hand)return;
@@ -1529,17 +1640,74 @@ function updateSchedulerNow(){
   };
   setHand("schedulerHourHand",nowMin,132);
   setHand("schedulerMinuteHand",minuteMin*24+720,162);
+  setHand("schedulerSecondHand",secondMin*24+720,172);
+}
+function formatDuration(min){
+  const m=Math.max(0,Math.ceil(min));
+  const h=Math.floor(m/60),r=m%60;
+  if(!h)return `${m}m`;
+  return r?`${h}h ${r}m`:`${h}h`;
+}
+function formatHMS(totalSec){
+  const s=Math.max(0,Math.floor(totalSec));
+  const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);
+  return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+}
+let schedulerLastBlockKey=null; // key of the active block, to detect time changes
+let schedulerAlarmCtx=null;
+// unlock the alarm audio on the first user interaction (browsers block
+// sound until a gesture happens)
+["pointerdown","keydown"].forEach(evt=>document.addEventListener(evt,()=>{
+  if(!schedulerAlarmCtx)schedulerAlarmCtx=new (window.AudioContext||window.webkitAudioContext)();
+  if(schedulerAlarmCtx.state==="suspended")schedulerAlarmCtx.resume();
+},{capture:true}));
+// classic digital clock alarm: beep beep beep … beep beep beep
+function playSchedulerAlarm(){
+  try{
+    if(!schedulerAlarmCtx)schedulerAlarmCtx=new (window.AudioContext||window.webkitAudioContext)();
+    if(schedulerAlarmCtx.state==="suspended")schedulerAlarmCtx.resume();
+    const ctx=schedulerAlarmCtx,t0=ctx.currentTime+0.05;
+    // classic piezo digital clock alarm: sharp ~2kHz square bursts,
+    // staccato on/off like a real alarm clock buzzer
+    const beepAt=start=>{
+      const osc=ctx.createOscillator(),gain=ctx.createGain();
+      osc.type="square";osc.frequency.value=2000;
+      gain.gain.setValueAtTime(0.12,start);
+      gain.gain.setValueAtTime(0.0001,start+0.085);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(start);osc.stop(start+0.09);
+    };
+    const burst=base=>{for(let i=0;i<3;i++)beepAt(base+i*0.14)};
+    burst(t0);        // beep beep beep
+    burst(t0+0.6);    // beep beep beep (x2)
+  }catch{}
 }
 function updateSchedulerCenter(){
   const now=new Date();
   const min=now.getHours()*60+now.getMinutes()+now.getSeconds()/60;
-  $("schedulerNowTime").textContent=now.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
   const blocks=schedulerSorted();
   const current=blocks.find(b=>(min>=b.start&&min<b.end)||(min+1440>=b.start&&min+1440<b.end));
+  if(currentMode==="scheduler"){
+    const key=current?`${current.start}-${current.end}-${current.label}`:"free";
+    if(schedulerLastBlockKey!==null&&key!==schedulerLastBlockKey)playSchedulerAlarm();
+    schedulerLastBlockKey=key;
+  }
+  const next=blocks.find(b=>b.start>min);
+  if(current){
+    // countdown: time left in the active block
+    const refMin=min+1440>=current.start&&min<current.start?min+1440:min;
+    setWheelText($("schedulerNowTime"),formatHMS((current.end-refMin)*60));
+  }else if(next){
+    // free time: countdown until the next block starts
+    setWheelText($("schedulerNowTime"),formatHMS((next.start-min)*60));
+  }else{
+    setWheelText($("schedulerNowTime"),now.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"}));
+  }
   $("schedulerCurrent").textContent=current?current.label:"free time";
   $("schedulerCurrent").style.color=current?current.color:"";
-  const next=blocks.find(b=>b.start>min);
-  $("schedulerNext").textContent=next?`next: ${next.label} at ${formatMinutes(next.start)}`:"nothing planned next";
+  $("schedulerNext").textContent=current
+    ?`ends at ${formatMinutes(current.end)}${next?` · next: ${next.label} at ${formatMinutes(next.start)}`:""}`
+    :next?`next: ${next.label} at ${formatMinutes(next.start)}`:"nothing planned next";
 }
 function closeSchedulerEditor(){
   schedulerSelection=null;schedulerEditingIndex=-1;
@@ -1584,6 +1752,7 @@ function previewSchedulerSelection(){
     const path=document.createElementNS("http://www.w3.org/2000/svg","path");
     path.setAttribute("d",d);
     path.setAttribute("fill",schedulerSelection.color);
+    path.setAttribute("stroke",schedulerSelection.color);
     path.setAttribute("class","schedWedgeDrag");
     g.append(path);
   });
@@ -1659,9 +1828,62 @@ function initSchedulerMode(){
     if(e.key==="Enter"){e.preventDefault();commitSchedulerBlock();}
     else if(e.key==="Escape"){e.preventDefault();closeSchedulerEditor();renderScheduler();}
   });
+  $("miniClock")?.addEventListener("click",()=>{if(currentMode!=="scheduler")enterSchedulerMode();});
+  // shared styled tooltip: block name over a wedge, current time otherwise
+  let tipEl=null;
+  const hideTip=()=>{if(tipEl){tipEl.remove();tipEl=null;}};
+  const showTip=(text,x,y)=>{
+    tipEl=document.createElement("div");
+    tipEl.className="miniClockTooltip";
+    tipEl.textContent=text;
+    document.body.append(tipEl);
+    const r=tipEl.getBoundingClientRect();
+    tipEl.style.left=`${Math.min(window.innerWidth-r.width-8,x+12)}px`;
+    tipEl.style.top=`${Math.max(8,y-r.height-10)}px`;
+  };
+  const nowInfo=()=>{
+    const now=new Date();
+    const min=now.getHours()*60+now.getMinutes();
+    const blocks=schedulerSorted();
+    const current=blocks.find(b=>(min>=b.start&&min<b.end)||(min+1440>=b.start&&min+1440<b.end));
+    return `now ${now.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}${current?` · ${current.label}`:""}`;
+  };
+  const bindTooltip=(container,fallback)=>{
+    if(!container)return;
+    container.addEventListener("pointermove",e=>{
+      const path=e.target.closest&&e.target.closest("[data-tip]");
+      const text=path&&path.dataset.tip?path.dataset.tip:fallback();
+      if(tipEl&&tipEl.textContent===text)return;
+      hideTip();
+      showTip(text,e.clientX,e.clientY);
+    });
+    container.addEventListener("pointerleave",hideTip);
+    container.addEventListener("pointerdown",hideTip);
+  };
+  const mini=$("miniClock");
+  if(mini)bindTooltip(mini,nowInfo);
+  bindTooltip($("schedulerClock"),nowInfo);
+  // schedule list show/hide — clock centers when the list is hidden
+  const applyListVisibility=()=>{
+    document.body.classList.toggle("schedulerListHidden",settings.schedulerListVisible===false);
+    const t=$("scheduleListToggle");
+    if(t)t.setAttribute("aria-pressed",String(settings.schedulerListVisible!==false));
+  };
+  $("scheduleListToggle")?.addEventListener("click",()=>{
+    settings.schedulerListVisible=settings.schedulerListVisible===false;
+    saveSettings();
+    applyListVisibility();
+  });
+  applyListVisibility();
+  renderMiniClock();
+  let lastListMinute=-1;
   setInterval(()=>{
-    if(currentMode==="scheduler"){updateSchedulerNow();updateSchedulerCenter();}
-  },30000);
+    updateSchedulerNow();updateSchedulerCenter();renderMiniClock();
+    if(currentMode==="scheduler"){
+      const m=new Date().getMinutes();
+      if(m!==lastListMinute){lastListMinute=m;renderScheduleList();}
+    }
+  },1000);
 }
 function enterSchedulerMode(){
   clearTimeout(cycleTimer);closeCategoryMenu();
@@ -1773,7 +1995,7 @@ $("timerAnimationEnabled").addEventListener("change",e=>{
 [["backgroundColor","backgroundColor"],["textColor","textColor"],["accentColor","accentColor"],["overlayColor","overlayColor"]].forEach(([id,key])=>{
   $(id).addEventListener("input",e=>updateAppearanceValue(key,e.target.value));
 });
-[["backgroundOpacity","backgroundOpacity"],["overlayOpacity","overlayOpacity"],["backgroundBlur","blur"],["backgroundGrayscale","grayscale"],["backgroundSaturation","saturation"],["backgroundBrightness","brightness"],["backgroundContrast","contrast"],["backgroundSepia","sepia"],["parallaxText","parallaxText"],["parallaxBackground","parallaxBackground"],["parallaxScale","parallaxScale"]].forEach(([id,key])=>{
+[["backgroundOpacity","backgroundOpacity"],["overlayOpacity","overlayOpacity"],["backgroundBlur","blur"],["backgroundGrayscale","grayscale"],["backgroundSaturation","saturation"],["backgroundBrightness","brightness"],["backgroundContrast","contrast"],["backgroundSepia","sepia"],["parallaxText","parallaxText"],["parallaxBackground","parallaxBackground"],["parallaxScale","parallaxScale"],["textSize","textSize"],["fontWeight","fontWeight"]].forEach(([id,key])=>{
   $(id).addEventListener("input",e=>updateAppearanceValue(key,Number(e.target.value)));
 });
 
@@ -1800,6 +2022,10 @@ $("removeBackground").onclick=()=>{
   applyAppearance();
 };
 document.querySelectorAll(".appearancePreset").forEach(btn=>btn.addEventListener("click",()=>applyAppearancePreset(btn.dataset.preset)));
+const lightModeToggle=$("lightModeEnabled");
+if(lightModeToggle)lightModeToggle.addEventListener("change",()=>setLightMode(lightModeToggle.checked));
+const themeToggleBtn=$("themeToggle");
+if(themeToggleBtn)themeToggleBtn.addEventListener("click",()=>setLightMode(!settings.appearance.lightMode));
 $("resetAppearance").onclick=resetAppearance;
 
 $("exportData").onclick=exportBackup;
