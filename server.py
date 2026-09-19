@@ -6,9 +6,11 @@ import threading
 import time
 
 ROOT = Path(__file__).resolve().parent
-HOST = "127.0.0.1"
+HOST = os.environ.get("ONE_QUESTION_HOST", "127.0.0.1")
 PORT = 8765
 STATE_FILE = ROOT / "one-question-state.json"
+EXPORT_DIR = ROOT / "settings export"
+EXPORT_FILE = EXPORT_DIR / "one-question-backup-latest.json"
 STATE_KEYS = {
     "oneQuestionQuestionBank",
     "oneQuestionFocusQuestions",
@@ -16,7 +18,23 @@ STATE_KEYS = {
     "oneQuestionHistory",
     "oneQuestionRecent",
     "oneQuestionTodos",
+    "oneQuestionNote",
+    "oneQuestionSchedule",
+    "oneQuestionStickies",
     "oneQuestionHydration",
+}
+
+# maps backup field names to state keys for the settings export snapshot
+EXPORT_MAP = {
+    "questions": "oneQuestionQuestionBank",
+    "focusQuestions": "oneQuestionFocusQuestions",
+    "settings": "oneQuestionSettings",
+    "history": "oneQuestionHistory",
+    "recent": "oneQuestionRecent",
+    "todos": "oneQuestionTodos",
+    "note": "oneQuestionNote",
+    "schedule": "oneQuestionSchedule",
+    "stickies": "oneQuestionStickies",
 }
 
 
@@ -36,6 +54,29 @@ def save_state(state):
     tmp = STATE_FILE.with_suffix(".tmp")
     tmp.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
     os.replace(tmp, STATE_FILE)
+    export_snapshot()
+
+
+def export_snapshot():
+    """Write the current state as an importable backup into 'settings export'."""
+    try:
+        keys = STATE.get("keys", {})
+        data = {}
+        for name, key in EXPORT_MAP.items():
+            entry = keys.get(key)
+            data[name] = entry.get("value") if isinstance(entry, dict) else None
+        payload = {
+            "format": "one-question-zen-backup",
+            "version": "2.21.3",
+            "exportedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "data": data,
+        }
+        EXPORT_DIR.mkdir(exist_ok=True)
+        tmp = EXPORT_FILE.with_suffix(".tmp")
+        tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        os.replace(tmp, EXPORT_FILE)
+    except Exception as exc:
+        print(f"[export] snapshot failed: {exc}")
 
 
 STATE = load_state()
@@ -127,6 +168,7 @@ class Handler(SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     os.chdir(ROOT)
+    export_snapshot()
     url = f"http://{HOST}:{PORT}/index.html"
     print("One Question shared local server")
     print(f"Serving: {ROOT}")

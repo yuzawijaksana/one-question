@@ -40,8 +40,25 @@
       <button id="modeToggle" class="focusModeToggle" type="button" aria-label="switch mode" aria-pressed="false"
         title="switch mode"><span class="modeIcon modeQuestion" aria-hidden="true">?</span><span
           class="modeIcon modeFocus" aria-hidden="true">#</span><span class="modeIcon modeScheduler"
-          aria-hidden="true">%</span></button>
+          aria-hidden="true">%</span><span class="modeIcon modeSticky"
+          aria-hidden="true">@</span></button>
     </div>
+
+    <section id="sticky" class="stickyMode" aria-hidden="true">
+      <div class="stickyKicker">remember wall</div>
+      <div class="stickyComposer">
+        <input id="stickyInput" class="stickyInput" type="text" autocomplete="off"
+          placeholder="what should you not forget?" aria-label="New remember note">
+        <button id="stickyAdd" type="button">keep</button>
+      </div>
+      <div id="stickyList" class="stickyList" aria-label="Remember notes"></div>
+      <div class="stickyHint">drag the notes wherever you like · ✓ handled · × delete</div>
+    </section>
+
+    <button id="stickyPin" class="stickyPin" type="button" title="remember wall" aria-label="Open remember wall">
+      <span class="stickyPinLabel">remember</span>
+      <span id="stickyPinText" class="stickyPinText"></span>
+    </button>
 
     <section class="focus" id="focus" aria-live="polite">
       <div id="focusTodoPreview" class="focusTodoPreview" aria-hidden="true"></div>
@@ -377,6 +394,14 @@
             <input id="importData" type="file" accept="application/json,.json" hidden>
           </div>
           <div id="dataStatus" class="dataStatus" aria-live="polite">storage: browser extension storage</div>
+          <div class="settingSubsection">
+            <div class="settingTitle">sync server</div>
+            <div class="settingHint">Every change is pushed to this server automatically and written to the
+              "settings export" folder. On another device, put this PC's address here (find it with "ipconfig"
+              — look for IPv4 Address).</div>
+            <input id="syncServer" class="syncServerInput" type="text" autocomplete="off" spellcheck="false"
+              placeholder="http://127.0.0.1:8765" aria-label="Sync server address">
+          </div>
         </section>
 
         <section class="settingSection" data-settings-category="questions">
@@ -482,7 +507,7 @@
     </section>
     <div id="cycleHint">questions change quietly · move toward an edge</div>
   </main>
-  <script src="app.js?v=2.20.2"></script>
+  <script src="app.js?v=2.21.4"></script>
 </body>
 
 </html>

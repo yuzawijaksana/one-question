@@ -2,13 +2,22 @@
   "version": 1,
   "keys": {
     "oneQuestionSettings": {
-      "updatedAt": 1789527153162,
+      "updatedAt": 1789813623352,
       "value": {
         "categories": [
           "all"
         ],
         "cycleSeconds": 6.5,
+        "hydrationMinutes": 60,
+        "hydrationSize": 24,
+        "hydrationWave": true,
+        "hydrationHoverEnabled": false,
+        "hydrationHoverScale": 1.5,
+        "screenScale": 1,
         "animation": true,
+        "timerAnimation": true,
+        "lowercase": false,
+        "schedulerListVisible": true,
         "appearance": {
           "backgroundColor": "#10100f",
           "textColor": "#ebe8e0",
@@ -23,12 +32,17 @@
           "saturation": 100,
           "brightness": 100,
           "contrast": 100,
-          "sepia": 0
+          "sepia": 0,
+          "parallaxText": 10,
+          "parallaxBackground": 18,
+          "parallaxScale": 108,
+          "textSize": 100,
+          "fontWeight": 400
         }
       }
     },
     "oneQuestionQuestionBank": {
-      "updatedAt": 1789005685236,
+      "updatedAt": 1789813536159,
       "value": [
         [
           "reflection",
@@ -193,7 +207,7 @@
       ]
     },
     "oneQuestionFocusQuestions": {
-      "updatedAt": 1789005685236,
+      "updatedAt": 1789813536159,
       "value": [
         "What do you want to move forward right now?",
         "What would make the next hour feel worthwhile?",
@@ -206,28 +220,28 @@
       ]
     },
     "oneQuestionHistory": {
-      "updatedAt": 1789005685240,
+      "updatedAt": 1789813536159,
       "value": []
     },
     "oneQuestionRecent": {
-      "updatedAt": 1789533924209,
+      "updatedAt": 1789813654115,
       "value": [
-        11,
-        24,
-        26,
-        7,
-        25,
-        19,
-        9,
-        2,
         14,
         31,
         30,
-        32
+        32,
+        23,
+        5,
+        33,
+        26,
+        3,
+        11,
+        8,
+        22
       ]
     },
     "oneQuestionTodos": {
-      "updatedAt": 1789005685240,
+      "updatedAt": 1789813536159,
       "value": []
     },
     "oneQuestionHydration": {
@@ -255,5 +269,5 @@
       }
     }
   },
-  "updatedAt": 1789772245809
+  "updatedAt": 1789813654966
 }

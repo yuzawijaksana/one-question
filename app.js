@@ -65,6 +65,10 @@ function cacheSet(key,value){
   if(extensionStorage){
     extensionStorage.set({[key]:value}).catch(e=>console.warn("One Question: browser storage write failed",e));
   }
+  if(SYNC_KEYS.includes(key)){
+    touchSyncTime(key);
+    scheduleSyncPush();
+  }
 }
 function readCached(key,fallback){
   try{
@@ -98,6 +102,78 @@ async function hydrateBrowserStorage(){
 function setDataStatus(text){
   const el=document.getElementById("dataStatus");
   if(el)el.textContent=text;
+}
+
+// ---- automatic sync: every save pushes to the One Question server ----
+const SYNC_KEYS=[...new Set([...STORAGE_KEYS,"oneQuestionSchedule","oneQuestionStickies","oneQuestionTimer","oneQuestionHydration"])];
+let syncPushTimer=null,syncBusy=false;
+function syncBase(){
+  return ((settings&&settings.syncServer)||SYNC_BASE).replace(/\/+$/,"");
+}
+function readSyncTimes(){
+  try{return JSON.parse(localStorage.getItem("oneQuestionSyncTimes")||"{}")}catch{return{}}
+}
+function touchSyncTime(key){
+  const times=readSyncTimes();
+  times[key]=Date.now();
+  try{localStorage.setItem("oneQuestionSyncTimes",JSON.stringify(times))}catch{}
+}
+function scheduleSyncPush(){
+  clearTimeout(syncPushTimer);
+  syncPushTimer=setTimeout(pushSyncToServer,800);
+}
+async function pushSyncToServer(){
+  if(syncBusy)return;
+  syncBusy=true;
+  try{
+    const times=readSyncTimes();
+    const changes={};
+    for(const key of SYNC_KEYS){
+      const raw=localStorage.getItem(key);
+      if(raw===null)continue;
+      let value;
+      try{value=JSON.parse(raw)}catch{continue}
+      changes[key]={value,updatedAt:times[key]||Date.now()};
+    }
+    if(!Object.keys(changes).length)return;
+    await fetch(`${syncBase()}/api/state`,{
+      method:"PUT",headers:{"Content-Type":"application/json"},cache:"no-store",
+      body:JSON.stringify({changes})
+    });
+    setDataStatus("synced to server");
+  }catch(e){
+    console.warn("One Question: sync push failed",e);
+  }finally{syncBusy=false}
+}
+async function pullSyncFromServer(){
+  try{
+    const res=await fetch(`${syncBase()}/api/state`,{cache:"no-store"});
+    if(!res.ok)return;
+    const data=await res.json();
+    const entries=data&&data.keys||{};
+    const times=readSyncTimes();
+    let adopted=false;
+    for(const key of SYNC_KEYS){
+      const entry=entries[key];
+      if(entry&&entry.value!=null&&(entry.updatedAt||0)>(times[key]||0)){
+        try{
+          localStorage.setItem(key,JSON.stringify(entry.value));
+          times[key]=entry.updatedAt;
+          adopted=true;
+        }catch{}
+      }
+    }
+    if(adopted){
+      try{localStorage.setItem("oneQuestionSyncTimes",JSON.stringify(times))}catch{}
+      // restart once so everything renders from the freshly synced data
+      if(!sessionStorage.getItem("oneQuestionSyncReload")){
+        sessionStorage.setItem("oneQuestionSyncReload","1");
+        location.reload();
+      }
+    }
+  }catch(e){
+    console.warn("One Question: sync pull unavailable",e);
+  }
 }
 
 function loadQuestionBank(){
@@ -461,9 +537,13 @@ function updateModeUI(){
   document.body.classList.toggle("todayMode",currentMode==="today");
   document.body.classList.toggle("focusModeVisual",currentMode==="focus");
   document.body.classList.toggle("schedulerVisual",currentMode==="scheduler");
+  document.body.classList.toggle("stickyVisual",currentMode==="sticky");
   const sched=$("scheduler");
   if(sched)sched.setAttribute("aria-hidden",String(currentMode!=="scheduler"));
+  const stickyEl=$("sticky");
+  if(stickyEl)stickyEl.setAttribute("aria-hidden",String(currentMode!=="sticky"));
   if(currentMode==="scheduler")renderScheduler();
+  if(currentMode==="sticky")renderStickies();
   updateFocusModePreview();
   updateTimerUI();
 }
@@ -474,9 +554,11 @@ function toggleModeMenu(e){
     if(icon.classList.contains("modeQuestion")){enterQuestionMode();return;}
     if(icon.classList.contains("modeFocus")){enterFocusMode();return;}
     if(icon.classList.contains("modeScheduler")){enterSchedulerMode();return;}
+    if(icon.classList.contains("modeSticky")){enterStickyMode();return;}
   }
   if(currentMode==="question")enterFocusMode();
   else if(currentMode==="focus")enterSchedulerMode();
+  else if(currentMode==="scheduler")enterStickyMode();
   else enterQuestionMode();
 }
 function renderQuestion(i){
@@ -599,6 +681,17 @@ function rollDigitWheel(wrap,ch){
   else w.pending=ch;
 }
 // render txt in an element as rolling digit wheels (same animation as the focus timer)
+let spinTimerWheels=false;
+// force a full-wheel spin to ch: the digit travels two rows so even an
+// unchanged digit visibly rolls (used when switching focus/break modes)
+function spinWheelTo(wrap,ch){
+  const w=wrap._w;
+  if(!w)return;
+  if(w.rolling){w.pending=ch;return;}
+  w.rows[0].textContent=ch;
+  w.idx=2;
+  w.rolling=true;
+}
 function setWheelText(el,txt){
   if(!el)return;
   if(settings.timerAnimation===false){
@@ -616,6 +709,8 @@ const TIMER_LENGTHS={focus:25*60,short:5*60,long:15*60};
 const TIMER_KEY="oneQuestionTimer";
 function saveTimerState(){
   try{localStorage.setItem(TIMER_KEY,JSON.stringify({timerMode,timerRunning,timerEndsAt,timerSeconds}))}catch{}
+  touchSyncTime(TIMER_KEY);
+  scheduleSyncPush();
 }
 function restoreTimerState(){
   try{
@@ -650,13 +745,20 @@ function updateTimerUI(){
   const el=$("focusTimer");
   if(el){
     const txt=`${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
-    setWheelText(el,txt);
+    if(spinTimerWheels&&el.dataset.wheels==="1"){
+      // mode switch: every digit spins a full wheel, even the unchanged ones
+      [...el.children].forEach((sp,i)=>{
+        if(/\d/.test(txt[i]))spinWheelTo(sp,txt[i]);
+        else if(sp.textContent!==txt[i])sp.textContent=txt[i];
+      });
+    }else setWheelText(el,txt);
+    spinTimerWheels=false;
     el.classList.toggle("running",timerRunning);
   }
   document.querySelectorAll(".timerMode").forEach(b=>b.classList.toggle("active",b.dataset.timer===timerMode));
   const start=$("focusTimerStart");if(start)start.textContent=timerRunning?"pause":"start";
 }
-function setTimerMode(mode){timerMode=mode;timerRunning=false;clearInterval(timerInterval);timerEndsAt=0;timerSeconds=TIMER_LENGTHS[mode]||TIMER_LENGTHS.focus;saveTimerState();updateTimerUI();}
+function setTimerMode(mode){timerMode=mode;timerRunning=false;clearInterval(timerInterval);timerEndsAt=0;timerSeconds=TIMER_LENGTHS[mode]||TIMER_LENGTHS.focus;saveTimerState();spinTimerWheels=true;updateTimerUI();}
 function tickTimer(){
   if(!timerRunning)return;
   timerSeconds=Math.max(0,Math.round((timerEndsAt-Date.now())/1000));
@@ -1235,7 +1337,8 @@ function buildBackup(){
       history:getHistory(),
       recent:getRecent(),
       todos:getTodos(),
-      schedule:schedulerBlocks.slice()
+      schedule:schedulerBlocks.slice(),
+      stickies:stickies.map(s=>({...s}))
     }
   };
 }
@@ -1284,6 +1387,12 @@ async function importBackup(file){
       d.schedule.forEach(b=>{if(Number.isFinite(b.start)&&Number.isFinite(b.end)&&b.label)schedulerBlocks.push({start:b.start,end:b.end,label:String(b.label),color:String(b.color||SCHEDULER_PALETTE[0])})});
       saveSchedule();
       renderScheduler();
+    }
+    if(Array.isArray(d.stickies)){
+      stickies.length=0;
+      d.stickies.forEach(s=>{if(s&&typeof s.text==="string"&&s.text.trim())stickies.push({id:String(s.id||crypto.randomUUID()),text:s.text.trim(),created:Number(s.created)||Date.now(),done:!!s.done})});
+      saveStickies();
+      renderStickyPin();
     }
     applyAppearance();
     renderSettings();
@@ -1334,6 +1443,8 @@ function renderSettings(){
   $("timerAnimationEnabled").checked=settings.timerAnimation!==false;
   $("lowercaseEnabled").checked=!!settings.lowercase;
   document.body.classList.toggle("lowercase",!!settings.lowercase);
+  const syncInput=$("syncServer");
+  if(syncInput)syncInput.value=settings.syncServer||"";
   setSettingsTab("questions");
   applyHydrationAppearance();
   applyScreenScale();
@@ -1876,6 +1987,22 @@ function initSchedulerMode(){
   });
   applyListVisibility();
   renderMiniClock();
+  // remember wall: input + always-visible rotating pin
+  const addFromInput=()=>{
+    const input=$("stickyInput");
+    if(input&&addSticky(input.value))input.value="";
+  };
+  $("stickyAdd")?.addEventListener("click",addFromInput);
+  $("stickyInput")?.addEventListener("keydown",e=>{
+    if(e.key==="Enter"){e.preventDefault();addFromInput();}
+    else if(e.key==="Escape"){e.preventDefault();enterQuestionMode();}
+  });
+  $("stickyPin")?.addEventListener("click",()=>{if(currentMode!=="sticky")enterStickyMode();});
+  renderStickyPin();
+  setInterval(()=>{
+    const pending=stickies.filter(s=>!s.done);
+    if(pending.length){stickyPinIndex=(stickyPinIndex+1)%pending.length;renderStickyPin();}
+  },8000);
   let lastListMinute=-1;
   setInterval(()=>{
     updateSchedulerNow();updateSchedulerCenter();renderMiniClock();
@@ -1892,6 +2019,133 @@ function enterSchedulerMode(){
   updateModeUI();updateFocusUI();
   setCycleStatus("day circle",false);
   answerEl.blur();
+}
+// ---- remember wall (sticky notes) mode --------------------------------
+const STICKY_KEY="oneQuestionStickies";
+const stickies=(()=>{
+  try{
+    const saved=JSON.parse(localStorage.getItem(STICKY_KEY)||"[]");
+    return Array.isArray(saved)?saved.filter(s=>s&&typeof s.text==="string"&&s.text.trim()).map((s,i)=>({id:String(s.id||crypto.randomUUID()),text:s.text.trim(),created:Number(s.created)||Date.now(),done:!!s.done})):[];
+  }catch{return[]}
+})();
+function saveStickies(){cacheSet(STICKY_KEY,stickies)}
+let stickyPinIndex=0;
+let stickyZ=10;
+function defaultStickyPos(i){
+  return {x:6+(i*37)%58,y:8+(i*29)%52};
+}
+function stickyTilt(s){
+  const n=[...s.id].reduce((a,c)=>a+c.charCodeAt(0),s.text.length);
+  return (n%7-3)*.6;
+}
+function renderStickies(){
+  const list=$("stickyList");
+  if(!list)return;
+  list.textContent="";
+  const pending=stickies.filter(s=>!s.done);
+  if(!pending.length){
+    const empty=document.createElement("div");
+    empty.className="stickyEmpty";
+    empty.textContent=stickies.length?"everything is handled — nothing pressing":"nothing here yet. capture the thing you keep forgetting.";
+    list.append(empty);
+  }
+  pending.forEach((s,i)=>{
+    const pos=s.x==null||s.y==null?defaultStickyPos(i):s;
+    const card=document.createElement("div");
+    card.className="stickyFloat";
+    card.style.left=`${pos.x}%`;
+    card.style.top=`${pos.y}%`;
+    card.style.zIndex=s.z||++stickyZ;
+    card.style.setProperty("--tilt",`${stickyTilt(s)}deg`);
+    const text=document.createElement("div");text.className="stickyNoteText";text.textContent=s.text;
+    const meta=document.createElement("div");meta.className="stickyNoteAge";
+    const days=Math.floor((Date.now()-s.created)/86400000);
+    meta.textContent=days>0?`${days}d ago`:"today";
+    const actions=document.createElement("div");actions.className="stickyActions";
+    const doneBtn=document.createElement("button");doneBtn.type="button";doneBtn.className="stickyBtn";doneBtn.textContent="✓";
+    doneBtn.title="mark as handled";
+    doneBtn.onclick=e=>{e.stopPropagation();s.done=true;saveStickies();renderStickies();renderStickyPin();};
+    const delBtn=document.createElement("button");delBtn.type="button";delBtn.className="stickyBtn stickyBtnDel";delBtn.textContent="×";
+    delBtn.title="delete note";
+    delBtn.onclick=e=>{e.stopPropagation();stickies.splice(stickies.indexOf(s),1);saveStickies();renderStickies();renderStickyPin();};
+    actions.append(doneBtn,delBtn);
+    card.append(actions,text,meta);
+    // drag anywhere — position is the reorder
+    card.addEventListener("pointerdown",e=>{
+      if(e.target.closest("button"))return;
+      try{card.setPointerCapture(e.pointerId);}catch{}
+      card.style.zIndex=++stickyZ;
+      s.z=card.style.zIndex;
+      const rect=list.getBoundingClientRect();
+      const cardRect=card.getBoundingClientRect();
+      const grabX=e.clientX-cardRect.left,grabY=e.clientY-cardRect.top;
+      card.classList.add("dragging");
+      const move=ev=>{
+        const x=Math.max(0,Math.min(rect.width-cardRect.width,ev.clientX-rect.left-grabX));
+        const y=Math.max(0,Math.min(rect.height-cardRect.height,ev.clientY-rect.top-grabY));
+        card.style.left=`${x}px`;
+        card.style.top=`${y}px`;
+      };
+      const up=()=>{
+        card.classList.remove("dragging");
+        card.removeEventListener("pointermove",move);
+        card.removeEventListener("pointerup",up);
+        card.removeEventListener("pointercancel",up);
+        s.x=Math.round(card.offsetLeft/rect.width*1000)/10;
+        s.y=Math.round(card.offsetTop/rect.height*1000)/10;
+        saveStickies();
+      };
+      card.addEventListener("pointermove",move);
+      card.addEventListener("pointerup",up);
+      card.addEventListener("pointercancel",up);
+    });
+    list.append(card);
+  });
+  // handled notes: quiet footer with restore
+  const done=stickies.filter(s=>s.done);
+  if(done.length){
+    const head=document.createElement("button");
+    head.type="button";head.className="stickyDoneHead";
+    head.textContent=`handled (${done.length})`;
+    head.onclick=()=>{head.parentElement.classList.toggle("showDone");};
+    list.append(head);
+    const wrap=document.createElement("div");wrap.className="stickyDoneWrap";
+    done.slice(-8).reverse().forEach(s=>{
+      const row=document.createElement("button");
+      row.type="button";row.className="stickyDoneRow";
+      row.textContent=s.text;
+      row.title="bring it back";
+      row.onclick=()=>{s.done=false;saveStickies();renderStickies();renderStickyPin();};
+      wrap.append(row);
+    });
+    list.append(wrap);
+  }
+}
+function addSticky(text){
+  const clean=String(text||"").trim();
+  if(!clean)return false;
+  stickies.unshift({id:crypto.randomUUID(),text:clean,created:Date.now(),done:false});
+  saveStickies();renderStickies();renderStickyPin();
+  return true;
+}
+function renderStickyPin(){
+  const pin=$("stickyPin"),text=$("stickyPinText");
+  if(!pin||!text)return;
+  const pending=stickies.filter(s=>!s.done);
+  pin.classList.toggle("hasNotes",pending.length>0);
+  if(!pending.length){text.textContent="";pin.title="remember wall";return;}
+  stickyPinIndex=stickyPinIndex%pending.length;
+  text.textContent=pending[stickyPinIndex].text;
+  pin.title=`remember (${pending.length}) — click to open`;
+}
+function enterStickyMode(){
+  clearTimeout(cycleTimer);closeCategoryMenu();
+  currentMode="sticky";cyclePaused=false;isAnswering=false;
+  document.body.classList.remove("focusModeVisual");
+  updateModeUI();updateFocusUI();
+  setCycleStatus("remember",false);
+  answerEl.blur();
+  $("stickyInput")?.focus();
 }
 function enterQuestionMode(){
   clearTimeout(cycleTimer);
@@ -1922,6 +2176,11 @@ $("todoDock").onclick=openToday;
 
 $("modeToggle").onclick=e=>toggleModeMenu(e);
 $("lowercaseEnabled").addEventListener("change",e=>{settings.lowercase=e.target.checked;saveSettings();});
+$("syncServer")?.addEventListener("change",e=>{
+  settings.syncServer=e.target.value.trim();
+  saveSettings();
+  pushSyncToServer();
+});
 $("noteDock").addEventListener("click",e=>{e.preventDefault();e.stopPropagation();toggleNote();});
 $("noteText")?.addEventListener("input",e=>saveNote(e.target.value));
 document.querySelectorAll(".timerMode").forEach(b=>b.onclick=()=>setTimerMode(b.dataset.timer));
@@ -2086,6 +2345,7 @@ document.addEventListener("keydown",e=>{
   if($("calendarPanel").classList.contains("open")){closeCalendar();return;}
   if($("settingsPanel").classList.contains("open")){closeSettings();return;}
   if(schedulerSelection){closeSchedulerEditor();renderScheduler();return;}
+  if(currentMode==="sticky"){enterQuestionMode();return;}
   if($("historyPanel").classList.contains("open")){closeHistory();return;}
   closeCategoryMenu();
 });
@@ -2110,6 +2370,7 @@ focusEl.classList.add("questionIn");
 setTimeout(()=>focusEl.classList.remove("questionIn"),1100);
 startCycle();
 
+pullSyncFromServer();
 hydrateBrowserStorage().then(()=>{
   questions=loadQuestionBank();
   focusQuestions=loadFocusQuestions();

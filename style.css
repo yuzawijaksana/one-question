@@ -4540,3 +4540,390 @@ body.schedulerListHidden .scheduleListToggle {
 .schedulerNowTime span {
   font-variant-numeric: tabular-nums
 }
+
+/* ---- remember wall (sticky notes) mode ---- */
+.stickyMode {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 24px;
+  animation: schedulerIn .5s cubic-bezier(.2, .7, .2, 1)
+}
+
+body.stickyVisual .focus,
+body.stickyVisual .controlsZone,
+body.stickyVisual #cycleHint,
+body.stickyVisual .miniClock {
+  display: none !important
+}
+
+body.stickyVisual .stickyMode {
+  display: flex
+}
+
+.stickyKicker {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 300;
+  letter-spacing: .34em;
+  opacity: .7
+}
+
+.stickyComposer {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: min(560px, 88vw)
+}
+
+.stickyInput {
+  flex: 1;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+  font: inherit;
+  font-weight: 300;
+  font-size: 16px;
+  text-align: center;
+  padding: 6px 2px;
+  outline: none
+}
+
+.stickyInput:focus {
+  border-bottom-color: var(--accent)
+}
+
+.stickyComposer button {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 300;
+  letter-spacing: .22em;
+  cursor: pointer;
+  padding: 4px 0
+}
+
+.stickyComposer button:hover {
+  color: var(--text)
+}
+
+.stickyList {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: min(640px, 90vw);
+  max-height: 52vh;
+  overflow-y: auto;
+  padding: 4px
+}
+
+.stickyNote {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  width: 100%;
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--text);
+  font: inherit;
+  font-weight: 300;
+  font-size: 14px;
+  text-align: left;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: border-color .25s, opacity .25s;
+  opacity: .8
+}
+
+.stickyNote:hover {
+  opacity: 1;
+  border-color: var(--accent)
+}
+
+.stickyNoteText {
+  flex: 1
+}
+
+.stickyNoteAge {
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: .08em;
+  flex: none
+}
+
+.stickyEmpty {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 300;
+  letter-spacing: .04em;
+  opacity: .6;
+  padding: 8px
+}
+
+.stickyDoneHead {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 9px;
+  letter-spacing: .22em;
+  opacity: .5
+}
+
+.stickyDoneRow {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 300;
+  text-decoration: line-through;
+  cursor: pointer;
+  padding: 2px;
+  opacity: .45
+}
+
+.stickyDoneRow:hover {
+  opacity: .9
+}
+
+.stickyHint {
+  font-size: 10px;
+  font-weight: 300;
+  color: var(--muted);
+  letter-spacing: .06em;
+  opacity: .4
+}
+
+/* always-visible remember pin */
+.stickyPin {
+  display: none;
+  position: fixed;
+  top: 76px;
+  right: 26px;
+  z-index: 70;
+  max-width: 300px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font: inherit;
+  text-align: right;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity .5s, transform .5s, border-color .3s;
+  pointer-events: none
+}
+
+body:not(.focusModeVisual):not(.schedulerVisual):not(.stickyVisual) .stickyPin.hasNotes {
+  display: flex;
+  opacity: .72;
+  transform: none;
+  pointer-events: auto
+}
+
+.stickyPin:hover {
+  opacity: 1 !important;
+  border-color: var(--accent)
+}
+
+.stickyPinLabel {
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 300;
+  letter-spacing: .3em
+}
+
+.stickyPinText {
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 300;
+  line-height: 1.4;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical
+}
+
+/* ---- remember wall: floating draggable notes ---- */
+.stickyMode {
+  justify-content: flex-start;
+  padding-top: 90px
+}
+
+.stickyList {
+  position: relative;
+  flex: 1;
+  width: min(1100px, 94vw);
+  max-height: none;
+  align-items: stretch;
+  overflow: hidden
+}
+
+.stickyFloat {
+  position: absolute;
+  width: 210px;
+  padding: 26px 14px 10px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--text);
+  cursor: grab;
+  transform: rotate(var(--tilt, 0deg));
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .25);
+  transition: box-shadow .25s, border-color .25s, opacity .25s;
+  user-select: none;
+  touch-action: none
+}
+
+.stickyFloat.dragging {
+  cursor: grabbing;
+  transform: rotate(var(--tilt, 0deg)) scale(1.04);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .4);
+  opacity: 1 !important;
+  border-color: var(--accent)
+}
+
+.stickyNoteText {
+  font-weight: 300;
+  font-size: 14px;
+  line-height: 1.45;
+  word-break: break-word
+}
+
+.stickyNoteAge {
+  display: block;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 9px;
+  letter-spacing: .14em;
+  opacity: .7
+}
+
+.stickyActions {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity .2s
+}
+
+.stickyFloat:hover .stickyActions {
+  opacity: 1
+}
+
+.stickyBtn {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0
+}
+
+.stickyBtn:hover {
+  color: var(--text);
+  border-color: var(--accent)
+}
+
+.stickyBtnDel:hover {
+  color: #c76a6a;
+  border-color: #c76a6a
+}
+
+.stickyDoneHead {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: none;
+  border: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 9px;
+  letter-spacing: .22em;
+  opacity: .45;
+  cursor: pointer
+}
+
+.stickyDoneHead:hover {
+  opacity: .9
+}
+
+.stickyDoneWrap {
+  display: none;
+  position: absolute;
+  bottom: 34px;
+  left: 50%;
+  transform: translateX(-50%);
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: none
+}
+
+.stickyList.showDone .stickyDoneWrap {
+  display: flex
+}
+
+.stickyDoneRow {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 300;
+  text-decoration: line-through;
+  cursor: pointer;
+  padding: 2px;
+  opacity: .45
+}
+
+.stickyDoneRow:hover {
+  opacity: .9
+}
+
+.stickyEmpty {
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center
+}
+
+.syncServerInput {
+  width: 100%;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+  font: inherit;
+  font-weight: 300;
+  font-size: 13px;
+  padding: 5px 2px;
+  outline: none
+}
+
+.syncServerInput:focus {
+  border-bottom-color: var(--accent)
+}
