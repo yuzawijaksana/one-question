@@ -472,7 +472,7 @@ const DEFAULT_APPEARANCE={
   textSize:100,
   fontWeight:400
 };
-const DEFAULT_SETTINGS={categories:["all"],cycleSeconds:6.5,hydrationMinutes:DEFAULT_HYDRATION_MINUTES,hydrationSize:DEFAULT_HYDRATION_SIZE,hydrationWave:true,hydrationHoverEnabled:false,hydrationHoverScale:DEFAULT_HYDRATION_HOVER_SCALE,screenScale:DEFAULT_SCREEN_SCALE,animation:true,timerAnimation:true,lowercase:false,schedulerListVisible:true,appearance:{...DEFAULT_APPEARANCE}};
+const DEFAULT_SETTINGS={categories:["all"],cycleSeconds:6.5,modeSwitchExpand:"hover",modeOrder:["question","focus","scheduler","sticky"],stickyCategories:["general"],stickyPush:110,stickyTilt:1.8,stickyScale:12,stickySpread:100,hydrationMinutes:DEFAULT_HYDRATION_MINUTES,hydrationSize:DEFAULT_HYDRATION_SIZE,hydrationWave:true,hydrationHoverEnabled:false,hydrationHoverScale:DEFAULT_HYDRATION_HOVER_SCALE,screenScale:DEFAULT_SCREEN_SCALE,animation:true,timerAnimation:true,lowercase:false,schedulerListVisible:true,appearance:{...DEFAULT_APPEARANCE}};
 let settings=loadSettings();
 
 function loadSettings(){
@@ -482,7 +482,67 @@ function loadSettings(){
     return {...DEFAULT_SETTINGS,...saved,categories,appearance:{...DEFAULT_APPEARANCE,...(saved.appearance||{})}};
   }catch{return {...DEFAULT_SETTINGS,appearance:{...DEFAULT_APPEARANCE}}}
 }
-function saveSettings(){cacheSet("oneQuestionSettings",settings);document.body.classList.toggle("lowercase",!!settings.lowercase)}
+const MODE_ORDER_CLASSES={question:"modeQuestion",focus:"modeFocus",scheduler:"modeScheduler",sticky:"modeSticky"};
+const MODE_ORDER_LABELS={question:"question",focus:"focus",scheduler:"scheduler",sticky:"remember wall"};
+function normalizedModeOrder(){
+  const valid=Object.keys(MODE_ORDER_CLASSES);
+  const saved=Array.isArray(settings.modeOrder)?settings.modeOrder.filter(k=>valid.includes(k)):[];
+  return [...saved,...valid.filter(k=>!saved.includes(k))];
+}
+function applyModeOrder(){
+  const toggle=$("modeToggle");
+  if(!toggle)return;
+  normalizedModeOrder().forEach(key=>{
+    const icon=toggle.querySelector(`.modeIcon.${MODE_ORDER_CLASSES[key]}`);
+    if(icon)toggle.appendChild(icon);
+  });
+}
+function renderModeOrderSetting(){
+  const list=$("modeOrderList");
+  if(!list)return;
+  list.innerHTML="";
+  const order=normalizedModeOrder();
+  order.forEach((key,index)=>{
+    const row=document.createElement("div");
+    row.className="modeOrderRow";
+    const name=document.createElement("span");
+    name.className="modeOrderName";
+    name.textContent=MODE_ORDER_LABELS[key]||key;
+    const up=document.createElement("button");
+    up.type="button";
+    up.className="modeOrderBtn";
+    up.textContent="↑";
+    up.setAttribute("aria-label",`Move ${name.textContent} up`);
+    up.disabled=index===0;
+    up.onclick=()=>moveModeOrder(index,index-1);
+    const down=document.createElement("button");
+    down.type="button";
+    down.className="modeOrderBtn";
+    down.textContent="↓";
+    down.setAttribute("aria-label",`Move ${name.textContent} down`);
+    down.disabled=index===order.length-1;
+    down.onclick=()=>moveModeOrder(index,index+1);
+    row.append(name,up,down);
+    list.append(row);
+  });
+}
+function moveModeOrder(from,to){
+  const order=normalizedModeOrder();
+  if(to<0||to>=order.length)return;
+  const [moved]=order.splice(from,1);
+  order.splice(to,0,moved);
+  settings.modeOrder=order;
+  saveSettings();
+  applyModeOrder();
+  renderModeOrderSetting();
+}
+function applyModeSwitchExpand(){
+  const mode=settings.modeSwitchExpand==="always"?"always":"hover";
+  document.body.classList.toggle("modeExpandAlways",mode==="always");
+  const cb=$("modeSwitchExpand");
+  if(cb)cb.checked=mode==="always";
+}
+function saveSettings(){applyModeSwitchExpand();cacheSet("oneQuestionSettings",settings);document.body.classList.toggle("lowercase",!!settings.lowercase)}
 function selectedCategories(){return settings.categories.includes("all")?new Set(uniqueCategories()):new Set(settings.categories)}
 function uniqueCategories(){return [...new Set(questions.map(q=>q[0]))].sort((a,b)=>a.localeCompare(b))}
 const todayKey=()=>new Date().toLocaleDateString("en-CA");
@@ -991,22 +1051,6 @@ function addTodoText(text,dateKey=todoViewDate||todayKey()){
   }
   return true;
 }
-function openToday(){
-  const p=$("notePanel"),b=$("noteDock");
-  if(p&&p.classList.contains("open")){
-    p.classList.remove("open");
-    p.setAttribute("aria-hidden","true");
-    b?.setAttribute("aria-expanded","false");
-  }
-  todoViewDate=todayKey();
-  todoViewScope="upcoming";
-  renderTodos(todoViewDate);
-  const screen=$("todoFullscreen");
-  screen.classList.add("open");
-  screen.setAttribute("aria-hidden","false");
-  $("todoDock")?.setAttribute("aria-expanded","true");
-  setTimeout(()=>{$("todoFullscreenInput").focus()},120);
-}
 function closeToday(){
   todoViewScope="date";
   const screen=$("todoFullscreen");
@@ -1403,7 +1447,7 @@ async function importBackup(file){
     }
     if(Array.isArray(d.stickies)){
       stickies.length=0;
-      d.stickies.forEach(s=>{if(s&&typeof s.text==="string"&&s.text.trim())stickies.push({id:String(s.id||crypto.randomUUID()),text:s.text.trim(),created:Number(s.created)||Date.now(),done:!!s.done})});
+      d.stickies.forEach(s=>{if(s&&typeof s.text==="string"&&s.text.trim())stickies.push({id:String(s.id||crypto.randomUUID()),text:s.text.trim(),created:Number(s.created)||Date.now(),done:!!s.done,cat:typeof s.cat==="string"?s.cat.trim().toLowerCase():undefined})});
       saveStickies();
       renderStickyPin();
     }
@@ -1456,6 +1500,26 @@ function renderSettings(){
   $("timerAnimationEnabled").checked=settings.timerAnimation!==false;
   $("lowercaseEnabled").checked=!!settings.lowercase;
   document.body.classList.toggle("lowercase",!!settings.lowercase);
+  applyModeSwitchExpand();
+  renderModeOrderSetting();
+  const stickyPushEl=$("stickyPush");
+  if(stickyPushEl){
+    stickyPushEl.value=Math.max(20,Math.min(220,stickyPushTolerance()));
+    $("stickyPushValue").textContent=`${stickyPushEl.value}px`;
+  }
+  const stickyTiltEl=$("stickyTilt");
+  if(stickyTiltEl){
+    stickyTiltEl.value=Math.max(0,Math.min(6,Number(settings.stickyTilt)||0));
+    $("stickyTiltValue").textContent=`${Number(stickyTiltEl.value).toFixed(1)}°`;
+  }
+  const stickyScaleEl=$("stickyScale");
+  if(stickyScaleEl){
+    stickyScaleEl.value=Math.max(0,Math.min(40,Number(settings.stickyScale)||0));
+    $("stickyScaleValue").textContent=`${stickyScaleEl.value}%`;
+  }
+  document.querySelectorAll("#stickySpreadBtns button[data-spread]").forEach(b=>{
+    b.classList.toggle("active",Number(b.dataset.spread)===stickySpreadSetting());
+  });
   const syncInput=$("syncServer");
   if(syncInput)syncInput.value=settings.syncServer||"";
   setSettingsTab("questions");
@@ -2010,14 +2074,230 @@ function initSchedulerMode(){
     if(e.key==="Enter"){e.preventDefault();addFromInput();}
     else if(e.key==="Escape"){e.preventDefault();enterQuestionMode();}
   });
-  $("stickyPin")?.addEventListener("click",()=>{if(currentMode!=="sticky")enterStickyMode();});
+  // seamless queue: the front deals away while every card slides forward
+  $("stickyPin")?.addEventListener("click",()=>{
+    const pin=$("stickyPin");
+    if(currentMode==="sticky"||!stickies.length){if(currentMode!=="sticky")enterStickyMode();return;}
+    if(pin.dataset.busy)return;
+    pin.dataset.busy="1";
+    setTimeout(()=>{delete pin.dataset.busy;},240);
+    const list=pin.querySelectorAll(".stickyPinCard");
+    const front=list[0];
+    const oldRects={};
+    list.forEach(c=>oldRects[c.dataset.id]=c.getBoundingClientRect());
+    // advance the queue order, then move each surviving card to its new depth
+    stickyPinIndex=(stickyPinIndex+1)%pinOrderIds.length;
+    const data=pinCardsData();
+    front.classList.add("leaving");
+    front.addEventListener("animationend",()=>front.remove(),{once:true});
+    setTimeout(()=>front.remove(),400);
+    data.forEach(({note,depth})=>{
+      let el=pin.querySelector(`.stickyPinCard[data-id="${note.id}"]`);
+      const isNew=!el;
+      if(!el){
+        el=makePinCard(note,depth);
+        el.style.opacity="0";
+        pin.append(el);
+      }
+      el.classList.toggle("front",depth===0);
+      el.style.setProperty("--d",String(depth));
+      if(depth===0){
+        el.style.setProperty("--qrot","0deg");
+        el.style.setProperty("--qty","0px");
+        el.style.opacity="1";
+      }
+      el.style.setProperty("--qtx",`${depth%2?8:-8}px`);
+      // glide from the old spot (FLIP)
+      const old=oldRects[note.id];
+      if(old){
+        const nr=el.getBoundingClientRect();
+        el.style.transition="none";
+        el.style.setProperty("--fdx",Math.round(old.left-nr.left)+"px");
+        el.style.setProperty("--fdy",Math.round(old.top-nr.top)+"px");
+        void el.offsetWidth;
+        el.style.transition="";
+        el.style.removeProperty("--fdx");
+        el.style.removeProperty("--fdy");
+      }
+      if(isNew){
+        requestAnimationFrame(()=>{el.style.opacity=String(1-depth*.15);});
+      }
+    });
+  });
+  // note pad: drag a blank note off the stack, type inline where you drop it  // note pad: drag a blank note off the stack, type inline where you drop it
+  const stickyListEl=$("stickyList");
+  $("stickyPad")?.addEventListener("pointerdown",e=>{
+    e.preventDefault();
+    const list=stickyListEl;
+    if(!list)return;
+    const lw=list.offsetWidth,lh=list.offsetHeight;
+    const frame=()=>{
+      const r=list.getBoundingClientRect();
+      return {r,z:r.width/(lw||1)||1};
+    };
+    const toLX=ev=>{const {r,z}=frame();return (ev.clientX-r.left)/z;};
+    const toLY=ev=>{const {r,z}=frame();return (ev.clientY-r.top)/z;};
+    // give the draft its own identity so its tilt/size survive the commit
+    const draftId=crypto.randomUUID();
+    const draftS={id:draftId,text:""};
+    const draft=document.createElement("div");
+    draft.className="stickyDraft";
+    draft.style.setProperty("--tilt",`${stickyTilt(draftS)}deg`);
+    draft.innerHTML=`<textarea class="stickyDraftInput" rows="1" placeholder="type here…" autocomplete="off" aria-label="New note"></textarea><div class="stickyDraftMirror" aria-hidden="true"></div><div class="stickyDraftHint">keep (enter) · cancel (click anywhere)</div>`;
+    list.append(draft);
+    const scaleMax=Math.round(300*stickyScaleFactor(draftS));
+    const input=draft.querySelector(".stickyDraftInput");
+    const mirror=draft.querySelector(".stickyDraftMirror");
+    const w0=150;
+    let lx=Math.max(0,Math.min(lw-w0,toLX(e)-w0/2));
+    let ly=Math.max(0,Math.min(lh-70,toLY(e)-35));
+    draft.style.left=`${lx}px`;
+    draft.style.top=`${ly}px`;
+    const sync=()=>{
+      draftS.text=input.value||"";
+      draft.style.setProperty("--tilt",`${stickyTilt(draftS)}deg`);
+      mirror.textContent=input.value||input.placeholder;
+      mirror.style.width="max-content";
+      const natural=mirror.offsetWidth+34;
+      draft.style.width=`${Math.max(w0,Math.min(scaleMax,natural))}px`;
+      // measure the height from the textarea itself so wrapping always matches
+      input.style.height="auto";
+      input.style.height=`${Math.max(22,input.scrollHeight)}px`;
+      draft.style.minHeight=`${Math.max(70,input.scrollHeight+46)}px`;
+      lx=Math.max(0,Math.min(lw-parseInt(draft.style.width),lx));
+    };
+    input.addEventListener("input",sync);
+    try{draft.setPointerCapture(e.pointerId);}catch{}
+    const move=ev=>{
+      const w=parseInt(draft.style.width)||w0;
+      lx=Math.max(0,Math.min(lw-w,toLX(ev)-w/2));
+      ly=Math.max(0,Math.min(lh-70,toLY(ev)-35));
+      draft.style.left=`${lx}px`;
+      draft.style.top=`${ly}px`;
+    };
+    const up=()=>{
+      draft.removeEventListener("pointermove",move);
+      draft.removeEventListener("pointerup",up);
+      draft.removeEventListener("pointercancel",up);
+      draft.classList.add("placing");
+      const commit=()=>{
+        const text=String(input.value||"").trim();
+        draft.remove();
+        if(text)addSticky(text,Math.round(lx/lw*1000)/10,Math.round(ly/lh*1000)/10,draftId);
+      };
+      input.addEventListener("keydown",ev=>{
+        if(ev.key==="Enter"){ev.preventDefault();commit();}
+        else if(ev.key==="Escape"){ev.preventDefault();draft.remove();}
+      });
+      input.addEventListener("blur",()=>{if(!draft.isConnected)return;if(input.value.trim())commit();else draft.remove();});
+      sync();
+      setTimeout(()=>input.focus(),40);
+    };
+    draft.addEventListener("pointermove",move);
+    draft.addEventListener("pointerup",up);
+    draft.addEventListener("pointercancel",up);
+  });
+  // ghost card: a faint blank note trailing the cursor over blank wall;
+  // click an empty spot to start typing a card right there
+  if(stickyListEl&&!window.__stickyGhostEl){
+    const ghost=window.__stickyGhostEl=document.createElement("div");
+    ghost.className="stickyGhost";
+    ghost.textContent="new card";
+    let shown=false;
+    const gFrame=()=>{const r=stickyListEl.getBoundingClientRect();return {r,z:r.width/(stickyListEl.offsetWidth||1)||1};};
+    const gPoint=e=>{
+      const {r,z}=gFrame();
+      return {
+        x:Math.max(52,Math.min(stickyListEl.offsetWidth-52,(e.clientX-r.left)/z)),
+        y:Math.max(22,Math.min(stickyListEl.offsetHeight-22,(e.clientY-r.top)/z))
+      };
+    };
+    const spawnDraft=(gx,gy)=>{
+      ghost.classList.remove("visible");shown=false;
+      const list=stickyListEl;
+      const draftId=crypto.randomUUID();
+      const draftS={id:draftId,text:""};
+      const draft=document.createElement("div");
+      draft.className="stickyDraft placing";
+      draft.style.setProperty("--tilt",`${stickyTilt(draftS)}deg`);
+      draft.innerHTML=`<textarea class="stickyDraftInput" rows="1" placeholder="type here…" autocomplete="off" aria-label="New note"></textarea><div class="stickyDraftMirror" aria-hidden="true"></div><div class="stickyDraftHint">keep (enter) · cancel (click anywhere)</div>`;
+      const lw=list.offsetWidth,lh=list.offsetHeight;
+      const lx=Math.max(0,Math.min(lw-150,gx-105));
+      const ly=Math.max(0,Math.min(lh-70,gy-48));
+      draft.style.left=`${lx}px`;
+      draft.style.top=`${ly}px`;
+      list.append(draft);
+      const input=draft.querySelector(".stickyDraftInput");
+      const mirror=draft.querySelector(".stickyDraftMirror");
+      const sync=()=>{
+        draftS.text=input.value||"";
+        draft.style.setProperty("--tilt",`${stickyTilt(draftS)}deg`);
+        mirror.textContent=input.value||input.placeholder;
+        mirror.style.width="max-content";
+        const natural=mirror.offsetWidth+34;
+        draft.style.width=`${Math.max(150,Math.min(Math.round(300*stickyScaleFactor(draftS)),natural))}px`;
+        input.style.height="auto";
+        input.style.height=`${Math.max(22,input.scrollHeight)}px`;
+        draft.style.minHeight=`${Math.max(70,input.scrollHeight+46)}px`;
+      };
+      const commit=()=>{
+        const text=String(input.value||"").trim();
+        draft.remove();
+        if(text)addSticky(text,Math.round(lx/lw*1000)/10,Math.round(ly/lh*1000)/10,draftId);
+      };
+      input.addEventListener("input",sync);
+      input.addEventListener("keydown",ev=>{
+        if(ev.key==="Enter"){ev.preventDefault();commit();}
+        else if(ev.key==="Escape"){ev.preventDefault();draft.remove();}
+      });
+      input.addEventListener("blur",()=>{if(!draft.isConnected)return;if(input.value.trim())commit();else draft.remove();});
+      sync();
+      setTimeout(()=>input.focus(),40);
+    };
+    window.__spawnStickyDraft=spawnDraft;
+    // the ghost only appears where it would sit clear of every existing card
+    const ghostClearAt=(gx,gy)=>{
+      const gl=gx-52,gt=gy-22,gr=gx+52,gb=gy+22;
+      for(const el of stickyListEl.querySelectorAll(".stickyFloat")){
+        if(gl<el.offsetLeft+el.offsetWidth+14&&gr>el.offsetLeft-14&&gt<el.offsetTop+el.offsetHeight+14&&gb>el.offsetTop-14)return false;
+      }
+      return true;
+    };
+    // clicking blank while a draft is open dismisses that draft first —
+    // the same click must not spawn a second one
+    let draftDismiss=false;
+    stickyListEl.addEventListener("pointerdown",()=>{draftDismiss=!!document.querySelector(".stickyDraft");});
+    stickyListEl.addEventListener("pointermove",e=>{
+      const blank=e.target===stickyListEl&&currentMode==="sticky"&&!document.querySelector(".stickyDraft");
+      let ok=false;
+      if(blank){
+        const p=gPoint(e);
+        if(ghostClearAt(p.x,p.y)){
+          ghost.style.left=`${p.x-52}px`;
+          ghost.style.top=`${p.y-22}px`;
+          ok=true;
+        }
+      }
+      if(ok!==shown){shown=ok;ghost.classList.toggle("visible",ok);}
+    });
+    stickyListEl.addEventListener("pointerleave",()=>{shown=false;ghost.classList.remove("visible");});
+    stickyListEl.addEventListener("click",e=>{
+      if(e.target!==stickyListEl||currentMode!=="sticky")return;
+      if(draftDismiss){draftDismiss=false;return;}
+      const p=gPoint(e);
+      spawnDraft(p.x,p.y);
+    });
+  }
   renderStickyPin();
-  setInterval(()=>{
-    const pending=stickies.filter(s=>!s.done);
-    if(pending.length){stickyPinIndex=(stickyPinIndex+1)%pending.length;renderStickyPin();}
-  },8000);
+
   let lastListMinute=-1;
+  let lastStickyDay=todayKey();
   setInterval(()=>{
+    if(lastStickyDay!==todayKey()){
+      lastStickyDay=todayKey();
+      if(currentMode==="sticky")renderStickies();
+      renderStickyPin();
+    }
     updateSchedulerNow();updateSchedulerCenter();renderMiniClock();
     if(currentMode==="scheduler"){
       const m=new Date().getMinutes();
@@ -2038,74 +2318,526 @@ const STICKY_KEY="oneQuestionStickies";
 const stickies=(()=>{
   try{
     const saved=JSON.parse(localStorage.getItem(STICKY_KEY)||"[]");
-    return Array.isArray(saved)?saved.filter(s=>s&&typeof s.text==="string"&&s.text.trim()).map((s,i)=>({id:String(s.id||crypto.randomUUID()),text:s.text.trim(),created:Number(s.created)||Date.now(),done:!!s.done})):[];
+    return Array.isArray(saved)?saved.filter(s=>s&&typeof s.text==="string"&&s.text.trim()).map((s,i)=>({id:String(s.id||crypto.randomUUID()),text:s.text.trim(),created:Number(s.created)||Date.now(),done:!!s.done,cat:typeof s.cat==="string"?s.cat.trim().toLowerCase():undefined,x:s.x,y:s.y,z:s.z})):[];
   }catch{return[]}
 })();
 function saveStickies(){cacheSet(STICKY_KEY,stickies)}
+function stickyCats(){
+  const list=Array.isArray(settings.stickyCategories)?settings.stickyCategories.map(c=>String(c).trim()).filter(Boolean):[];
+  return list.length?list:["general"];
+}
+function stickyCatOf(s){
+  const cats=stickyCats();
+  return cats.includes(s.cat)?s.cat:cats[0];
+}
+let stickyFilter="all";
+function cleanCategoryName(raw){
+  const clean=String(raw||"").trim().toLowerCase().slice(0,18);
+  return clean;
+}
+// in-app replacement for alert/confirm/prompt
+let appDialogEl=null;
+function appDialog({message,inputLabel=null,initialValue="",okText="ok",cancelText="cancel",danger=false,choices=null}={}){
+  return new Promise(resolve=>{
+    if(!appDialogEl){
+      appDialogEl=document.createElement("div");
+      appDialogEl.className="appDialog";
+      appDialogEl.innerHTML=`<div class="appDialogCard"><div class="appDialogMessage"></div><div class="appDialogChoices"></div><input class="appDialogInput" type="text" autocomplete="off"><div class="appDialogActions"><button type="button" class="appDialogCancel"></button><button type="button" class="appDialogOk"></button></div></div>`;
+      document.body.append(appDialogEl);
+    }
+    const msg=appDialogEl.querySelector(".appDialogMessage");
+    const input=appDialogEl.querySelector(".appDialogInput");
+    const ok=appDialogEl.querySelector(".appDialogOk");
+    const cancel=appDialogEl.querySelector(".appDialogCancel");
+    const choiceWrap=appDialogEl.querySelector(".appDialogChoices");
+    msg.textContent=message;
+    ok.textContent=okText;
+    cancel.textContent=cancelText;
+    cancel.style.display=cancelText?"":"none";
+    ok.classList.toggle("danger",!!danger);
+    const hasChoices=Array.isArray(choices)&&choices.length>0;
+    const showInput=typeof inputLabel==="string"&&!hasChoices;
+    input.style.display=showInput?"":"none";
+    if(showInput){input.value=initialValue;input.placeholder=inputLabel;}
+    choiceWrap.textContent="";
+    choiceWrap.style.display=hasChoices?"":"none";
+    if(hasChoices)choices.forEach(c=>{
+      const b=document.createElement("button");
+      b.type="button";
+      b.className="appDialogChoice";
+      b.textContent=c;
+      b.onclick=()=>done(c);
+      choiceWrap.append(b);
+    });
+    appDialogEl.classList.add("open");
+    const done=val=>{
+      appDialogEl.classList.remove("open");
+      ok.onclick=cancel.onclick=input.onkeydown=null;
+      choiceWrap.querySelectorAll(".appDialogChoice").forEach(b=>b.onclick=null);
+      document.removeEventListener("keydown",onKey,true);
+      resolve(val);
+    };
+    ok.onclick=()=>done(showInput?input.value.trim():true);
+    cancel.onclick=()=>done(null);
+    input.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();ok.click();}};
+    const onKey=e=>{
+      if(e.key==="Escape"){e.preventDefault();e.stopPropagation();done(null);}
+      else if(e.key==="Enter"&&!showInput&&!hasChoices){e.preventDefault();done(true);}
+    };
+    document.addEventListener("keydown",onKey,true);
+    setTimeout(()=>{
+      if(hasChoices){const first=choiceWrap.querySelector(".appDialogChoice");if(first)first.focus();}
+      else (showInput?input:ok).focus();
+    },50);
+  });
+}
+let stickyCatEditorEl=null;
+function openStickyCatEditor(){
+  if(!stickyCatEditorEl){
+    stickyCatEditorEl=document.createElement("div");
+    stickyCatEditorEl.className="appDialog";
+    stickyCatEditorEl.innerHTML=`<div class="appDialogCard"><div class="appDialogMessage">edit categories</div><div class="stickyCatEditorList"></div><div class="stickyCatEditorAdd"><input type="text" class="appDialogInput" placeholder="new category…" autocomplete="off"><button type="button" class="stickyCatEditorAddBtn">add</button></div><div class="appDialogActions"><button type="button" class="appDialogOk stickyCatEditorDone">done</button></div></div>`;
+    document.body.append(stickyCatEditorEl);
+  }
+  const list=stickyCatEditorEl.querySelector(".stickyCatEditorList");
+  const input=stickyCatEditorEl.querySelector(".appDialogInput");
+  let onKey=null;
+  const close=()=>{
+    stickyCatEditorEl.classList.remove("open");
+    document.removeEventListener("keydown",onKey,true);
+    renderStickies();
+  };
+  const render=()=>{
+    list.textContent="";
+    stickyCats().forEach(c=>{
+      const row=document.createElement("div");
+      row.className="stickyCatEditorRow";
+      const name=document.createElement("span");
+      name.className="stickyCatEditorName";
+      name.textContent=c;
+      const count=document.createElement("span");
+      count.className="stickyChipCount";
+      count.textContent=`${stickies.filter(s=>stickyCatOf(s)===c).length} note${stickies.filter(s=>stickyCatOf(s)===c).length===1?"":"s"}`;
+      const del=document.createElement("button");
+      del.type="button";
+      del.className="stickyBtn stickyBtnDel";
+      del.textContent="×";
+      del.title=`remove "${c}"`;
+      del.onclick=async()=>{
+        const cats=stickyCats();
+        if(cats.length<=1){
+          await appDialog({message:`"${c}" is the only category — add another one before removing it.`,cancelText:""});
+          return;
+        }
+        const affected=stickies.filter(s=>stickyCatOf(s)===c).length;
+        const fallback=cats.find(x=>x!==c);
+        const ok=await appDialog({message:`remove category "${c}"? ${affected} note${affected===1?"":"s"} will move to "${fallback}".`,okText:"remove",cancelText:"keep",danger:true});
+        if(!ok)return;
+        settings.stickyCategories=cats.filter(x=>x!==c);
+        saveSettings();
+        if(stickyFilter===c)stickyFilter="all";
+        render();
+      };
+      row.append(name,count,del);
+      list.append(row);
+    });
+  };
+  const add=()=>{
+    const name=cleanCategoryName(input.value);
+    if(!name)return;
+    if(stickyCats().includes(name)){input.value="";return;}
+    settings.stickyCategories=[...stickyCats(),name];
+    saveSettings();
+    input.value="";
+    render();
+  };
+  stickyCatEditorEl.querySelector(".stickyCatEditorAddBtn").onclick=add;
+  input.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();add();}};
+  stickyCatEditorEl.querySelector(".stickyCatEditorDone").onclick=close;
+  onKey=e=>{
+    if(e.key==="Escape"){e.preventDefault();e.stopPropagation();close();}
+  };
+  document.addEventListener("keydown",onKey,true);
+  render();
+  stickyCatEditorEl.classList.add("open");
+  setTimeout(()=>input.focus(),50);
+}
 let stickyPinIndex=0;
+let pinOrderIds=[];
+let pinOrderSig="";
 let stickyZ=10;
 function defaultStickyPos(i){
   return {x:6+(i*37)%58,y:8+(i*29)%52};
 }
+// cards may overlap up to this many px before the push kicks in (user-set)
+function stickySpreadSetting(){
+  const v=Number(settings.stickySpread);
+  return Number.isFinite(v)&&v>0?Math.min(250,v):100;
+}
+function stickyPushTolerance(){
+  const v=Number(settings.stickyPush);
+  return Number.isFinite(v)&&v>=0?Math.min(240,v):110;
+}
+function stickyAgeLabel(s){
+  // short date + month, no year (e.g. "19 sep")
+  const d=new Date(s.created);
+  return d.toLocaleDateString(undefined,{day:"numeric",month:"short"});
+}
+function stickyHash(s){
+  return [...s.id].reduce((a,c)=>a+c.charCodeAt(0),s.text.length);
+}
 function stickyTilt(s){
-  const n=[...s.id].reduce((a,c)=>a+c.charCodeAt(0),s.text.length);
-  return (n%7-3)*.6;
+  const maxDeg=Math.max(0,Math.min(10,Number(settings.stickyTilt)||0));
+  return ((stickyHash(s)%7-3)/3)*maxDeg;
+}
+function stickyScaleFactor(s){
+  const n=[...s.id].reduce((a,c)=>a+c.charCodeAt(0),s.text.length*7);
+  const pct=Math.max(0,Math.min(50,Number(settings.stickyScale)||0));
+  return 1+((n%100)/100-.5)*2*(pct/100);
+}
+// gently push overlapping cards apart; a little overlap is allowed
+function resolveStickyOverlaps(){
+  const list=$("stickyList");
+  if(!list)return;
+  const cards=[...list.querySelectorAll(".stickyFloat")];
+  if(cards.length<2)return;
+  const W=list.clientWidth,H=list.clientHeight;
+  const items=cards.map(c=>({c,x:c.offsetLeft,y:c.offsetTop,w:c.offsetWidth,h:c.offsetHeight}));
+  const tolerance=stickyPushTolerance();
+  for(let iter=0;iter<20;iter++){
+    let moved=false;
+    for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++){
+      const a=items[i],b=items[j];
+      const ox=(a.w+b.w)/2-tolerance-Math.abs(b.x-a.x);
+      const oy=(a.h+b.h)/2-tolerance-Math.abs(b.y-a.y);
+      if(ox<=0||oy<=0)continue;
+      // ball-style: push along the line between centers, not straight left/right/up/down
+      let dx=b.x-a.x,dy=b.y-a.y;
+      if(!dx&&!dy)dx=1;
+      const dist=Math.hypot(dx,dy);
+      const depth=Math.min(ox,oy)/2+1;
+      a.x-=dx/dist*depth;a.y-=dy/dist*depth;
+      b.x+=dx/dist*depth;b.y+=dy/dist*depth;
+      moved=true;
+    }
+    if(!moved)break;
+  }
+  let changed=false;
+  items.forEach((it,idx)=>{
+    const s=cards[idx]._sticky;
+    const nx=Math.max(0,Math.min(W-it.w,it.x));
+    const ny=Math.max(0,Math.min(H-it.h,it.y));
+    it.c.style.left=`${nx}px`;
+    it.c.style.top=`${ny}px`;
+    if(s){
+      const px=Math.round(nx/W*1000)/10,py=Math.round(ny/H*1000)/10;
+      if(s.x!==px||s.y!==py){s.x=px;s.y=py;changed=true;}
+    }
+  });
+  if(changed)saveStickies();
 }
 function renderStickies(){
   const list=$("stickyList");
   if(!list)return;
+  // remember where cards currently are so they can glide to their next spot
+  const oldPos={};
+  list.querySelectorAll(".stickyFloat").forEach(el=>{
+    if(el._sticky)oldPos[el._sticky.id]={x:el.offsetLeft,y:el.offsetTop};
+  });
   list.textContent="";
-  const pending=stickies.filter(s=>!s.done);
-  if(!pending.length){
+  const cats=stickyCats();
+  // category filter bar
+  const bar=document.createElement("div");
+  bar.className="stickyCatBar";
+  const chipFor=(key,label,count)=>{
+    const chip=document.createElement("button");
+    chip.type="button";
+    chip.className="stickyChip"+(stickyFilter===key?" active":"");
+    chip.dataset.cat=key;
+    chip.append(document.createTextNode(label));
+    if(count!=null){
+      const n=document.createElement("span");
+      n.className="stickyChipCount";
+      n.textContent=String(count);
+      chip.append(n);
+    }
+    if(key!=="all"){
+      const del=document.createElement("span");
+      del.className="stickyChipDel";
+      del.textContent="×";
+      del.title=`remove category "${key}"`;
+      del.onclick=async e=>{
+        e.stopPropagation();
+        if(cats.length<=1){
+          await appDialog({message:`"${key}" is the only category — add another one before removing it.`,cancelText:""});
+          return;
+        }
+        const affected=stickies.filter(s=>stickyCatOf(s)===key).length;
+        const fallback=cats.find(c=>c!==key);
+        const ok=await appDialog({message:`remove category "${key}"? ${affected} note${affected===1?"":"s"} will move to "${fallback}".`,okText:"remove",cancelText:"keep",danger:true});
+        if(!ok)return;
+        settings.stickyCategories=cats.filter(c=>c!==key);
+        saveSettings();
+        if(stickyFilter===key)stickyFilter="all";
+        renderStickies();
+      };
+    }
+    chip.onclick=()=>{stickyFilter=key;tidyWall();};
+    return chip;
+  };
+  bar.append(chipFor("all","all",stickies.filter(s=>!s.done).length));
+  cats.forEach(c=>{
+    bar.append(chipFor(c,c,stickies.filter(s=>!s.done&&stickyCatOf(s)===c).length));
+  });
+  const editChip=document.createElement("button");
+  editChip.type="button";
+  editChip.className="stickyChip";
+  editChip.textContent="edit";
+  editChip.title="add or remove categories";
+  editChip.onclick=()=>openStickyCatEditor();
+  bar.append(editChip);
+  const tidyChip=document.createElement("button");
+  tidyChip.type="button";
+  tidyChip.className="stickyChip";
+  tidyChip.textContent="tidy";
+  tidyChip.title="gather cards into a centered layout";
+  // arrange visible cards into the centered zigzag cluster and re-render (they glide)
+  function tidyWall(){
+    const W=list.clientWidth||window.innerWidth;
+    const H=list.clientHeight||window.innerHeight;
+    const visible=stickies.filter(s=>!s.done&&(stickyFilter==="all"||stickyCatOf(s)===stickyFilter));
+    if(!visible.length){renderStickies();return;}
+    const n=visible.length;
+    const cols=Math.min(n,Math.ceil(Math.sqrt(n*1.4)));
+    const rows=Math.ceil(n/cols);
+    const cardW=210,cardH=130;
+    // spacing follows the push sensitivity: high tolerance = cards packed to touching/slight overlap
+    // tidy spread lets the user scale how far apart the cluster sits
+    const spread=stickySpreadSetting()/100;
+    // below 100% pull the cards into real overlap, above 100% stretch the gaps
+    const base=48-stickyPushTolerance()*.5;
+    const extra=(1-Math.min(spread,1))*45;
+    const edgeGap=Math.max(-60,Math.min(200,base*spread-extra));
+    const cellW=cardW+edgeGap,cellH=cardH+edgeGap*.7;
+    // if the cluster is wider than the screen, wrap into more rows instead
+    const finalCols=cols*cellW>W?Math.max(1,Math.floor((W-20)/cellW)):cols;
+    const finalRows=Math.ceil(n/finalCols);
+    // jitter seed so it doesn't look mechanically identical each time
+    const jitter=()=>(Math.random()-.5)*44;
+    visible.forEach((s,i)=>{
+      const col=i%finalCols,row=Math.floor(i/finalCols);
+      const clusterW=finalCols*cellW,clusterH=finalRows*cellH;
+      // strong zigzag: alternate rows swing a half-cell across, with a wave on top
+      const wave=Math.round(Math.sin(row*1.1+col*.6)*cellW*.16);
+      const rowShift=row%2===1?cellW*.5:cellW*.12;
+      // cancel the rowShift's average so the cluster stays truly centered
+      const bias=cellW*.31;
+      const x=(W-clusterW)/2+col*cellW+rowShift-bias+wave+jitter();
+      const y=96+row*cellH+(col%2===1?34:0)+jitter()*.5;
+      s.x=Math.round(Math.max(8,Math.min(W-cardW-8,x))/W*1000)/10;
+      s.y=Math.round(Math.max(8,Math.min(H-cardH-8,y))/H*1000)/10;
+    });
+    saveStickies();
+    renderStickies();
+    // true-center pass: measure the rendered cluster and nudge it onto the
+    // screen center — card widths vary, so left-edge math alone drifts
+    const cards=[...list.querySelectorAll(".stickyFloat")];
+    if(cards.length){
+      const avg=cards.reduce((a,c)=>a+c.offsetLeft+c.offsetWidth/2,0)/cards.length;
+      const dx=Math.round(W/2-avg);
+      if(Math.abs(dx)>2){
+        const dPct=Math.round(dx/W*100000)/1000;
+        stickies.forEach(sv=>{if(typeof sv.x==="number")sv.x=Math.round((sv.x+dPct)*1000)/1000;});
+        saveStickies();
+        renderStickies();
+      }
+    }
+  }
+  tidyChip.onclick=tidyWall;
+  bar.append(tidyChip);
+  list.append(bar);
+  const visible=stickies.filter(s=>stickyFilter==="all"||stickyCatOf(s)===stickyFilter);
+  if(!visible.length){
     const empty=document.createElement("div");
     empty.className="stickyEmpty";
-    empty.textContent=stickies.length?"everything is handled — nothing pressing":"nothing here yet. capture the thing you keep forgetting.";
+    empty.textContent=stickyFilter!=="all"?"nothing in this category yet":"nothing here yet. capture the thing you keep forgetting.";
     list.append(empty);
   }
-  pending.forEach((s,i)=>{
+  visible.forEach((s,i)=>{
     const pos=s.x==null||s.y==null?defaultStickyPos(i):s;
     const card=document.createElement("div");
-    card.className="stickyFloat";
+    card.className="stickyFloat"+(s.done?" faded":"");
+    card._sticky=s;
     card.style.left=`${pos.x}%`;
     card.style.top=`${pos.y}%`;
     card.style.zIndex=s.z||++stickyZ;
     card.style.setProperty("--tilt",`${stickyTilt(s)}deg`);
+    // each card bobs on its own rhythm
+    card.style.setProperty("--floatDur",`${5+stickyHash(s)%40/10}s`);
+    card.style.setProperty("--floatDelay",`-${stickyHash(s)%90/10}s`);
+    card.style.maxWidth=`${Math.round(300*stickyScaleFactor(s))}px`;
     const text=document.createElement("div");text.className="stickyNoteText";text.textContent=s.text;
     const meta=document.createElement("div");meta.className="stickyNoteAge";
-    const days=Math.floor((Date.now()-s.created)/86400000);
-    meta.textContent=days>0?`${days}d ago`:"today";
+    meta.textContent=stickyAgeLabel(s);
     const actions=document.createElement("div");actions.className="stickyActions";
-    const doneBtn=document.createElement("button");doneBtn.type="button";doneBtn.className="stickyBtn";doneBtn.textContent="✓";
-    doneBtn.title="mark as handled";
-    doneBtn.onclick=e=>{e.stopPropagation();s.done=true;saveStickies();renderStickies();renderStickyPin();};
+    const doneBtn=document.createElement("button");doneBtn.type="button";doneBtn.className="stickyBtn";doneBtn.textContent=s.done?"↺":"✓";
+    doneBtn.title=s.done?"bring back":"fade out (remembered)";
+    doneBtn.onclick=e=>{e.stopPropagation();s.done=!s.done;saveStickies();renderStickies();renderStickyPin();};
+    const catBtn=document.createElement("button");catBtn.type="button";catBtn.className="stickyBtn stickyBtnCat";catBtn.textContent="#";
+    catBtn.title=`category: ${stickyCatOf(s)} — click to move`;
+    catBtn.onclick=async e=>{
+      e.stopPropagation();
+      const catsNow=stickyCats();
+      const options=[...catsNow.filter(c=>c!==stickyCatOf(s)),"+ new category…"];
+      const picked=await appDialog({message:`move this note to:`,choices:options,cancelText:"cancel"});
+      if(!picked)return;
+      if(picked==="+ new category…"){
+        const name=cleanCategoryName(await appDialog({message:"new category name:",inputLabel:"category name…",okText:"add"}));
+        if(!name)return;
+        if(!catsNow.includes(name)){
+          settings.stickyCategories=[...stickyCats(),name];
+          saveSettings();
+        }
+        s.cat=name;
+      }else{
+        s.cat=picked;
+      }
+      saveStickies();renderStickies();renderStickyPin();
+    };
     const delBtn=document.createElement("button");delBtn.type="button";delBtn.className="stickyBtn stickyBtnDel";delBtn.textContent="×";
     delBtn.title="delete note";
     delBtn.onclick=e=>{e.stopPropagation();stickies.splice(stickies.indexOf(s),1);saveStickies();renderStickies();renderStickyPin();};
-    actions.append(doneBtn,delBtn);
+    actions.append(doneBtn,catBtn,delBtn);
     card.append(actions,text,meta);
-    // drag anywhere — position is the reorder
+    // hover: lean slightly toward the cursor, like it's attracted
+    card.addEventListener("pointermove",e=>{
+      if(card.classList.contains("dragging"))return;
+      const r=card.getBoundingClientRect();
+      const dx=e.clientX-(r.left+r.width/2);
+      const dy=e.clientY-(r.top+r.height/2);
+      const d=Math.hypot(dx,dy)||1;
+      const pull=Math.min(6,d*.12);
+      card.style.translate=`${dx/d*pull}px ${dy/d*pull}px`;
+    });
+    card.addEventListener("pointerleave",()=>{card.style.translate="0px 0px";});
+    // drag anywhere — position is the reorder; other cards get pushed live
     card.addEventListener("pointerdown",e=>{
       if(e.target.closest("button"))return;
       try{card.setPointerCapture(e.pointerId);}catch{}
       card.style.zIndex=++stickyZ;
       s.z=card.style.zIndex;
-      const rect=list.getBoundingClientRect();
-      const cardRect=card.getBoundingClientRect();
-      const grabX=e.clientX-cardRect.left,grabY=e.clientY-cardRect.top;
+      const lw=list.offsetWidth,lh=list.offsetHeight;
+      // the page stacks several zoom levels (text size body zoom × screen
+      // scale…), so measure the real rendered scale instead of guessing:
+      // rendered rect width ÷ layout width. The frame is re-read every event
+      // because parallax also nudges the list origin with the cursor.
+      const frame=()=>{
+        const r=list.getBoundingClientRect();
+        return {r,z:r.width/(lw||1)||1};
+      };
+      const toLX=ev=>{const {r,z}=frame();return (ev.clientX-r.left)/z;};
+      const toLY=ev=>{const {r,z}=frame();return (ev.clientY-r.top)/z;};
+      const grabX=Math.max(0,Math.min(card.offsetWidth,toLX(e)-card.offsetLeft));
+      const grabY=Math.max(0,Math.min(card.offsetHeight,toLY(e)-card.offsetTop));
+      const others=list.querySelectorAll(".stickyFloat").length?(()=>{
+        const arr=[];
+        list.querySelectorAll(".stickyFloat").forEach(el=>{
+          if(el===card)return;
+          arr.push({el,s:el._sticky,x:el.offsetLeft,y:el.offsetTop,w:el.offsetWidth,h:el.offsetHeight});
+        });
+        return arr;
+      })():[];
+      const self={w:card.offsetWidth,h:card.offsetHeight,x:card.offsetLeft,y:card.offsetTop};
+      // cards that formed the pile under this one — the next in line steps
+      // forward into the front spot when this card is dealt away
+      const pile=others.filter(o=>Math.abs(o.x-self.x)<(o.w+self.w)/2&&Math.abs(o.y-self.y)<(o.h+self.h)/2)
+        .sort((a,b)=>(Number(b.s?.z)||0)-(Number(a.s?.z)||0));
+      const nextUp=pile[0]||null;
+      const origX=self.x,origY=self.y;
+      const tolerance=stickyPushTolerance();
+      const clampX=v=>Math.max(0,Math.min(lw-self.w,v));
+      const clampY=v=>Math.max(0,Math.min(lh-self.h,v));
+      // push others out of the way (dragged card is immovable)
+      const liveSeparate=()=>{
+        for(let iter=0;iter<8;iter++){
+          let moved=false;
+          for(const o of others){
+            const ox=(self.w+o.w)/2-tolerance-Math.abs(o.x-self.x);
+            const oy=(self.h+o.h)/2-tolerance-Math.abs(o.y-self.y);
+            if(ox>0&&oy>0){
+              // ball-style: shove away along the center line (dragged card is immovable)
+              let dx=o.x-self.x,dy=o.y-self.y;
+              if(!dx&&!dy)dy=-1;
+              const dist=Math.hypot(dx,dy);
+              const depth=Math.min(ox,oy)+1;
+              o.x+=dx/dist*depth;o.y+=dy/dist*depth;
+              moved=true;
+            }
+            for(const p of others){
+              if(p===o)break;
+              const px=(o.w+p.w)/2-tolerance-Math.abs(p.x-o.x);
+              const py=(o.h+p.h)/2-tolerance-Math.abs(p.y-o.y);
+              if(px>0&&py>0){
+                let dx=p.x-o.x,dy=p.y-o.y;
+                if(!dx&&!dy)dx=1;
+                const dist=Math.hypot(dx,dy);
+                const depth=Math.min(px,py)/2+1;
+                o.x-=dx/dist*depth;o.y-=dy/dist*depth;
+                p.x+=dx/dist*depth;p.y+=dy/dist*depth;
+                moved=true;
+              }
+            }
+          }
+          if(!moved)break;
+        }
+        others.forEach(o=>{
+          o.x=Math.max(0,Math.min(lw-o.w,o.x));
+          o.y=Math.max(0,Math.min(lh-o.h,o.y));
+          o.el.style.left=`${o.x}px`;
+          o.el.style.top=`${o.y}px`;
+        });
+      };
+      card.style.translate="0px 0px";
       card.classList.add("dragging");
+      let dropChip=null;
       const move=ev=>{
-        const x=Math.max(0,Math.min(rect.width-cardRect.width,ev.clientX-rect.left-grabX));
-        const y=Math.max(0,Math.min(rect.height-cardRect.height,ev.clientY-rect.top-grabY));
-        card.style.left=`${x}px`;
-        card.style.top=`${y}px`;
+        self.x=clampX(toLX(ev)-grabX);
+        self.y=clampY(toLY(ev)-grabY);
+        card.style.left=`${self.x}px`;
+        card.style.top=`${self.y}px`;
+        liveSeparate();
+        const over=document.elementFromPoint(ev.clientX,ev.clientY);
+        const chip=over&&over.closest?over.closest(".stickyChip"):null;
+        const next=chip&&chip.dataset.cat&&chip.dataset.cat!=="all"&&chip.dataset.cat!==stickyCatOf(s)?chip:null;
+        if(dropChip&&dropChip!==next)dropChip.classList.remove("dropTarget");
+        dropChip=next;
+        if(dropChip)dropChip.classList.add("dropTarget");
       };
       const up=()=>{
         card.classList.remove("dragging");
         card.removeEventListener("pointermove",move);
         card.removeEventListener("pointerup",up);
         card.removeEventListener("pointercancel",up);
-        s.x=Math.round(card.offsetLeft/rect.width*1000)/10;
-        s.y=Math.round(card.offsetTop/rect.height*1000)/10;
+        if(dropChip){
+          dropChip.classList.remove("dropTarget");
+          s.cat=dropChip.dataset.cat;
+          saveStickies();renderStickies();renderStickyPin();
+          return;
+        }
+        s.x=Math.round(clampX(self.x)/lw*1000)/10;
+        s.y=Math.round(clampY(self.y)/lh*1000)/10;
+        others.forEach(o=>{
+          if(!o.s)return;
+          o.s.x=Math.round(o.x/lw*1000)/10;
+          o.s.y=Math.round(o.y/lh*1000)/10;
+        });
+        // the next card in the pile glides forward into the emptied front spot
+        if(nextUp&&nextUp.s&&Math.hypot(self.x-origX,self.y-origY)>80){
+          nextUp.s.x=Math.round(origX/lw*1000)/10;
+          nextUp.s.y=Math.round(origY/lh*1000)/10;
+          nextUp.el.style.left=`${origX}px`;
+          nextUp.el.style.top=`${origY}px`;
+        }
         saveStickies();
       };
       card.addEventListener("pointermove",move);
@@ -2114,42 +2846,95 @@ function renderStickies(){
     });
     list.append(card);
   });
-  // handled notes: quiet footer with restore
-  const done=stickies.filter(s=>s.done);
-  if(done.length){
-    const head=document.createElement("button");
-    head.type="button";head.className="stickyDoneHead";
-    head.textContent=`handled (${done.length})`;
-    head.onclick=()=>{head.parentElement.classList.toggle("showDone");};
-    list.append(head);
-    const wrap=document.createElement("div");wrap.className="stickyDoneWrap";
-    done.slice(-8).reverse().forEach(s=>{
-      const row=document.createElement("button");
-      row.type="button";row.className="stickyDoneRow";
-      row.textContent=s.text;
-      row.title="bring it back";
-      row.onclick=()=>{s.done=false;saveStickies();renderStickies();renderStickyPin();};
-      wrap.append(row);
-    });
-    list.append(wrap);
-  }
+  resolveStickyOverlaps();
+  // animate: existing cards glide from where they were, new cards fade in
+  list.querySelectorAll(".stickyFloat").forEach(card=>{
+    const s=card._sticky;
+    const old=s&&oldPos[s.id];
+    if(old){
+      const fx=card.style.left,fy=card.style.top;
+      card.style.transition="none";
+      card.style.left=`${old.x}px`;
+      card.style.top=`${old.y}px`;
+      void card.offsetWidth;
+      card.style.transition="";
+      card.style.left=fx;
+      card.style.top=fy;
+    }else{
+      card.classList.add("cardIn");
+      setTimeout(()=>card.classList.remove("cardIn"),600);
+    }
+  });
+  if(window.__stickyGhostEl)list.append(window.__stickyGhostEl);
+
 }
-function addSticky(text){
+function addSticky(text,xPct,yPct,keepId){
   const clean=String(text||"").trim();
   if(!clean)return false;
-  stickies.unshift({id:crypto.randomUUID(),text:clean,created:Date.now(),done:false});
+  const s={id:String(keepId||crypto.randomUUID()),text:clean,created:Date.now(),done:false,cat:stickyFilter!=="all"?stickyFilter:stickyCats()[0]};
+  if(typeof xPct==="number")s.x=xPct;
+  if(typeof yPct==="number")s.y=yPct;
+  stickies.unshift(s);
   saveStickies();renderStickies();renderStickyPin();
   return true;
 }
+function syncPinOrder(){
+  // urutan tumpukan diacak; kartu lama pertahankan posisinya, kartu baru
+  // disisipkan di posisi acak sehingga tiap kartu rotasinya beda sendiri
+  const ids=stickies.map(s=>s.id);
+  const sig=ids.join("|");
+  if(sig===pinOrderSig)return;
+  const set=new Set(ids);
+  pinOrderIds=pinOrderIds.filter(id=>set.has(id));
+  ids.filter(id=>!pinOrderIds.includes(id)).forEach(id=>{
+    pinOrderIds.splice(Math.floor(Math.random()*(pinOrderIds.length+1)),0,id);
+  });
+  pinOrderSig=sig;
+}
 function renderStickyPin(){
-  const pin=$("stickyPin"),text=$("stickyPinText");
-  if(!pin||!text)return;
-  const pending=stickies.filter(s=>!s.done);
-  pin.classList.toggle("hasNotes",pending.length>0);
-  if(!pending.length){text.textContent="";pin.title="remember wall";return;}
-  stickyPinIndex=stickyPinIndex%pending.length;
-  text.textContent=pending[stickyPinIndex].text;
-  pin.title=`remember (${pending.length}) — click to open`;
+  const pin=$("stickyPin");
+  if(!pin)return;
+  syncPinOrder();
+  pin.classList.toggle("hasNotes",pinOrderIds.length>0);
+  if(!pinOrderIds.length){pin.innerHTML="";pin.title="remember wall";return;}
+  if(stickyPinIndex>=pinOrderIds.length)stickyPinIndex%=pinOrderIds.length;
+  pin.querySelectorAll(".stickyPinCard").forEach(el=>el.remove());
+  pinCardsData().forEach(({note,depth})=>{
+    const el=makePinCard(note,depth);
+    if(depth>0){ // deeper cards appear already settled
+      el.style.transition="none";
+      requestAnimationFrame(()=>{el.style.transition="";});
+    }
+    pin.append(el);
+  });
+  pin.title=`remember (${stickies.length}) — click for the next note`;
+}
+function makePinCard(note,depth){
+  const el=document.createElement("span");
+  el.className="stickyPinCard"+(depth===0?" front":"");
+  el.dataset.id=note.id;
+  el.style.setProperty("--tilt",`${stickyTilt(note)}deg`);
+  if(depth>0){ // only queue cards carry the extra messy rotation
+    const h=stickyHash({id:note.id,text:"x"});
+    el.style.setProperty("--qrot",`${((h%7)-3)*1.6}deg`);
+    el.style.setProperty("--qty",`${(h%5)-2}px`);
+  }
+  el.style.setProperty("--d",String(depth));
+  el.style.setProperty("--qtx",`${depth%2?8:-8}px`);
+  el.style.opacity=depth===0?"1":String(1-depth*.15);
+  el.innerHTML=`<span class="stickyPinLabel">remember</span><span class="stickyPinNote"></span>`;
+  el.querySelector(".stickyPinNote").textContent=note.text;
+  return el;
+}
+function pinCardsData(){
+  // visible stack: depths start at the rotating offset over the shuffled order
+  const n=pinOrderIds.length;
+  if(!n)return [];
+  const count=Math.min(n,4);
+  return Array.from({length:count},(_,d)=>{
+    const id=pinOrderIds[(stickyPinIndex+d)%n];
+    return {note:stickies.find(s=>s.id===id),depth:d};
+  });
 }
 function enterStickyMode(){
   clearTimeout(cycleTimer);closeCategoryMenu();
@@ -2185,10 +2970,34 @@ $("historyNext").onclick=historyNext;
 $("newQuestion").onclick=nextQuestion;
 $("settings").onclick=openSettings;
 $("category").onclick=toggleCategoryMenu;
-$("todoDock").onclick=openToday;
 
 $("modeToggle").onclick=e=>toggleModeMenu(e);
 $("lowercaseEnabled").addEventListener("change",e=>{settings.lowercase=e.target.checked;saveSettings();});
+$("modeSwitchExpand").addEventListener("change",e=>{settings.modeSwitchExpand=e.target.checked?"always":"hover";saveSettings();});
+$("stickyPush").addEventListener("input",e=>{
+  settings.stickyPush=Number(e.target.value);
+  $("stickyPushValue").textContent=`${e.target.value}px`;
+  saveSettings();
+});
+$("stickyTilt").addEventListener("input",e=>{
+  settings.stickyTilt=Number(e.target.value);
+  $("stickyTiltValue").textContent=`${Number(e.target.value).toFixed(1)}°`;
+  saveSettings();
+  if(currentMode==="sticky")renderStickies();
+});
+$("stickyScale").addEventListener("input",e=>{
+  settings.stickyScale=Number(e.target.value);
+  $("stickyScaleValue").textContent=`${e.target.value}%`;
+  saveSettings();
+  if(currentMode==="sticky")renderStickies();
+});
+$("stickySpreadBtns")?.addEventListener("click",e=>{
+  const b=e.target.closest("button[data-spread]");
+  if(!b)return;
+  settings.stickySpread=Number(b.dataset.spread);
+  saveSettings();
+  renderSettings();
+});
 $("syncServer")?.addEventListener("change",e=>{
   settings.syncServer=e.target.value.trim();
   saveSettings();
@@ -2283,7 +3092,7 @@ $("backgroundImage").addEventListener("change",async e=>{
     applyAppearance();
   }catch(err){
     console.warn("One Question: background image could not be saved",err);
-    alert("That image could not be saved. Try a smaller image file.");
+    await appDialog({message:"That image could not be saved. Try a smaller image file.",cancelText:""});
   }
   e.target.value="";
 });
@@ -2304,7 +3113,7 @@ $("exportData").onclick=exportBackup;
 $("importData").addEventListener("change",async e=>{
   const file=e.target.files&&e.target.files[0];
   if(file){
-    const ok=confirm("Importing a backup will replace your current One Question data. Continue?");
+    const ok=await appDialog({message:"Importing a backup will replace your current One Question data. Continue?",okText:"import",danger:true});
     if(ok)await importBackup(file);
   }
   e.target.value="";
@@ -2313,10 +3122,6 @@ $("importData").addEventListener("change",async e=>{
 $("date").onclick=toggleCalendar;
 $("calendarPrev").onclick=()=>{calendarMonthDate=new Date(calendarMonthDate.getFullYear(),calendarMonthDate.getMonth()-1,1);renderCalendar()};
 $("calendarNext").onclick=()=>{calendarMonthDate=new Date(calendarMonthDate.getFullYear(),calendarMonthDate.getMonth()+1,1);renderCalendar()};
-$("todoDock").onclick=()=>{
-  if($("todoFullscreen").classList.contains("open")) closeToday();
-  else openToday();
-};
 $("closeTodoFullscreen").onclick=closeToday;
 $("todoFullscreenAdd").onclick=addFullscreenTodo;
 $("todoFullscreenInput").addEventListener("keydown",e=>{
@@ -2364,6 +3169,8 @@ document.addEventListener("keydown",e=>{
 });
 
 applyAppearance();
+applyModeSwitchExpand();
+applyModeOrder();
 dateEl.textContent=new Intl.DateTimeFormat(undefined,{weekday:"long",month:"long",day:"numeric"}).format(new Date());
 restoreTimerState();
 if(timerRunning)timerInterval=setInterval(tickTimer,1000);

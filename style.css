@@ -2591,7 +2591,8 @@ body.lowercase [contenteditable] {
 /* iOS-style mode switch: both modes visible, the selected one glows */
 .modePicker {
   top: 24px;
-  left: 26px
+  left: 0;
+  right: 0
 }
 
 .focusModeToggle {
@@ -2601,13 +2602,13 @@ body.lowercase [contenteditable] {
   padding: 2px !important;
   margin: 0 !important;
   display: flex !important;
-  flex-direction: row-reverse !important;
-  justify-content: flex-end !important;
+  flex-direction: row !important;
+  justify-content: flex-start !important;
   align-items: center !important;
   overflow: hidden !important;
   border: 1px solid rgba(235, 232, 224, .12) !important;
   border-radius: 999px !important;
-  background: rgba(235, 232, 224, .05) !important;
+  background: transparent !important;
   box-shadow: none !important;
   backdrop-filter: none !important;
   opacity: 1 !important;
@@ -2618,7 +2619,7 @@ body.lowercase [contenteditable] {
 
 .focusModeToggle:hover {
   opacity: 1 !important;
-  background: rgba(235, 232, 224, .09) !important;
+  background: transparent !important;
   transform: none !important
 }
 
@@ -2649,18 +2650,30 @@ body.lowercase [contenteditable] {
 }
 
 /* collapsed: only the active mode's icon stays visible */
-body:not(.focusModeVisual):not(.schedulerVisual) .focusModeToggle .modeIcon.modeQuestion,
+body:not(.focusModeVisual):not(.schedulerVisual):not(.stickyVisual) .focusModeToggle .modeIcon.modeQuestion,
 body.focusModeVisual .focusModeToggle .modeIcon.modeFocus,
-body.schedulerVisual .focusModeToggle .modeIcon.modeScheduler {
+body.schedulerVisual .focusModeToggle .modeIcon.modeScheduler,
+body.stickyVisual .focusModeToggle .modeIcon.modeSticky {
   width: 38px !important;
   min-width: 38px !important;
   opacity: 1;
   pointer-events: auto
 }
 
-body:not(.focusModeVisual):not(.schedulerVisual) .modeQuestion,
+/* setting: always expand the mode switch instead of hover-to-expand */
+body.modeExpandAlways .focusModeToggle .modeIcon,
+body.modeExpandAlways .focusModeToggle:hover .modeIcon,
+body.modeExpandAlways .focusModeToggle:focus-within .modeIcon {
+  width: 38px !important;
+  min-width: 38px !important;
+  opacity: 1;
+  pointer-events: auto
+}
+
+body:not(.focusModeVisual):not(.schedulerVisual):not(.stickyVisual) .modeQuestion,
 body.focusModeVisual .modeFocus,
-body.schedulerVisual .modeScheduler {
+body.schedulerVisual .modeScheduler,
+body.stickyVisual .modeSticky {
   color: var(--text) !important;
   background: rgba(235, 232, 224, .12);
 }
@@ -3032,8 +3045,10 @@ main:before,
 .modePicker {
   position: fixed !important;
   top: 22px !important;
-  left: 22px !important;
-  right: auto !important;
+  left: 0 !important;
+  right: 0 !important;
+  margin: 0 auto !important;
+  width: fit-content !important;
   z-index: 100 !important
 }
 
@@ -3512,7 +3527,8 @@ body.focusModeVisual .focusTimer.running {
 @media(max-width:700px) {
   .modePicker {
     top: 18px !important;
-    left: 18px !important
+    left: 0 !important;
+    right: 0 !important
   }
 
   .bottomLeftTools {
@@ -3600,10 +3616,10 @@ body.focusModeVisual .focusTimerButtons button {
   user-select: text !important;
   -webkit-user-select: text !important
 }
-/* mode switch on the right, date + calendar popup on the left */
+/* mode switch centered at the top, date + calendar popup on the left */
 .modePicker {
-  left: auto !important;
-  right: 22px !important
+  left: 0 !important;
+  right: 0 !important
 }
 
 .topbar {
@@ -4703,11 +4719,10 @@ body.stickyVisual .stickyMode {
   opacity: .4
 }
 
-/* always-visible remember pin */
 .stickyPin {
   display: none;
   position: fixed;
-  top: 76px;
+  top: 26px;
   right: 26px;
   z-index: 70;
   max-width: 300px;
@@ -4732,11 +4747,6 @@ body:not(.focusModeVisual):not(.schedulerVisual):not(.stickyVisual) .stickyPin.h
   opacity: .72;
   transform: none;
   pointer-events: auto
-}
-
-.stickyPin:hover {
-  opacity: 1 !important;
-  border-color: var(--accent)
 }
 
 .stickyPinLabel {
@@ -4774,7 +4784,10 @@ body:not(.focusModeVisual):not(.schedulerVisual):not(.stickyVisual) .stickyPin.h
 
 .stickyFloat {
   position: absolute;
-  width: 210px;
+  width: fit-content;
+  min-width: 110px;
+  max-width: 300px;
+  overflow-wrap: break-word;
   padding: 26px 14px 10px;
   background: color-mix(in srgb, var(--accent) 12%, var(--bg));
   border: 1px solid var(--line);
@@ -4926,4 +4939,830 @@ body:not(.focusModeVisual):not(.schedulerVisual):not(.stickyVisual) .stickyPin.h
 
 .syncServerInput:focus {
   border-bottom-color: var(--accent)
+}
+
+/* mode switch order setting */
+.modeOrderList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px
+}
+
+.modeOrderRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border: 1px solid rgba(235, 232, 224, .1);
+  border-radius: 8px
+}
+
+.modeOrderName {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text)
+}
+
+.modeOrderBtn {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid rgba(235, 232, 224, .12);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color .3s, border-color .3s, background .3s
+}
+
+.modeOrderBtn:hover:not(:disabled) {
+  color: var(--text);
+  border-color: rgba(235, 232, 224, .3);
+  background: rgba(235, 232, 224, .06)
+}
+
+.modeOrderBtn:disabled {
+  opacity: .3;
+  cursor: default
+}
+
+/* remember wall: category filter bar */
+.stickyCatBar {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: calc(100% - 48px)
+}
+
+.stickyChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 12px;
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: lowercase;
+  color: var(--muted);
+  border: 1px solid rgba(235, 232, 224, .12);
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  transition: color .3s, border-color .3s, background .3s
+}
+
+.stickyChip:hover {
+  color: var(--text);
+  border-color: rgba(235, 232, 224, .3)
+}
+
+.stickyChip.active {
+  color: var(--text);
+  border-color: rgba(235, 232, 224, .3);
+  background: rgba(235, 232, 224, .08)
+}
+
+.stickyChipCount {
+  font-size: 9px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums
+}
+
+.stickyChipAdd {
+  padding: 0 10px;
+  font-size: 12px
+}
+
+.stickyChipDel {
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  margin-right: -4px;
+  font-size: 11px;
+  line-height: 1;
+  border-radius: 999px;
+  color: var(--muted);
+  transition: color .25s, background .25s
+}
+
+.stickyChipDel:hover {
+  color: #e08484;
+  background: rgba(224, 132, 132, .12)
+}
+
+.stickyBtnCat {
+  font-size: 10px
+}
+
+/* dragging a note onto a category chip reassigns it */
+.stickyFloat.dragging {
+  pointer-events: none
+}
+
+.stickyChip.dropTarget {
+  color: var(--text);
+  border-color: rgba(235, 232, 224, .45);
+  background: rgba(235, 232, 224, .16);
+  transform: scale(1.06)
+}
+
+/* in-app dialog (replaces browser alert/confirm/prompt) */
+.appDialog {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, .45);
+  opacity: 0;
+  transition: opacity .25s ease
+}
+
+.appDialog.open {
+  display: flex;
+  opacity: 1
+}
+
+.appDialogCard {
+  width: min(360px, calc(100vw - 48px));
+  padding: 22px 24px;
+  border: 1px solid rgba(235, 232, 224, .14);
+  border-radius: 14px;
+  background: #23211e;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, .45);
+  transform: translateY(6px);
+  transition: transform .25s cubic-bezier(.16, .8, .26, .99)
+}
+
+.appDialog.open .appDialogCard {
+  transform: none
+}
+
+.appDialogMessage {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text)
+}
+
+.appDialogInput {
+  width: 100%;
+  margin-top: 14px;
+  padding: 9px 12px;
+  font-size: 13px;
+  color: var(--text);
+  background: rgba(235, 232, 224, .05);
+  border: 1px solid rgba(235, 232, 224, .14);
+  border-radius: 8px;
+  outline: none
+}
+
+.appDialogInput:focus {
+  border-color: rgba(235, 232, 224, .3)
+}
+
+.appDialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px
+}
+
+.appDialogActions button {
+  padding: 7px 16px;
+  font-size: 11px;
+  letter-spacing: .06em;
+  text-transform: lowercase;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color .25s, border-color .25s, background .25s
+}
+
+.appDialogCancel {
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid rgba(235, 232, 224, .14)
+}
+
+.appDialogCancel:hover {
+  color: var(--text);
+  border-color: rgba(235, 232, 224, .3)
+}
+
+.appDialogOk {
+  color: #23211e;
+  background: rgba(235, 232, 224, .85);
+  border: 1px solid transparent
+}
+
+.appDialogOk:hover {
+  background: rgba(235, 232, 224, .95)
+}
+
+.appDialogOk.danger {
+  color: #f3d9d9;
+  background: rgba(196, 106, 106, .55);
+  border-color: rgba(224, 132, 132, .3)
+}
+
+.appDialogOk.danger:hover {
+  background: rgba(196, 106, 106, .75)
+}
+
+/* category picker inside the dialog */
+.appDialogChoices {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 14px
+}
+
+.appDialogChoice {
+  padding: 9px 14px;
+  font-size: 12px;
+  text-align: left;
+  color: var(--text);
+  background: rgba(235, 232, 224, .04);
+  border: 1px solid rgba(235, 232, 224, .12);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color .25s, background .25s
+}
+
+.appDialogChoice:hover,
+.appDialogChoice:focus-visible {
+  border-color: rgba(235, 232, 224, .35);
+  background: rgba(235, 232, 224, .09);
+  outline: none
+}
+
+/* make the chip remove button easier to spot */
+.stickyChipDel {
+  width: 16px;
+  height: 16px;
+  font-size: 12px;
+  color: rgba(235, 232, 224, .55)
+}
+
+.stickyChip:hover .stickyChipDel {
+  color: #e08484
+}
+
+/* edit categories dialog */
+.stickyCatEditorList {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 14px;
+  max-height: 220px;
+  overflow-y: auto
+}
+
+.stickyCatEditorRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid rgba(235, 232, 224, .1);
+  border-radius: 8px
+}
+
+.stickyCatEditorName {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text)
+}
+
+.stickyCatEditorRow .stickyBtnDel {
+  position: static;
+  opacity: 1;
+  pointer-events: auto
+}
+
+.stickyCatEditorAdd {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px
+}
+
+.stickyCatEditorAdd .appDialogInput {
+  flex: 1;
+  margin-top: 0
+}
+
+.stickyCatEditorAddBtn {
+  padding: 7px 16px;
+  font-size: 11px;
+  letter-spacing: .06em;
+  text-transform: lowercase;
+  color: #23211e;
+  background: rgba(235, 232, 224, .85);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer
+}
+
+.stickyCatEditorAddBtn:hover {
+  background: rgba(235, 232, 224, .95)
+}
+
+/* remember wall: full-screen canvas + bottom new-card button */
+.stickyList {
+  width: 100vw
+}
+
+.stickyNewCard {
+  position: fixed;
+  left: 50%;
+  bottom: 90px;
+  transform: translateX(-50%);
+  z-index: 500;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--muted);
+  background: rgba(35, 33, 30, .85);
+  border: 1px solid rgba(235, 232, 224, .16);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color .3s, border-color .3s, transform .3s
+}
+
+.stickyNewCard:hover {
+  color: var(--text);
+  border-color: rgba(235, 232, 224, .35);
+  transform: translateX(-50%) scale(1.08)
+}
+
+body.stickyVisual .stickyHint {
+  margin-bottom: 26px
+}
+
+/* slippery live push: pushed cards glide, the dragged card follows 1:1 */
+.stickyFloat {
+  transition: left .35s cubic-bezier(.22, .9, .3, 1), top .35s cubic-bezier(.22, .9, .3, 1), translate .3s ease-out, box-shadow .35s ease, border-color .35s ease, opacity .4s ease;
+  will-change: translate
+}
+
+/* faded notes stay on the wall, just quieter */
+.stickyFloat.faded {
+  opacity: .3
+}
+
+.stickyFloat:hover {
+  border-color: rgba(235, 232, 224, .3);
+  box-shadow:
+    0 0 0 1px rgba(235, 232, 224, .07),
+    0 0 28px rgba(235, 232, 224, .12),
+    0 0 60px rgba(235, 232, 224, .05),
+    0 14px 34px rgba(0, 0, 0, .4)
+}
+
+.stickyFloat.dragging {
+  transition: none
+}
+
+/* composer sits at the bottom of the wall */
+.stickyMode {
+  padding-top: 64px
+}
+
+.stickyMode .stickyKicker {
+  order: 1
+}
+
+.stickyMode .stickyList {
+  order: 2
+}
+
+.stickyMode .stickyComposer {
+  order: 3;
+  margin: 10px 0 4px
+}
+
+.stickyMode .stickyHint {
+  order: 4;
+  margin-bottom: 10px
+}
+
+
+/* new cards fade in when the wall re-renders */
+.stickyFloat.cardIn {
+  animation: stickyCardIn .45s cubic-bezier(.2, .7, .2, 1)
+}
+
+@keyframes stickyCardIn {
+  from {
+    opacity: 0;
+    scale: .85
+  }
+
+  to {
+    opacity: 1;
+    scale: 1
+  }
+}
+
+/* sticky note pad: grab a blank note from the stack */
+.stickyPad {
+  position: absolute;
+  left: 26px;
+  top: 96px;
+  width: 120px;
+  height: 86px;
+  z-index: 520;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: lowercase;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  cursor: grab;
+  transition: color .3s, border-color .3s, transform .3s
+}
+
+.stickyPad::before,
+.stickyPad::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent) 6%, var(--bg));
+  z-index: -1;
+  transition: transform .3s
+}
+
+.stickyPad::before {
+  transform: rotate(-4deg) translate(-3px, 3px)
+}
+
+.stickyPad::after {
+  transform: rotate(3deg) translate(3px, 2px)
+}
+
+.stickyPad:hover {
+  color: var(--text);
+  border-color: rgba(235, 232, 224, .35);
+  transform: scale(1.04)
+}
+
+.stickyPad:hover::before {
+  transform: rotate(-7deg) translate(-5px, 5px)
+}
+
+.stickyPad:hover::after {
+  transform: rotate(6deg) translate(5px, 3px)
+}
+
+/* blank note being dragged / typed into: starts small, grows as you type */
+.stickyDraft {
+  position: absolute;
+  width: 150px;
+  min-height: 70px;
+  padding: 14px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+  border: 1px dashed rgba(235, 232, 224, .35);
+  border-radius: 12px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .4);
+  cursor: grab;
+  touch-action: none;
+  transform: rotate(var(--tilt, 0deg));
+  transform-origin: top left;
+  transition: width .18s ease, height .18s ease, min-height .18s ease, border-color .3s
+}
+
+.stickyDraft.placing {
+  cursor: text;
+  border-style: solid;
+  border-color: var(--accent)
+}
+
+.stickyDraftInput {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  outline: none;
+  resize: none;
+  overflow: hidden;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5
+}
+
+.stickyDraftMirror {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  visibility: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  pointer-events: none
+}
+
+.stickyDraftHint {
+  margin-top: 10px;
+  font-size: 9px;
+  letter-spacing: .06em;
+  color: var(--muted)
+}
+
+/* cards gently bob; the dragged card stays put */
+.stickyFloat {
+  animation: stickyFloat var(--floatDur, 6s) ease-in-out var(--floatDelay, 0s) infinite
+}
+
+.stickyFloat.dragging,
+.stickyFloat.cardIn {
+  animation: none
+}
+
+@keyframes stickyFloat {
+
+  0%,
+  100% {
+    transform: rotate(var(--tilt, 0deg)) translateY(0)
+  }
+
+  50% {
+    transform: rotate(var(--tilt, 0deg)) translateY(-8px)
+  }
+}
+
+/* tidy spread preset buttons */
+.spreadBtns {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap
+}
+
+.spreadBtns button {
+  padding: 6px 14px;
+  font-size: 11px;
+  letter-spacing: .05em;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid rgba(235, 232, 224, .12);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color .25s, border-color .25s, background .25s
+}
+
+.spreadBtns button:hover {
+  color: var(--text);
+  border-color: rgba(235, 232, 224, .3)
+}
+
+.spreadBtns button.active {
+  color: var(--text);
+  border-color: rgba(235, 232, 224, .35);
+  background: rgba(235, 232, 224, .09)
+}
+
+/* the wall canvas is the whole screen; composer + hint overlay it.
+   inset alone — 100vw/vh would overshoot under CSS zoom */
+.stickyList {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  flex: none
+}
+
+.stickyMode .stickyComposer {
+  position: absolute;
+  left: 50%;
+  bottom: 64px;
+  transform: translateX(-50%);
+  margin: 0;
+  z-index: 520
+}
+
+.stickyMode .stickyHint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 30px;
+  margin: 0;
+  text-align: center;
+  z-index: 520
+}
+
+/* ghost card: preview note trailing the cursor over blank wall */
+.stickyGhost {
+  position: absolute;
+  z-index: 450;
+  width: 104px;
+  height: 44px;
+  display: none;
+  align-items: flex-end;
+  padding: 10px 14px;
+  font-size: 11px;
+  letter-spacing: .06em;
+  color: var(--muted);
+  border: 1px dashed rgba(235, 232, 224, .25);
+  border-radius: 12px;
+  background: rgba(235, 232, 224, .03);
+  pointer-events: none
+}
+
+.stickyGhost.visible {
+  display: flex;
+  opacity: .45
+}
+
+/* keep the category bar below the kicker + mode switch */
+.stickyCatBar {
+  top: 96px
+}
+
+/* absolute-positioned hint must not inherit the old flow margin that
+   pushed it up into the composer */
+body.stickyVisual .stickyMode .stickyHint {
+  margin: 0;
+  bottom: 24px
+}
+
+/* categories live on the left edge as a vertical rail */
+.stickyCatBar {
+  left: 26px;
+  top: 96px;
+  transform: none;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: none
+}
+
+/* the note pad moves to the bottom of the left rail */
+.stickyPad {
+  top: auto;
+  bottom: 80px
+}
+
+
+
+.stickyPin {
+  background: transparent;
+  border: none;
+  padding: 0;
+  transform: none;
+  box-shadow: none;
+  transition: none;
+  overflow: visible;
+  cursor: pointer
+}
+
+.stickyPin:hover /* the queued notes behind the front card — real cards, one per note */
+@keyframes pinDealOut {
+  to {
+    transform: translateX(150%) rotate(calc(var(--tilt, 0deg) + 14deg));
+    opacity: 0
+  }
+}
+
+
+/* the queued notes behind the front card — real cards, one per note */
+.stickyPinQueue {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  display: flex;
+  align-items: flex-end;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .3);
+  transform: rotate(calc(var(--tilt, 0deg) + var(--qrot, 0deg))) translate(calc(var(--qtx, 0px) + var(--fdx, 0px)), calc(var(--qty, 3px) + var(--fdy, 0px)));
+  transition: transform .32s cubic-bezier(.22, .9, .3, 1), opacity .3s ease
+}
+
+/* remember pin: a real queue of sticky note cards */
+.stickyPin {
+  transform: none;
+  box-shadow: none;
+  background: transparent;
+  border: none;
+  padding: 0;
+  transition: none;
+  overflow: visible;
+  cursor: pointer
+}
+
+.stickyPin.hasNotes {
+  width: fit-content;
+  height: fit-content
+}
+
+.stickyPinCard {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
+  transform: rotate(calc(var(--tilt, 0deg) + var(--qrot, 0deg))) translate(calc(var(--qtx, 0px) + var(--fdx, 0px)), calc(var(--qty, 3px) + var(--fdy, 0px)));
+  transition: transform .32s cubic-bezier(.22, .9, .3, 1), opacity .3s ease, box-shadow .35s ease, border-color .35s ease
+}
+
+.stickyPinCard.front {
+  position: relative;
+  inset: auto;
+  width: max-content;
+  max-width: 300px;
+  min-width: 110px;
+  height: auto;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  z-index: 2;
+  cursor: pointer
+}
+
+.stickyPinCard .stickyPinLabel {
+  font-size: 10px;
+  font-weight: 300;
+  letter-spacing: .18em;
+  text-transform: lowercase;
+  color: var(--muted);
+  opacity: 0;
+  transition: opacity .3s ease .1s
+}
+
+.stickyPinCard.front .stickyPinLabel {
+  opacity: 1
+}
+
+.stickyPin:hover .stickyPinCard.front {
+  border-color: rgba(235, 232, 224, .3);
+  box-shadow:
+    0 0 0 1px rgba(235, 232, 224, .07),
+    0 0 28px rgba(235, 232, 224, .12),
+    0 14px 34px rgba(0, 0, 0, .4);
+  transform: rotate(var(--tilt, 0deg)) translateY(-3px)
+}
+
+/* the dealt card slides away */
+.stickyPinCard.leaving {
+  animation: pinDealOut .26s ease-in forwards
+}
+
+@keyframes pinDealOut {
+  to {
+    transform: translateX(150%) rotate(calc(var(--tilt, 0deg) + 14deg));
+    opacity: 0
+  }
+}
+
+/* the dealt card must leave the flow immediately so the new front
+   doesn't get pushed down by the leftover slot */
+.stickyPinCard.leaving {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  animation: pinDealOut .26s ease-in forwards
+}
+
+/* kartu queue: teks di-clip di dalam kartu (no bleed) */
+.stickyPinCard {
+  overflow: hidden
+}
+
+.stickyPinCard .stickyPinNote {
+  display: block;
+  overflow-wrap: anywhere
 }

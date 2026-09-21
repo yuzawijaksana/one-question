@@ -46,19 +46,14 @@
 
     <section id="sticky" class="stickyMode" aria-hidden="true">
       <div class="stickyKicker">remember wall</div>
-      <div class="stickyComposer">
-        <input id="stickyInput" class="stickyInput" type="text" autocomplete="off"
-          placeholder="what should you not forget?" aria-label="New remember note">
-        <button id="stickyAdd" type="button">keep</button>
+      <div id="stickyPad" class="stickyPad" title="drag a blank note onto the wall">
+        <span>new card</span>
       </div>
       <div id="stickyList" class="stickyList" aria-label="Remember notes"></div>
-      <div class="stickyHint">drag the notes wherever you like · ✓ handled · × delete</div>
+      <div class="stickyHint">drag a note from the pad · ✓ handled · × delete · # move category</div>
     </section>
 
-    <button id="stickyPin" class="stickyPin" type="button" title="remember wall" aria-label="Open remember wall">
-      <span class="stickyPinLabel">remember</span>
-      <span id="stickyPinText" class="stickyPinText"></span>
-    </button>
+    <button id="stickyPin" class="stickyPin" type="button" title="remember wall" aria-label="Open remember wall"></button>
 
     <section class="focus" id="focus" aria-live="polite">
       <div id="focusTodoPreview" class="focusTodoPreview" aria-hidden="true"></div>
@@ -157,18 +152,7 @@
       </nav>
     </div>
 
-    <aside id="todoPanel" class="todoPanel" aria-hidden="true">
-      <div class="todoHeader"><span>to do</span></div>
-      <div id="todoList"></div>
-    </aside>
     <div class="bottomLeftTools">
-      <button id="todoDock" class="toolIcon" aria-expanded="false" aria-controls="todoFullscreen" title="to do"
-        aria-label="to do">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-          stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>
-      </button>
       <button id="noteDock" class="toolIcon" aria-expanded="false" aria-controls="notePanel" title="notepad"
         aria-label="notepad">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -261,6 +245,47 @@
         <section class="settingSection appearanceSection" data-settings-category="appearance">
           <div class="settingTitle">appearance</div>
           <label class="settingCheck"><input id="lightModeEnabled" type="checkbox"><span>light mode</span></label>
+          <label class="settingCheck"><input id="modeSwitchExpand" type="checkbox"><span>always expand mode
+              switch</span></label>
+
+          <div class="appearanceControl modeOrderControl">
+            <div class="appearanceControlHead"><span>mode switch order</span></div>
+            <div id="modeOrderList" class="modeOrderList" aria-label="Mode switch order"></div>
+            <div class="settingHint">Use the arrows to reorder the mode switch buttons.</div>
+          </div>
+
+          <div class="appearanceControl">
+            <div class="appearanceControlHead"><span>card push sensitivity</span><output id="stickyPushValue"></output>
+            </div>
+            <input id="stickyPush" type="range" min="20" max="220" step="10" value="110"
+              aria-label="Card push sensitivity">
+            <div class="settingHint">How much remember-wall cards may overlap before they push each other away.
+              Lower = pushes sooner.</div>
+          </div>
+
+          <div class="appearanceControl">
+            <div class="appearanceControlHead"><span>card tilt</span><output id="stickyTiltValue"></output></div>
+            <input id="stickyTilt" type="range" min="0" max="6" step="0.3" value="1.8" aria-label="Card tilt">
+          </div>
+
+          <div class="appearanceControl">
+            <div class="appearanceControlHead"><span>card size uniqueness</span><output id="stickyScaleValue"></output>
+            </div>
+            <input id="stickyScale" type="range" min="0" max="40" step="2" value="12" aria-label="Card size uniqueness">
+            <div class="settingHint">How differently sized each card is from the others.</div>
+          </div>
+
+          <div class="appearanceControl">
+            <div class="appearanceControlHead"><span>tidy spread</span></div>
+            <div id="stickySpreadBtns" class="spreadBtns">
+              <button type="button" data-spread="25">tight</button>
+              <button type="button" data-spread="60">close</button>
+              <button type="button" data-spread="100">normal</button>
+              <button type="button" data-spread="160">loose</button>
+              <button type="button" data-spread="250">wide</button>
+            </div>
+            <div class="settingHint">How far apart the cards sit when the wall tidies itself.</div>
+          </div>
           <div class="settingHint">Make the reflection space yours. Colors and background effects are saved on this
             device.</div>
 
