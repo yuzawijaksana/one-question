@@ -472,7 +472,7 @@ const DEFAULT_APPEARANCE={
   textSize:100,
   fontWeight:400
 };
-const DEFAULT_SETTINGS={categories:["all"],cycleSeconds:6.5,modeSwitchExpand:"hover",modeOrder:["question","focus","scheduler","sticky"],stickyCategories:["general"],stickyPush:110,stickyTilt:1.8,stickyScale:12,stickySpread:100,hydrationMinutes:DEFAULT_HYDRATION_MINUTES,hydrationSize:DEFAULT_HYDRATION_SIZE,hydrationWave:true,hydrationHoverEnabled:false,hydrationHoverScale:DEFAULT_HYDRATION_HOVER_SCALE,screenScale:DEFAULT_SCREEN_SCALE,animation:true,timerAnimation:true,lowercase:false,schedulerListVisible:true,appearance:{...DEFAULT_APPEARANCE}};
+const DEFAULT_SETTINGS={categories:["all"],cycleSeconds:6.5,modeSwitchExpand:"hover",modeOrder:["question","focus","scheduler","sticky"],stickyCategories:["general"],stickyPush:110,stickyTilt:1.8,stickyScale:12,stickySpread:100,tidyAnchor:"center-center",hydrationMinutes:DEFAULT_HYDRATION_MINUTES,hydrationSize:DEFAULT_HYDRATION_SIZE,hydrationWave:true,hydrationHoverEnabled:false,hydrationHoverScale:DEFAULT_HYDRATION_HOVER_SCALE,screenScale:DEFAULT_SCREEN_SCALE,animation:true,timerAnimation:true,lowercase:false,schedulerListVisible:true,appearance:{...DEFAULT_APPEARANCE}};
 let settings=loadSettings();
 
 function loadSettings(){
@@ -1519,6 +1519,10 @@ function renderSettings(){
   }
   document.querySelectorAll("#stickySpreadBtns button[data-spread]").forEach(b=>{
     b.classList.toggle("active",Number(b.dataset.spread)===stickySpreadSetting());
+  });
+  const tidyAnchor=String(settings.tidyAnchor||"center-center");
+  document.querySelectorAll("#tidyAnchorBtns button[data-anchor]").forEach(b=>{
+    b.classList.toggle("active",b.dataset.anchor===tidyAnchor);
   });
   const syncInput=$("syncServer");
   if(syncInput)syncInput.value=settings.syncServer||"";
@@ -2596,6 +2600,7 @@ function renderStickies(){
   editChip.title="add or remove categories";
   editChip.onclick=()=>openStickyCatEditor();
   bar.append(editChip);
+let tidyWallRef=null;
   const tidyChip=document.createElement("button");
   tidyChip.type="button";
   tidyChip.className="stickyChip";
@@ -2622,25 +2627,33 @@ function renderStickies(){
     // if the cluster is wider than the screen, wrap into more rows instead
     const finalCols=cols*cellW>W?Math.max(1,Math.floor((W-20)/cellW)):cols;
     const finalRows=Math.ceil(n/finalCols);
+    // anchor point comes from the tidy-position setting: vertical × horizontal
+    const anchor=String(settings.tidyAnchor||"center-center").split("-");
+    const anchorY=anchor[0],anchorX=anchor[1]||"center";
+    const margin=24,topMargin=96;
+    const clusterW=finalCols*cellW,clusterH=finalRows*cellH;
+    const x0=anchorX==="left"?margin:anchorX==="right"?W-clusterW-margin:(W-clusterW)/2;
+    const y0=anchorY==="top"?topMargin:anchorY==="bottom"?H-clusterH-margin:(H-clusterH)/2;
     // jitter seed so it doesn't look mechanically identical each time
     const jitter=()=>(Math.random()-.5)*44;
     visible.forEach((s,i)=>{
       const col=i%finalCols,row=Math.floor(i/finalCols);
-      const clusterW=finalCols*cellW,clusterH=finalRows*cellH;
       // strong zigzag: alternate rows swing a half-cell across, with a wave on top
       const wave=Math.round(Math.sin(row*1.1+col*.6)*cellW*.16);
       const rowShift=row%2===1?cellW*.5:cellW*.12;
       // cancel the rowShift's average so the cluster stays truly centered
       const bias=cellW*.31;
-      const x=(W-clusterW)/2+col*cellW+rowShift-bias+wave+jitter();
-      const y=96+row*cellH+(col%2===1?34:0)+jitter()*.5;
+      const x=x0+col*cellW+rowShift-bias+wave+jitter();
+      const y=y0+row*cellH+(col%2===1?34:0)+jitter()*.5;
       s.x=Math.round(Math.max(8,Math.min(W-cardW-8,x))/W*1000)/10;
       s.y=Math.round(Math.max(8,Math.min(H-cardH-8,y))/H*1000)/10;
     });
     saveStickies();
     renderStickies();
     // true-center pass: measure the rendered cluster and nudge it onto the
-    // screen center — card widths vary, so left-edge math alone drifts
+    // screen center — card widths vary, so left-edge math alone drifts.
+    // only for the center anchors; left/right/bottom anchors pin to their edge
+    if(anchorX==="center"){
     const cards=[...list.querySelectorAll(".stickyFloat")];
     if(cards.length){
       const avg=cards.reduce((a,c)=>a+c.offsetLeft+c.offsetWidth/2,0)/cards.length;
@@ -2652,8 +2665,10 @@ function renderStickies(){
         renderStickies();
       }
     }
+    }
   }
   tidyChip.onclick=tidyWall;
+  tidyWallRef=tidyWall;
   bar.append(tidyChip);
   list.append(bar);
   const visible=stickies.filter(s=>stickyFilter==="all"||stickyCatOf(s)===stickyFilter);
@@ -2704,10 +2719,21 @@ function renderStickies(){
       }
       saveStickies();renderStickies();renderStickyPin();
     };
+    const editBtn=document.createElement("button");editBtn.type="button";editBtn.className="stickyBtn stickyBtnEdit";editBtn.textContent="✎";
+    editBtn.title="edit note";
+    editBtn.onclick=async e=>{
+      e.stopPropagation();
+      const text=await appDialog({message:"edit note:",inputLabel:"note text…",initialValue:s.text,okText:"save"});
+      if(text==null)return;
+      const clean=text.trim();
+      if(!clean)return;
+      s.text=clean;
+      saveStickies();renderStickies();renderStickyPin();
+    };
     const delBtn=document.createElement("button");delBtn.type="button";delBtn.className="stickyBtn stickyBtnDel";delBtn.textContent="×";
     delBtn.title="delete note";
     delBtn.onclick=e=>{e.stopPropagation();stickies.splice(stickies.indexOf(s),1);saveStickies();renderStickies();renderStickyPin();};
-    actions.append(doneBtn,catBtn,delBtn);
+    actions.append(doneBtn,catBtn,editBtn,delBtn);
     card.append(actions,text,meta);
     // hover: lean slightly toward the cursor, like it's attracted
     card.addEventListener("pointermove",e=>{
@@ -2998,6 +3024,14 @@ $("stickySpreadBtns")?.addEventListener("click",e=>{
   saveSettings();
   renderSettings();
 });
+$("tidyAnchorBtns")?.addEventListener("click",e=>{
+  const b=e.target.closest("button[data-anchor]");
+  if(!b)return;
+  settings.tidyAnchor=b.dataset.anchor;
+  saveSettings();
+  renderSettings();
+  if(currentMode==="sticky")tidyWallRef?.();
+});
 $("syncServer")?.addEventListener("change",e=>{
   settings.syncServer=e.target.value.trim();
   saveSettings();
@@ -3163,9 +3197,28 @@ document.addEventListener("keydown",e=>{
   if($("calendarPanel").classList.contains("open")){closeCalendar();return;}
   if($("settingsPanel").classList.contains("open")){closeSettings();return;}
   if(schedulerSelection){closeSchedulerEditor();renderScheduler();return;}
-  if(currentMode==="sticky"){enterQuestionMode();return;}
   if($("historyPanel").classList.contains("open")){closeHistory();return;}
   closeCategoryMenu();
+});
+
+// arrow keys cycle through the modes (order matches the mode toggle)
+document.addEventListener("keydown",e=>{
+  if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight")return;
+  if(e.altKey||e.ctrlKey||e.metaKey)return;
+  if($("historyPanel").classList.contains("open"))return;
+  if(document.querySelector(".appDialog.open"))return;
+  const t=e.target;
+  if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.isContentEditable))return;
+  const order=normalizedModeOrder();
+  if(!order.length)return;
+  const idx=Math.max(0,order.indexOf(currentMode));
+  const dir=e.key==="ArrowRight"?1:order.length-1;
+  const next=order[(idx+dir)%order.length];
+  e.preventDefault();
+  if(next==="question")enterQuestionMode();
+  else if(next==="focus")enterFocusMode();
+  else if(next==="scheduler")enterSchedulerMode();
+  else if(next==="sticky")enterStickyMode();
 });
 
 applyAppearance();
@@ -3186,8 +3239,14 @@ const initial=chooseFreshIndex();
 viewedQuestions=[initial];
 viewedPosition=0;
 renderQuestion(initial);
-focusEl.classList.add("questionIn");
-setTimeout(()=>focusEl.classList.remove("questionIn"),1100);
+// hold the question hidden until the first paint settles so the entrance
+// is actually seen — otherwise it plays behind the page load like the other modes don't
+focusEl.classList.add("boot");
+setTimeout(()=>{
+  focusEl.classList.remove("boot");
+  focusEl.classList.add("questionIn");
+  setTimeout(()=>focusEl.classList.remove("questionIn"),1100);
+},400);
 startCycle();
 
 pullSyncFromServer();
@@ -3206,5 +3265,11 @@ hydrateBrowserStorage().then(()=>{
   const refreshed=chooseFreshIndex();
   viewedQuestions=[refreshed];
   viewedPosition=0;
-  renderQuestion(refreshed);
+  if(focusEl.classList.contains("boot")){
+    // entrance hasn't played yet — show the refreshed question directly, one clean entrance
+    renderQuestion(refreshed);
+  }else if(refreshed!==initial){
+    // swap via the animated transition instead of overwriting the text mid-entrance
+    showQuestion(refreshed);
+  }
 });

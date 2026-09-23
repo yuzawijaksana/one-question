@@ -9,7 +9,17 @@
   --parallax-text-y: 0px;
   --parallax-bg-x: 0px;
   --parallax-bg-y: 0px;
-  --parallax-bg-scale: 1.08
+  --parallax-bg-scale: 1.08;
+  /* type scale — the only sizes text should use (display sizes stay literal) */
+  --fs-2xs: 9px;
+  --fs-xs: 10px;
+  --fs-sm: 11px;
+  --fs-md: 12px;
+  --fs-base: 13px;
+  --fs-lg: 14px;
+  --fs-xl: 16px;
+  --fs-2xl: 18px;
+  --fs-3xl: 20px
 }
 
 * {
@@ -923,7 +933,7 @@ h1 {
 
 .todoFullscreenHint {
   margin-top: 9px;
-  font-size: 8px;
+  font-size: 9px;
   color: #3f3d38
 }
 
@@ -1852,7 +1862,7 @@ body.minimal .settingsFab {
   color: var(--text);
   padding: 14px 16px;
   font: inherit;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.45;
   outline: none
 }
@@ -2175,7 +2185,7 @@ body.historyOpen #cycleHint {
   position: fixed;
   right: 6.2vw;
   top: 30px;
-  font-size: 25px;
+  font-size: 24px;
   line-height: 1
 }
 
@@ -2196,7 +2206,7 @@ body.historyOpen #cycleHint {
   }
 
   #date {
-    font-size: 8px
+    font-size: 9px
   }
 
   .focus {
@@ -2460,7 +2470,7 @@ body {
 
 .calendarWeekdays span {
   text-align: center;
-  font-size: 8px;
+  font-size: 9px;
   letter-spacing: .08em;
   text-transform: uppercase;
   color: #4d4943
@@ -2525,7 +2535,7 @@ body {
   margin-top: 13px;
   padding-top: 11px;
   border-top: 1px solid rgba(235, 232, 224, .06);
-  font-size: 8px;
+  font-size: 9px;
   letter-spacing: .04em;
   color: #46423d;
   text-align: center
@@ -2711,7 +2721,7 @@ body.focusModeVisual .focusTodoPreview {
   min-height: 20px;
   margin-bottom: 28px;
   color: var(--text);
-  font-size: 17px;
+  font-size: 16px;
   line-height: 1.45
 }
 
@@ -2960,7 +2970,7 @@ body.focusModeVisual .focusTimerButtons button:hover {
   background: none !important;
   border: 0 !important;
   color: color-mix(in srgb, var(--text) 50%, var(--bg)) !important;
-  font-size: 15px !important;
+  font-size: 14px !important;
   cursor: pointer !important;
   transition: opacity .2s ease, color .2s ease
 }
@@ -3573,7 +3583,7 @@ body.focusModeVisual .timerMode {
 }
 
 body.focusModeVisual .focusTimer {
-  font-size: 110px !important;
+  font-size: clamp(120px, 22vh, 240px) !important;
   font-weight: 700 !important;
   margin-bottom: 28px !important
 }
@@ -3869,7 +3879,7 @@ body.schedulerVisual .scheduler {
 }
 
 .schedulerCurrent {
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.3;
   max-width: 100%;
   overflow: hidden;
@@ -4383,7 +4393,7 @@ body:not(.focusModeVisual):not(.schedulerVisual) .miniClock {
 
 .scheduleListItem {
   opacity: .4;
-  font-size: 11.5px
+  font-size: 11px
 }
 
 .scheduleListItem:hover {
@@ -4471,7 +4481,7 @@ body:not(.focusModeVisual):not(.schedulerVisual) .miniClock {
 
 .schedulerNext {
   font-weight: var(--user-font-weight, 400);
-  font-size: 9.5px;
+  font-size: 10px;
   letter-spacing: .08em
 }
 
@@ -4751,14 +4761,14 @@ body:not(.focusModeVisual):not(.schedulerVisual):not(.stickyVisual) .stickyPin.h
 
 .stickyPinLabel {
   color: var(--muted);
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 300;
   letter-spacing: .3em
 }
 
 .stickyPinText {
   color: var(--text);
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 300;
   line-height: 1.4;
   overflow: hidden;
@@ -5765,4 +5775,70 @@ body.stickyVisual .stickyMode .stickyHint {
 .stickyPinCard .stickyPinNote {
   display: block;
   overflow-wrap: anywhere
+}
+
+/* ---- consistent mode titles: same top-center spot and style on every section ---- */
+.schedulerKicker,
+.stickyKicker,
+.focusKicker {
+  position: absolute;
+  top: 64px;
+  left: 0;
+  right: 0;
+  margin: 0;
+  text-align: center;
+  font-size: 10px;
+  font-weight: max(500, var(--user-font-weight, 400));
+  letter-spacing: .34em;
+  text-transform: lowercase;
+  color: color-mix(in srgb, var(--text) 56%, var(--bg));
+  opacity: 1;
+  pointer-events: none
+}
+
+.focusKicker {
+  display: none
+}
+
+body.focusModeVisual .focusKicker {
+  display: block;
+  animation: schedulerIn .5s cubic-bezier(.2, .7, .2, 1)
+}
+
+/* tidy position: 3×3 anchor picker */
+.tidyAnchorGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 44px);
+  gap: 6px;
+  width: max-content
+}
+
+.tidyAnchorGrid button {
+  padding: 6px 0;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid rgba(235, 232, 224, .12);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color .25s, border-color .25s, background .25s
+}
+
+.tidyAnchorGrid button:hover {
+  color: var(--text);
+  border-color: rgba(235, 232, 224, .3)
+}
+
+.tidyAnchorGrid button.active {
+  color: var(--text);
+  border-color: rgba(235, 232, 224, .35);
+  background: rgba(235, 232, 224, .09)
+}
+
+/* boot: hold the question screen hidden for a beat so the load entrance is visible */
+.focus.boot #question,
+.focus.boot .eyebrow,
+.focus.boot .answer {
+  opacity: 0
 }

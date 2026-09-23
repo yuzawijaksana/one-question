@@ -50,10 +50,12 @@
         <span>new card</span>
       </div>
       <div id="stickyList" class="stickyList" aria-label="Remember notes"></div>
-      <div class="stickyHint">drag a note from the pad · ✓ handled · × delete · # move category</div>
+      <div class="stickyHint">drag a note from the pad · ✓ handled · ✎ edit · × delete · # move category</div>
     </section>
 
     <button id="stickyPin" class="stickyPin" type="button" title="remember wall" aria-label="Open remember wall"></button>
+
+    <div id="focusKicker" class="focusKicker" aria-hidden="true">focus</div>
 
     <section class="focus" id="focus" aria-live="polite">
       <div id="focusTodoPreview" class="focusTodoPreview" aria-hidden="true"></div>
@@ -286,6 +288,23 @@
             </div>
             <div class="settingHint">How far apart the cards sit when the wall tidies itself.</div>
           </div>
+
+          <div class="appearanceControl">
+            <div class="appearanceControlHead"><span>tidy position</span></div>
+            <div id="tidyAnchorBtns" class="tidyAnchorGrid">
+              <button type="button" data-anchor="top-left" aria-label="tidy to top left" title="top left">↖</button>
+              <button type="button" data-anchor="top-center" aria-label="tidy to top center" title="top center">↑</button>
+              <button type="button" data-anchor="top-right" aria-label="tidy to top right" title="top right">↗</button>
+              <button type="button" data-anchor="center-left" aria-label="tidy to center left" title="center left">←</button>
+              <button type="button" data-anchor="center-center" aria-label="tidy to center" title="center">·</button>
+              <button type="button" data-anchor="center-right" aria-label="tidy to center right" title="center right">→</button>
+              <button type="button" data-anchor="bottom-left" aria-label="tidy to bottom left" title="bottom left">↙</button>
+              <button type="button" data-anchor="bottom-center" aria-label="tidy to bottom center" title="bottom center">↓</button>
+              <button type="button" data-anchor="bottom-right" aria-label="tidy to bottom right" title="bottom right">↘</button>
+            </div>
+            <div class="settingHint">Where the cards gather when you hit tidy.</div>
+          </div>
+
           <div class="settingHint">Make the reflection space yours. Colors and background effects are saved on this
             device.</div>
 
