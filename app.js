@@ -110,6 +110,12 @@ let syncPushTimer=null,syncBusy=false;
 function syncBase(){
   return ((settings&&settings.syncServer)||SYNC_BASE).replace(/\/+$/,"");
 }
+function syncHeaders(extra){
+  const headers=Object.assign({"Content-Type":"application/json"},extra||{});
+  const token=(settings&&settings.syncToken)||"";
+  if(token)headers["Authorization"]=`Bearer ${token}`;
+  return headers;
+}
 function readSyncTimes(){
   try{return JSON.parse(localStorage.getItem("oneQuestionSyncTimes")||"{}")}catch{return{}}
 }
@@ -137,7 +143,7 @@ async function pushSyncToServer(){
     }
     if(!Object.keys(changes).length)return;
     await fetch(`${syncBase()}/api/state`,{
-      method:"PUT",headers:{"Content-Type":"application/json"},cache:"no-store",
+      method:"PUT",headers:syncHeaders(),cache:"no-store",
       body:JSON.stringify({changes})
     });
     setDataStatus("synced to server");
@@ -147,7 +153,7 @@ async function pushSyncToServer(){
 }
 async function pullSyncFromServer(){
   try{
-    const res=await fetch(`${syncBase()}/api/state`,{cache:"no-store"});
+    const res=await fetch(`${syncBase()}/api/state`,{cache:"no-store",headers:syncHeaders()});
     if(!res.ok)return;
     const data=await res.json();
     const entries=data&&data.keys||{};
@@ -348,7 +354,7 @@ function writeHydrationLocal(value){
 }
 async function fetchHydrationState(){
   try{
-    const response=await fetch(`${SYNC_BASE}/api/state`,{cache:"no-store"});
+    const response=await fetch(`${syncBase()}/api/state`,{cache:"no-store",headers:syncHeaders()});
     if(!response.ok)throw new Error(`server returned ${response.status}`);
     const data=await response.json();
     const entry=data?.keys?.[HYDRATION_KEY];
@@ -362,8 +368,8 @@ async function saveHydrationState(){
   if(hydrationServerBusy)return;
   hydrationServerBusy=true;
   try{
-    await fetch(`${SYNC_BASE}/api/state`,{
-      method:"PUT",headers:{"Content-Type":"application/json"},cache:"no-store",
+    await fetch(`${syncBase()}/api/state`,{
+      method:"PUT",headers:syncHeaders(),cache:"no-store",
       body:JSON.stringify({changes:{[HYDRATION_KEY]:{value:hydrationState,updatedAt:Date.now()}}})
     });
   }catch(e){
@@ -1526,6 +1532,8 @@ function renderSettings(){
   });
   const syncInput=$("syncServer");
   if(syncInput)syncInput.value=settings.syncServer||"";
+  const tokenInput=$("syncToken");
+  if(tokenInput)tokenInput.value=settings.syncToken||"";
   setSettingsTab("questions");
   applyHydrationAppearance();
   applyScreenScale();
@@ -3034,6 +3042,11 @@ $("tidyAnchorBtns")?.addEventListener("click",e=>{
 });
 $("syncServer")?.addEventListener("change",e=>{
   settings.syncServer=e.target.value.trim();
+  saveSettings();
+  pushSyncToServer();
+});
+$("syncToken")?.addEventListener("change",e=>{
+  settings.syncToken=e.target.value.trim();
   saveSettings();
   pushSyncToServer();
 });

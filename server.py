@@ -7,8 +7,10 @@ import time
 
 ROOT = Path(__file__).resolve().parent
 HOST = os.environ.get("ONE_QUESTION_HOST", "127.0.0.1")
-PORT = 8765
-STATE_FILE = ROOT / "one-question-state.json"
+PORT = int(os.environ.get("ONE_QUESTION_PORT", "8765"))
+STATE_FILE = ROOT / os.environ.get("ONE_QUESTION_STATE_FILE", "one-question-state.json")
+# Optional shared secret: when set, requests must send "Authorization: Bearer <key>"
+API_KEY = os.environ.get("ONE_QUESTION_API_KEY", "")
 EXPORT_DIR = ROOT / "settings export"
 EXPORT_FILE = EXPORT_DIR / "one-question-backup-latest.json"
 STATE_KEYS = {
@@ -106,8 +108,17 @@ class Handler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _authorized(self):
+        if not API_KEY:
+            return True
+        expected = f"Bearer {API_KEY}"
+        return self.headers.get("Authorization", "") == expected
+
     def do_GET(self):
         if self.path == "/api/state":
+            if not self._authorized():
+                self._json(401, {"error": "unauthorized"})
+                return
             with STATE_LOCK:
                 payload = json.loads(json.dumps(STATE))
             self._json(200, payload)
@@ -117,6 +128,9 @@ class Handler(SimpleHTTPRequestHandler):
     def do_PUT(self):
         if self.path != "/api/state":
             self.send_error(404)
+            return
+        if not self._authorized():
+            self._json(401, {"error": "unauthorized"})
             return
         try:
             length = int(self.headers.get("Content-Length", "0"))
