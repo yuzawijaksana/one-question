@@ -128,8 +128,8 @@ function scheduleSyncPush(){
   clearTimeout(syncPushTimer);
   syncPushTimer=setTimeout(pushSyncToServer,800);
 }
-async function pushSyncToServer(){
-  if(syncBusy)return;
+async function pushSyncToServer(base){
+  if(syncBusy)return false;
   syncBusy=true;
   try{
     const times=readSyncTimes();
@@ -141,14 +141,19 @@ async function pushSyncToServer(){
       try{value=JSON.parse(raw)}catch{continue}
       changes[key]={value,updatedAt:times[key]||Date.now()-60000};
     }
-    if(!Object.keys(changes).length)return;
-    await fetch(`${syncBase()}/api/state`,{
+    if(!Object.keys(changes).length)return true;
+    const target=String(base||syncBase()).replace(/\/+$/,"");
+    const res=await fetch(`${target}/api/state`,{
       method:"PUT",headers:syncHeaders(),cache:"no-store",
       body:JSON.stringify({changes})
     });
+    if(!res.ok)throw new Error(`server answered ${res.status}`);
     setDataStatus("synced to server");
+    return true;
   }catch(e){
     console.warn("One Question: sync push failed",e);
+    setDataStatus("sync push failed");
+    return false;
   }finally{syncBusy=false}
 }
 async function pullSyncFromServer(){
@@ -193,6 +198,24 @@ async function pullSyncFromServer(){
   }catch(e){
     console.warn("One Question: sync pull unavailable",e);
   }
+}
+// manual sync: push this device's changes, pull the server's back, and — when
+// the sync server lives elsewhere — mirror the same push to the local server
+// so one-question-state.json and the settings export keep updating on this PC
+async function syncNow(){
+  const btn=$("syncNowBtn");
+  if(btn)btn.disabled=true;
+  setDataStatus("syncing…");
+  const ok=await pushSyncToServer();
+  if(ok)await pullSyncFromServer();
+  let status=ok?"synced with server":"sync failed — check server address / token";
+  if(ok&&syncBase()!==SYNC_BASE){
+    setDataStatus("refreshing local state file…");
+    const localOk=await pushSyncToServer(SYNC_BASE);
+    status=localOk?"synced · local state file refreshed":"synced with server · local refresh failed";
+  }
+  setDataStatus(status);
+  if(btn)btn.disabled=false;
 }
 
 function loadQuestionBank(){
@@ -3045,6 +3068,7 @@ $("syncServer")?.addEventListener("change",e=>{
   saveSettings();
   pushSyncToServer();
 });
+$("syncNowBtn")?.addEventListener("click",()=>{syncNow();});
 $("syncToken")?.addEventListener("change",e=>{
   settings.syncToken=e.target.value.trim();
   saveSettings();

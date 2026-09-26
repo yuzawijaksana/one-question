@@ -4951,6 +4951,31 @@ body:not(.focusModeVisual):not(.schedulerVisual):not(.stickyVisual) .stickyPin.h
   border-bottom-color: var(--accent)
 }
 
+/* manual sync button under the sync server / token inputs */
+.syncNowBtn {
+  margin-top: 14px;
+  padding: 7px 18px;
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: .06em;
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color .25s, border-color .25s, opacity .25s
+}
+
+.syncNowBtn:hover {
+  color: var(--text);
+  border-color: var(--accent)
+}
+
+.syncNowBtn:disabled {
+  opacity: .5;
+  cursor: default
+}
+
 /* mode switch order setting */
 .modeOrderList {
   display: flex;

@@ -92,7 +92,9 @@ class Handler(SimpleHTTPRequestHandler):
     def end_headers(self):
         self.send_header("Cache-Control", "no-store, max-age=0")
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        # Authorization must be allowed or browsers block cross-origin pushes
+        # from any page not served by this server (CORS preflight fails)
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
         self.send_header("Access-Control-Allow-Methods", "GET, PUT, OPTIONS")
         super().end_headers()
 
