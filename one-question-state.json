@@ -2,7 +2,7 @@
   "version": 1,
   "keys": {
     "oneQuestionSettings": {
-      "updatedAt": 1790435712246,
+      "updatedAt": 1790438514084,
       "value": {
         "categories": [
           "all"
@@ -16,7 +16,12 @@
           "sticky"
         ],
         "stickyCategories": [
-          "general"
+          "general",
+          "friend",
+          "skill",
+          "assignment",
+          "book",
+          "film"
         ],
         "stickyPush": 110,
         "stickyTilt": 1.8,
@@ -54,8 +59,7 @@
           "textSize": 100,
           "fontWeight": 400
         },
-        "syncServer": "http://103.47.225.99:8080/",
-        "syncToken": "fdfbecb3b31a290f935f556e6c6f858e"
+        "syncServer": "http://103.47.225.99:8080/"
       }
     },
     "oneQuestionQuestionBank": {
@@ -279,13 +283,20 @@
       ]
     },
     "oneQuestionRecent": {
-      "updatedAt": 1790435719266,
+      "updatedAt": 1790436967228,
       "value": [
-        26,
-        39,
-        31,
-        17,
-        32
+        20,
+        34,
+        19,
+        32,
+        10,
+        23,
+        28,
+        2,
+        33,
+        6,
+        24,
+        15
       ]
     },
     "oneQuestionTodos": {
@@ -394,7 +405,7 @@
       ]
     },
     "oneQuestionStickies": {
-      "updatedAt": 1790435736891,
+      "updatedAt": 1790436961290,
       "value": [
         {
           "id": "22f379cc-b095-48a9-95dc-efecef1440f1",
@@ -402,8 +413,8 @@
           "created": 1790086231973,
           "done": false,
           "cat": "book",
-          "x": 10.9,
-          "y": 32.2
+          "x": 11.1,
+          "y": 30.8
         },
         {
           "id": "de79007c-cde8-4cd5-bf02-3bf5748fc121",
@@ -411,8 +422,8 @@
           "created": 1790086198918,
           "done": false,
           "cat": "book",
-          "x": 22.6,
-          "y": 34.2
+          "x": 22.5,
+          "y": 35.2
         },
         {
           "id": "ff46289a-c71d-407d-ba27-c32abe602215",
@@ -420,8 +431,8 @@
           "created": 1790086092926,
           "done": false,
           "cat": "film",
-          "x": 32.4,
-          "y": 30.7,
+          "x": 35.8,
+          "y": 30.2,
           "z": "13"
         },
         {
@@ -430,8 +441,8 @@
           "created": 1790004800440,
           "done": false,
           "cat": "book",
-          "x": 43.1,
-          "y": 33.8,
+          "x": 46.5,
+          "y": 34.9,
           "z": "33"
         },
         {
@@ -440,8 +451,8 @@
           "created": 1790004780554,
           "done": false,
           "cat": "book",
-          "x": 54.5,
-          "y": 31.8,
+          "x": 56.2,
+          "y": 31.5,
           "z": "39"
         },
         {
@@ -450,8 +461,8 @@
           "created": 1790004768030,
           "done": false,
           "cat": "book",
-          "x": 62.8,
-          "y": 34.8,
+          "x": 66.4,
+          "y": 35.2,
           "z": "45"
         },
         {
@@ -460,9 +471,9 @@
           "created": 1790004750032,
           "done": false,
           "cat": "book",
-          "x": 16,
-          "y": 43,
-          "z": "14"
+          "x": 16.5,
+          "y": 44.2,
+          "z": "13"
         },
         {
           "id": "c10f0ff7-3ff0-49a8-ac80-446fe23a32ab",
@@ -470,8 +481,8 @@
           "created": 1789816515228,
           "done": false,
           "cat": "friend",
-          "x": 27.2,
-          "y": 47,
+          "x": 28.9,
+          "y": 48.1,
           "z": "12"
         },
         {
@@ -480,8 +491,8 @@
           "created": 1789816364531,
           "done": false,
           "cat": "friend",
-          "x": 36.7,
-          "y": 43.9,
+          "x": 38,
+          "y": 42.8,
           "z": "12"
         },
         {
@@ -490,8 +501,8 @@
           "created": 1789816362131,
           "done": false,
           "cat": "friend",
-          "x": 47.9,
-          "y": 46.2,
+          "x": 49.2,
+          "y": 46.5,
           "z": "15"
         },
         {
@@ -500,8 +511,8 @@
           "created": 1789816337074,
           "done": false,
           "cat": "skill",
-          "x": 56.4,
-          "y": 43,
+          "x": 58.3,
+          "y": 44.3,
           "z": "20"
         },
         {
@@ -510,8 +521,8 @@
           "created": 1789816315707,
           "done": false,
           "cat": "skill",
-          "x": 66.4,
-          "y": 48.2,
+          "x": 67.3,
+          "y": 47.5,
           "z": "18"
         },
         {
@@ -520,8 +531,8 @@
           "created": 1789815892883,
           "done": false,
           "cat": "friend",
-          "x": 11,
-          "y": 56.8,
+          "x": 13.4,
+          "y": 56.9,
           "z": "16"
         },
         {
@@ -530,8 +541,8 @@
           "created": 1789815885007,
           "done": false,
           "cat": "friend",
-          "x": 21.6,
-          "y": 58.9,
+          "x": 22.1,
+          "y": 59,
           "z": "19"
         },
         {
@@ -540,8 +551,8 @@
           "created": 1789814800974,
           "done": false,
           "cat": "friend",
-          "x": 31.8,
-          "y": 56.7,
+          "x": 32.4,
+          "y": 56.4,
           "z": "16"
         },
         {
@@ -550,8 +561,8 @@
           "created": 1789814786389,
           "done": false,
           "cat": "friend",
-          "x": 41.9,
-          "y": 60,
+          "x": 42.3,
+          "y": 59.8,
           "z": "19"
         },
         {
@@ -560,8 +571,8 @@
           "created": 1789804934229,
           "done": false,
           "cat": "assignment",
-          "x": 51.7,
-          "y": 55.9,
+          "x": 53.2,
+          "y": 56.3,
           "z": "28"
         },
         {
@@ -570,8 +581,8 @@
           "created": 1789804390454,
           "done": false,
           "cat": "skill",
-          "x": 62.4,
-          "y": 60.1,
+          "x": 63.9,
+          "y": 60.8,
           "z": "17"
         }
       ]
@@ -581,5 +592,5 @@
       "value": "my secret note"
     }
   },
-  "updatedAt": 1790436139564
+  "updatedAt": 1790438514084
 }
