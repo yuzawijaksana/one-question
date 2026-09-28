@@ -3262,6 +3262,23 @@ document.addEventListener("keydown",e=>{
 applyAppearance();
 applyModeSwitchExpand();
 applyModeOrder();
+// hardware-acceleration-off friendliness: Chrome composites on the CPU
+// (SwiftShader) when GPU acceleration is disabled, and the decorative blurs
+// and endless motion then dominate the frame budget. Detect it once and let
+// CSS strip the heavy effects via body.softRender.
+(function detectSoftRender(){
+  try{
+    const c=document.createElement("canvas");
+    const gl=c.getContext("webgl")||c.getContext("experimental-webgl");
+    if(!gl)return;
+    const dbg=gl.getExtension("WEBGL_debug_renderer_info");
+    const renderer=dbg?String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)||""):"";
+    if(/swiftshader|software|llvmpipe|basic raster/i.test(renderer)){
+      document.body.classList.add("softRender");
+      setDataStatus("rendering: cpu — lite effects on");
+    }
+  }catch{}
+})();
 dateEl.textContent=new Intl.DateTimeFormat(undefined,{weekday:"long",month:"long",day:"numeric"}).format(new Date());
 restoreTimerState();
 if(timerRunning)timerInterval=setInterval(tickTimer,1000);

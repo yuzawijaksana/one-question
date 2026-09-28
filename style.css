@@ -5867,3 +5867,60 @@ body.focusModeVisual .focusKicker {
 .focus.boot .answer {
   opacity: 0
 }
+
+/* ---- software rendering (hardware acceleration off) --------------------
+   Without GPU compositing, big blurs and the always-on decorative motion
+   eat the whole frame budget and everything else judders. body.softRender
+   (set by app.js when the WebGL renderer is SwiftShader) drops them and
+   keeps the app usable. */
+body.softRender .ambient {
+  display: none
+}
+
+body.softRender main:before {
+  animation: none
+}
+
+body.softRender #date::before,
+body.softRender .focusRunningBadge i {
+  animation: none
+}
+
+body.softRender .hydrationReminder:not(.hydrating) .glassWater,
+body.softRender .hydrationReminder:not(.hydrating) .waterLine {
+  animation: none
+}
+
+body.softRender .focusTimer.running {
+  animation: none !important
+}
+
+body.softRender .stickyFloat {
+  animation: none
+}
+
+/* the question swap keyframes carry filter: blur() — instant swaps instead */
+body.softRender .focus.questionOut h1,
+body.softRender .focus.questionOut .eyebrow,
+body.softRender .focus.questionIn h1,
+body.softRender .focus.questionIn .eyebrow,
+body.softRender .focus.questionIn .answer {
+  animation: none
+}
+
+/* backdrop blur is the single most expensive effect on the CPU path */
+body.softRender *,
+body.softRender *::before,
+body.softRender *::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important
+}
+
+/* panels leaned on blur for readability — solid them up without it */
+body.softRender .settingsPanel {
+  background: color-mix(in srgb, var(--bg) 97%, transparent)
+}
+
+body.softRender .notePanel {
+  background: color-mix(in srgb, var(--bg) 97%, transparent) !important
+}
