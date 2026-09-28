@@ -2979,7 +2979,8 @@ function makePinCard(note,depth){
   el.style.setProperty("--d",String(depth));
   el.style.setProperty("--qtx",`${depth%2?8:-8}px`);
   el.style.opacity=depth===0?"1":String(1-depth*.15);
-  el.innerHTML=`<span class="stickyPinLabel">remember</span><span class="stickyPinNote"></span>`;
+  el.innerHTML=`<span class="stickyPinLabel"></span><span class="stickyPinNote"></span>`;
+  el.querySelector(".stickyPinLabel").textContent=`remember • ${stickyCatOf(note)}`;
   el.querySelector(".stickyPinNote").textContent=note.text;
   return el;
 }
