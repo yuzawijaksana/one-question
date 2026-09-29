@@ -3723,8 +3723,10 @@ function renderReader(leftAnchor,rightAnchor){
     const prev0=$("bookReaderPrev"),next0=$("bookReaderNext");
     if(prev0)prev0.disabled=readerIndex<=0;
     if(next0)next0.disabled=readerIndex>=readerPages.length-1;
+    // phones always show the close control — one page at a time, the cover
+    // is itself a page and there is no "opening spread" to keep clean
     const close0=$("bookReaderClose");
-    if(close0)close0.classList.toggle("onCover",readerIndex<=1);
+    if(close0)close0.classList.remove("onCover");
     return;
   }
   bk.classList.remove("single");
