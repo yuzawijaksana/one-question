@@ -6305,3 +6305,12 @@ body.focusModeVisual #cycleHint {
   background: rgba(141, 129, 102, .35);
   border-radius: 8px
 }
+
+/* resting pages: same paper, corners matched to their side, no 3d */
+.pageFace.flatLeft {
+  border-radius: 8px 2px 2px 8px
+}
+
+.pageFace.flatRight {
+  border-radius: 2px 8px 8px 2px
+}

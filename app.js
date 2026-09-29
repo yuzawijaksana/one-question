@@ -3078,9 +3078,11 @@ function journalFlipTo(spread){
   if(journalSpread===spread){renderJournal();return;}
   step();
 }
-function journalPageNode(p,side){
+function journalPageNode(p,side,flat){
+  // flat faces are the resting pages — no 3d classes, or backface-visibility
+  // hides them and every left page renders invisible
   const face=document.createElement("div");
-  face.className="pageFace "+(side==="right"?"faceFront":"faceBack");
+  face.className="pageFace "+(flat?(side==="right"?"flatRight":"flatLeft"):side==="right"?"faceFront":"faceBack");
   face.dataset.pid=p.id;
   // the page is editable paper itself — a contenteditable, not a form
   // control, so no browser can ever paint a dark box behind the words
@@ -3132,12 +3134,12 @@ function renderJournal(){
   const stackL=document.createElement("div");stackL.className="pageStack left";
   const stackR=document.createElement("div");stackR.className="pageStack right";
   for(let s=journalSpread;s>=Math.max(0,journalSpread-3);s--){
-    const f=journalPageNode(pages[2*s],"left");
+    const f=journalPageNode(pages[2*s],"left",true);
     f.style.zIndex=String(10+(journalSpread-s));
     stackL.append(f);
   }
   for(let s=Math.min(spreads-1,journalSpread+3);s>=journalSpread;s--){
-    const f=journalPageNode(pages[2*s+1],"right");
+    const f=journalPageNode(pages[2*s+1],"right",true);
     f.style.zIndex=String(10+(s-journalSpread));
     stackR.append(f);
   }
