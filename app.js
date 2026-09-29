@@ -3647,6 +3647,55 @@ function readerBuild(){
   });
   readerPages=pages;
 }
+// ---- export: the book as a pdf, through the browser's print pipeline -----
+// the same pages the reader shows — nominal 505×650, same type, same folios —
+// laid one per sheet; "save as pdf" in the print dialog writes the file with
+// selectable vector text, no libraries, fully offline
+function bookPrintPages(){
+  const pages=[{cover:true}];
+  if(book){
+    book.chapters.forEach(c=>{
+      const ci=book.chapters.indexOf(c);
+      const cp=flowChapterPages(c);
+      if(!cp.length){
+        pages.push({chapterIndex:ci,first:true,blocks:[]});
+        return;
+      }
+      cp.forEach(pg=>pages.push({chapterIndex:ci,first:pg.first,blocks:pg.blocks}));
+    });
+  }
+  let folio=0;
+  pages.forEach(p=>{
+    if(!p.cover){folio+=1;p.folio=folio;}
+  });
+  return pages;
+}
+function bookExportPdf(){
+  document.getElementById("bookPrintRoot")?.remove();
+  const root=document.createElement("div");
+  root.id="bookPrintRoot";
+  bookPrintPages().forEach(p=>{
+    const sheet=document.createElement("div");
+    sheet.className="pgPrintPage";
+    sheet.append(readerPageNode(p,"right"));
+    root.append(sheet);
+  });
+  document.body.append(root);
+  const prevTitle=document.title;
+  document.title=((book&&book.title)?book.title:"an untitled book").toLowerCase()+" — one question";
+  const clean=()=>{
+    root.remove();
+    document.title=prevTitle;
+    window.removeEventListener("afterprint",clean);
+  };
+  window.addEventListener("afterprint",clean);
+  try{
+    window.print();
+  }catch(e){
+    console.warn("One Question: print failed",e);
+    clean();
+  }
+}
 function readerPageNode(p,side){
   const face=document.createElement("div");
   face.className="rdFace "+side;
@@ -3902,6 +3951,7 @@ function initBookStudio(){
   // the header's open-book button replaces the old gather-answers one — on
   // phones the preview column is hidden, so this is the reader's entry point
   $("bookReadHeader")?.addEventListener("click",readerOpen);
+  $("bookExportPdf")?.addEventListener("click",bookExportPdf);
   $("bookNewChapter")?.addEventListener("click",addBookChapter);
   $("bookPrevChapter")?.addEventListener("click",()=>bookChapterStep(-1));
   $("bookNextChapter")?.addEventListener("click",()=>bookChapterStep(1));

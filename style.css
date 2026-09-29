@@ -5998,7 +5998,9 @@ body.focusModeVisual .focusKicker {
 .bookHeaderActions {
   display: flex;
   align-items: center;
-  gap: 12px
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end
 }
 
 .bookSaveStatus {
@@ -7248,4 +7250,48 @@ body.focusModeVisual .focusKicker {
 
 .readerBook.single .rdFace {
   border-radius: 8px
+}
+
+/* ---- pdf export: only the book's own pages go to the printer ------------ */
+#bookPrintRoot {
+  display: none
+}
+
+.pgPrintPage {
+  width: 505px;
+  height: 650px;
+  position: relative
+}
+
+@media print {
+  body > *:not(#bookPrintRoot) {
+    display: none !important
+  }
+
+  #bookPrintRoot {
+    display: block
+  }
+
+  @page {
+    size: 505px 650px;
+    margin: 0
+  }
+
+  .pgPrintPage {
+    break-after: page;
+    page-break-after: always;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact
+  }
+
+  .pgPrintPage:last-child {
+    break-after: auto;
+    page-break-after: auto
+  }
+
+  .pgPrintPage .rdFace {
+    box-shadow: none;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact
+  }
 }
