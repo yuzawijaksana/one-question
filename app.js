@@ -57,8 +57,7 @@ const extensionStorage=(typeof browser!=="undefined"&&browser.storage&&browser.s
   : null;
 const STORAGE_KEYS=[
   "oneQuestionQuestionBank","oneQuestionFocusQuestions","oneQuestionSettings",
-  "oneQuestionHistory","oneQuestionRecent","oneQuestionTodos","oneQuestionNote",
-  "oneQuestionJournal"
+  "oneQuestionHistory","oneQuestionRecent","oneQuestionTodos","oneQuestionNote"
 ];
 
 function cacheSet(key,value){
@@ -635,7 +634,7 @@ function updateModeUI(){
     btn.classList.toggle("active",currentMode==="focus");
     btn.classList.toggle("schedulerActive",currentMode==="scheduler");
     btn.setAttribute("aria-pressed",String(currentMode!=="question"));
-    btn.setAttribute("title",currentMode==="focus"?"question mode":currentMode==="scheduler"?"question mode":"journal");
+    btn.setAttribute("title",currentMode==="focus"?"question mode":currentMode==="scheduler"?"question mode":"focus mode");
   }
   document.body.classList.toggle("todayMode",currentMode==="today");
   document.body.classList.toggle("focusModeVisual",currentMode==="focus");
@@ -645,11 +644,8 @@ function updateModeUI(){
   if(sched)sched.setAttribute("aria-hidden",String(currentMode!=="scheduler"));
   const stickyEl=$("sticky");
   if(stickyEl)stickyEl.setAttribute("aria-hidden",String(currentMode!=="sticky"));
-  const journalEl=$("journal");
-  if(journalEl)journalEl.setAttribute("aria-hidden",String(currentMode!=="focus"));
   if(currentMode==="scheduler")renderScheduler();
   if(currentMode==="sticky")renderStickies();
-  if(currentMode==="focus")renderJournal();
   updateFocusModePreview();
   updateTimerUI();
 }
@@ -1654,10 +1650,8 @@ function updateFocusUI(){
 function enterFocusMode(){
   clearTimeout(cycleTimer);closeCategoryMenu();currentMode="focus";cyclePaused=false;isAnswering=false;
   document.body.classList.add("focusModeVisual");
-  answerEl.blur();
-  updateModeUI();
-  journalAnchorEnd=true;
-  renderJournal();
+  updateModeUI();updateFocusUI();showFocusQuestion(chooseFreshFocusIndex());
+  setCycleStatus("cycling",true);answerEl.focus();
 }
 // ---- day circle (time scheduler) mode --------------------------------
 const SCHEDULE_KEY="oneQuestionSchedule";
@@ -3000,317 +2994,6 @@ function pinCardsData(){
     return {note:stickies.find(s=>s.id===id),depth:d};
   });
 }
-// ---- journal: a quiet book — every page writable, flip or swipe --------
-const JOURNAL_KEY="oneQuestionJournal";
-function loadJournal(){
-  try{
-    const saved=JSON.parse(localStorage.getItem(JOURNAL_KEY)||"[]");
-    if(Array.isArray(saved)&&saved.length){
-      return saved.filter(e=>e&&typeof e.text==="string").map((e,i)=>({
-        id:String(e.id||(e.date||"page")+i),
-        date:String(e.date||""),
-        text:e.text,
-        createdAt:Number(e.createdAt)||Number(e.updatedAt)||Date.now(),
-        updatedAt:Number(e.updatedAt)||0
-      }));
-    }
-  }catch{}
-  return [];
-}
-function journalBlankPage(date){
-  return {id:"p"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
-    date:date||"",text:"",createdAt:Date.now(),updatedAt:0};
-}
-let journal=loadJournal();
-let journalSpread=0;
-let journalDrag=null;
-let journalSaveTimer=null;
-let journalFocusId=null;
-let journalAnchorEnd=false;
-function journalPages(){
-  // the book never runs out: always a blank spread waiting at the end,
-  // and an odd page count gets padded so spreads stay whole
-  const pages=[...journal];
-  while(pages.length<2)pages.push(journalBlankPage(""));
-  if(pages.length%2===1)pages.push(journalBlankPage(pages[pages.length-1].date));
-  return pages;
-}
-function journalSpreads(pages){return Math.max(1,Math.ceil(pages.length/2))}
-function journalSave(page,patch){
-  // the blank spread waiting at the end is a padding page — the moment it
-  // is written on, it joins the real journal
-  if(!journal.includes(page))journal.push(page);
-  Object.assign(page,patch);
-  page.updatedAt=Date.now();
-  clearTimeout(journalSaveTimer);
-  journalSaveTimer=setTimeout(()=>cacheSet(JOURNAL_KEY,journal),600);
-}
-// a page ran full while writing — continue on the next one, date following
-function journalOverflow(page){
-  let idx=journal.indexOf(page);
-  if(idx===-1){journal.push(page);idx=journal.length-1;}
-  // only the writing frontier moves on by itself; older pages stay put
-  const frontier=journal.reduce((last,p,i)=>p.text?i:last,-1);
-  if(idx!==frontier)return;
-  let next=journal[idx+1];
-  let madeNew=false;
-  if(!next){next=journalBlankPage(page.date);journal.push(next);madeNew=true;}
-  const spread=Math.floor((idx+1)/2);
-  journalFocusId=next.id;
-  if(spread!==journalSpread||madeNew){
-    journalAnchorEnd=false;
-    if(spread>journalSpread)journalFlipTo(spread);
-    else{journalSpread=spread;renderJournal();}
-  }else{
-    renderJournal();
-  }
-}
-function journalFlipTo(spread){
-  const step=()=>{
-    // the flip's own settle render applies the pending focus — only render
-    // here when no flip is needed (an extra render would drop that focus)
-    if(journalSpread===spread)return;
-    const before=journalSpread;
-    journalFlip(journalSpread<spread?1:-1);
-    if(journalSpread===before)return;
-    setTimeout(step,760);
-  };
-  if(journalSpread===spread){renderJournal();return;}
-  step();
-}
-function journalPageNode(p,side,flat){
-  // flat faces are the resting pages — no 3d classes, or backface-visibility
-  // hides them and every left page renders invisible
-  const face=document.createElement("div");
-  face.className="pageFace "+(flat?(side==="right"?"flatRight":"flatLeft"):side==="right"?"faceFront":"faceBack");
-  face.dataset.pid=p.id;
-  // the page is editable paper itself — a contenteditable, not a form
-  // control, so no browser can ever paint a dark box behind the words
-  const ta=document.createElement("div");
-  ta.className="pageText";
-  ta.contentEditable="true";
-  ta.spellcheck=true;
-  ta.dataset.placeholder="write…";
-  ta.setAttribute("role","textbox");
-  ta.setAttribute("aria-label","journal page");
-  ta.textContent=p.text;
-  ta.addEventListener("input",()=>{
-    if(!ta.innerText.trim())ta.textContent="";
-    journalSave(p,{text:ta.innerText});
-    if(ta.scrollHeight>ta.clientHeight+6)journalOverflow(p);
-  });
-  // keep pasted text plain — the book only holds words
-  ta.addEventListener("paste",e=>{
-    e.preventDefault();
-    const t=(e.clipboardData||window.clipboardData).getData("text/plain");
-    document.execCommand("insertText",false,t);
-  });
-  // write anywhere: clicking a blank spot pads the page with empty lines and
-  // spaces so the caret lands exactly under the cursor, pen-on-paper style
-  ta.addEventListener("pointerdown",e=>{
-    const rect=ta.getBoundingClientRect();
-    const y=e.clientY-rect.top+ta.scrollTop;
-    const lineIdx=Math.floor(y/28);
-    const nl=String.fromCharCode(10);
-    const arr=ta.innerText.split(nl);
-    // average character width of this page's font, measured live
-    const meas=document.createElement("span");
-    meas.style.cssText="position:absolute;visibility:hidden;white-space:pre";
-    meas.style.font=getComputedStyle(ta).font;
-    meas.textContent="0000000000";
-    document.body.append(meas);
-    const charW=meas.getBoundingClientRect().width/10||8;
-    meas.remove();
-    const col=Math.max(0,Math.round((e.clientX-rect.left)/charW));
-    const cur=(arr[lineIdx]||"").length;
-    const blankLine=lineIdx>=arr.length||!arr[lineIdx].trim();
-    if(lineIdx>=arr.length||cur<col&&(blankLine||cur===0&&col>0)){
-      e.preventDefault();
-      while(arr.length<=lineIdx)arr.push("");
-      if((arr[lineIdx]||"").length<col)arr[lineIdx]=(arr[lineIdx]||"")+" ".repeat(col-(arr[lineIdx]||"").length);
-      // rebuild as text nodes + brs so the caret can aim at the exact line
-      ta.textContent="";
-      const nodes=[];
-      arr.forEach((line,i)=>{
-        if(i>0)ta.append(document.createElement("br"));
-        if(line){const tn=document.createTextNode(line);ta.append(tn);nodes.push(tn);}
-        else nodes.push(null);
-      });
-      journalSave(p,{text:arr.join(nl)});
-      ta.focus();
-      const range=document.createRange();
-      if(nodes[lineIdx])range.setStart(nodes[lineIdx],nodes[lineIdx].length);
-      else{
-        const brs=ta.querySelectorAll("br");
-        if(brs[lineIdx])range.setStartBefore(brs[lineIdx]);
-        else{range.selectNodeContents(ta);range.collapse(false);}
-      }
-      range.collapse(true);
-      const sel=getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
-    }
-  });
-  face.append(ta);
-  return face;
-}
-function renderJournal(){
-  const book=$("book");
-  if(!book)return;
-  // remember which page held the caret — a rebuild must never eat it
-  const activePid=(document.activeElement&&document.activeElement.closest&&document.activeElement.closest(".pageFace")||{}).dataset?((document.activeElement.closest(".pageFace")).dataset.pid||null):null;
-  const pages=journalPages();
-  const spreads=journalSpreads(pages);
-  if(journalAnchorEnd){
-    // open the book where the writing actually ends — landing on the blank
-    // frontier made finished pages look like they had vanished
-    let last=-1;
-    pages.forEach((p,i)=>{if(p.text&&p.text.trim())last=i;});
-    journalSpread=last>=0?Math.floor(last/2):spreads-1;
-    journalAnchorEnd=false;
-  }
-  journalSpread=Math.max(0,Math.min(journalSpread,spreads-1));
-  book.textContent="";
-  const baseL=document.createElement("div");baseL.className="bookBase left";
-  const baseR=document.createElement("div");baseR.className="bookBase right";
-  book.append(baseL,baseR);
-  const spine=document.createElement("div");spine.className="bookSpine";
-  book.append(spine);
-  // resting pages are plain flat paper — only a turning leaf is ever 3d
-  const stackL=document.createElement("div");stackL.className="pageStack left";
-  const stackR=document.createElement("div");stackR.className="pageStack right";
-  for(let s=journalSpread;s>=Math.max(0,journalSpread-3);s--){
-    const f=journalPageNode(pages[2*s],"left",true);
-    f.style.zIndex=String(10+(journalSpread-s));
-    stackL.append(f);
-  }
-  for(let s=Math.min(spreads-1,journalSpread+3);s>=journalSpread;s--){
-    const f=journalPageNode(pages[2*s+1],"right",true);
-    f.style.zIndex=String(10+(s-journalSpread));
-    stackR.append(f);
-  }
-  book.append(stackR,stackL);
-  const prev=$("journalPrev"),next=$("journalNext");
-  if(prev)prev.disabled=journalSpread<=0;
-  if(next)next.disabled=false; // the book never ends
-  const wantPid=journalFocusId||activePid;
-  if(wantPid){
-    const face=book.querySelector(`[data-pid="${wantPid}"]`);
-    const ta=face&&face.querySelector(".pageText");
-    if(ta){
-      ta.focus();
-      const range=document.createRange();
-      range.selectNodeContents(ta);
-      range.collapse(false);
-      const sel=getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
-    }
-    journalFocusId=null;
-  }
-}
-// the turning sheet: front = the right page it leaves, back = the left page it lands on
-function journalMakeLeaf(pages,s){
-  const leaf=document.createElement("div");
-  leaf.className="leaf";
-  leaf.dataset.s=String(s);
-  leaf.style.zIndex="100";
-  const backPage=pages[2*s+2]||journalBlankPage(pages[2*s+1]&&pages[2*s+1].date);
-  leaf.append(
-    journalPageNode(pages[2*s+1],"right"),
-    journalPageNode(backPage,"left")
-  );
-  return leaf;
-}
-function journalFlip(dir){
-  if(dir<0&&journalSpread<=0)return;
-  const book=$("book");
-  if(!book)return;
-  if(dir>0&&journalSpread>=journalSpreads(journalPages())-1){
-    // opening past the last spread grows the book — it never ends
-    const d=journal[journal.length-1]&&journal[journal.length-1].date||"";
-    journal.push(journalBlankPage(d),journalBlankPage(d));
-  }
-  const freshPages=journalPages();
-  if(dir>0&&journalSpread>=journalSpreads(freshPages)-1)return;
-  const s=dir>0?journalSpread:journalSpread-1;
-  const leaf=journalMakeLeaf(freshPages,s);
-  if(dir<0)leaf.classList.add("flipped"); // starts on the left, turns back
-  book.append(leaf);
-  requestAnimationFrame(()=>{
-    leaf.classList.toggle("flipped",dir>0);
-    journalSpread+=dir;
-    setTimeout(()=>{
-      leaf.remove();
-      renderJournal();
-    },700);
-  });
-}
-function initJournalBook(){
-  const book=$("book");
-  if(!book)return;
-  $("journalPrev")?.addEventListener("click",()=>journalFlip(-1));
-  $("journalNext")?.addEventListener("click",()=>journalFlip(1));
-  book.addEventListener("pointerdown",e=>{
-    if(e.target.closest(".pageText")||e.target.closest("textarea")||e.target.closest("input")||e.target.closest("button"))return;
-    const rect=book.getBoundingClientRect();
-    journalDrag={x0:e.clientX,y0:e.clientY,dir:0,leaf:null,half:rect.width/2,moved:false};
-    try{book.setPointerCapture(e.pointerId)}catch{}
-  });
-  book.addEventListener("pointermove",e=>{
-    if(!journalDrag)return;
-    const dx=e.clientX-journalDrag.x0,dy=e.clientY-journalDrag.y0;
-    if(!journalDrag.moved){
-      if(Math.abs(dx)<8)return;
-      if(Math.abs(dx)<Math.abs(dy)*1.2){journalDrag=null;return}
-      const dir=dx>0?-1:1;
-      if(dir<0&&journalSpread<=0){journalDrag=null;return}
-      const s=dir>0?journalSpread:journalSpread-1;
-      if(s<0){journalDrag=null;return}
-      if(dir>0&&journalSpread>=journalSpreads(journalPages())-1){
-        // dragging past the end grows the book — same as the next button
-        const d=journal[journal.length-1]&&journal[journal.length-1].date||"";
-        journal.push(journalBlankPage(d),journalBlankPage(d));
-      }
-      const leaf=journalMakeLeaf(journalPages(),s);
-      if(dir<0)leaf.classList.add("flipped");
-      book.append(leaf);
-      journalDrag.moved=true;
-      journalDrag.dir=dir;
-      journalDrag.leaf=leaf;
-      leaf.classList.add("dragging");
-    }
-    e.preventDefault();
-    const p=Math.max(0,Math.min(1,Math.abs(dx)/journalDrag.half));
-    // paper has stiffness: the pull resists as it approaches the fold, and
-    // the sheet bends a little toward the hand (vertical pull tilts it)
-    const stiff=Math.pow(p,.85);
-    const bend=Math.max(-8,Math.min(8,(e.clientY-journalDrag.y0)*.05));
-    journalDrag.p=p;
-    journalDrag.leaf.style.setProperty("--pull",p.toFixed(3));
-    const angle=journalDrag.dir>0?-stiff*180:-180+stiff*180;
-    journalDrag.leaf.style.transform=`rotateX(${bend.toFixed(1)}deg) rotateY(${angle.toFixed(1)}deg)`;
-  });
-  const settle=()=>{
-    if(!journalDrag)return;
-    const d=journalDrag;journalDrag=null;
-    if(!d.moved)return;
-    d.leaf.classList.remove("dragging");
-    d.leaf.classList.add("settling");
-    if(d.p>0.35){
-      journalSpread+=d.dir;
-      d.leaf.style.transform="";
-      d.leaf.classList.toggle("flipped",d.dir>0);
-      setTimeout(()=>{d.leaf.remove();renderJournal();},700);
-    }else{
-      // springs back with a little overshoot, like released paper
-      d.leaf.style.transform="";
-      setTimeout(()=>d.leaf.remove(),700);
-    }
-  };
-  book.addEventListener("pointerup",settle);
-  book.addEventListener("pointercancel",settle);
-}
 function enterStickyMode(){
   clearTimeout(cycleTimer);closeCategoryMenu();
   currentMode="sticky";cyclePaused=false;isAnswering=false;
@@ -3579,7 +3262,6 @@ document.addEventListener("keydown",e=>{
 applyAppearance();
 applyModeSwitchExpand();
 applyModeOrder();
-initJournalBook();
 // hardware-acceleration-off friendliness: Chrome composites on the CPU
 // (SwiftShader) when GPU acceleration is disabled, and the decorative blurs
 // and endless motion then dominate the frame budget. Detect it once and let
