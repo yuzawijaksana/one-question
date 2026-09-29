@@ -3082,15 +3082,26 @@ function journalPageNode(p,side){
   const face=document.createElement("div");
   face.className="pageFace "+(side==="right"?"faceFront":"faceBack");
   face.dataset.pid=p.id;
-  // one writing box per page — the date is just written wherever you like
-  const ta=document.createElement("textarea");
-  ta.className="pageTextarea";
-  ta.placeholder="write…";
-  ta.value=p.text;
+  // the page is editable paper itself — a contenteditable, not a form
+  // control, so no browser can ever paint a dark box behind the words
+  const ta=document.createElement("div");
+  ta.className="pageText";
+  ta.contentEditable="true";
+  ta.spellcheck=true;
+  ta.dataset.placeholder="write…";
+  ta.setAttribute("role","textbox");
   ta.setAttribute("aria-label","journal page");
+  ta.textContent=p.text;
   ta.addEventListener("input",()=>{
-    journalSave(p,{text:ta.value});
+    if(!ta.innerText.trim())ta.textContent="";
+    journalSave(p,{text:ta.innerText});
     if(ta.scrollHeight>ta.clientHeight+6)journalOverflow(p);
+  });
+  // keep pasted text plain — the book only holds words
+  ta.addEventListener("paste",e=>{
+    e.preventDefault();
+    const t=(e.clipboardData||window.clipboardData).getData("text/plain");
+    document.execCommand("insertText",false,t);
   });
   face.append(ta);
   return face;
@@ -3130,8 +3141,16 @@ function renderJournal(){
   const wantPid=journalFocusId||activePid;
   if(wantPid){
     const face=book.querySelector(`[data-pid="${wantPid}"]`);
-    const ta=face&&face.querySelector(".pageTextarea");
-    if(ta){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);}
+    const ta=face&&face.querySelector(".pageText");
+    if(ta){
+      ta.focus();
+      const range=document.createRange();
+      range.selectNodeContents(ta);
+      range.collapse(false);
+      const sel=getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
     journalFocusId=null;
   }
 }
@@ -3178,7 +3197,7 @@ function initJournalBook(){
   $("journalPrev")?.addEventListener("click",()=>journalFlip(-1));
   $("journalNext")?.addEventListener("click",()=>journalFlip(1));
   book.addEventListener("pointerdown",e=>{
-    if(e.target.closest("textarea")||e.target.closest("input")||e.target.closest("button"))return;
+    if(e.target.closest(".pageText")||e.target.closest("textarea")||e.target.closest("input")||e.target.closest("button"))return;
     const rect=book.getBoundingClientRect();
     journalDrag={x0:e.clientX,y0:e.clientY,dir:0,leaf:null,half:rect.width/2,moved:false};
     try{book.setPointerCapture(e.pointerId)}catch{}
