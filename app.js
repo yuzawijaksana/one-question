@@ -1656,6 +1656,7 @@ function enterFocusMode(){
   document.body.classList.add("focusModeVisual");
   answerEl.blur();
   updateModeUI();
+  journalAnchorEnd=true;
   renderJournal();
 }
 // ---- day circle (time scheduler) mode --------------------------------
@@ -2999,129 +3000,177 @@ function pinCardsData(){
     return {note:stickies.find(s=>s.id===id),depth:d};
   });
 }
-// ---- journal: a quiet book — one page a day, flip or swipe ------------
+// ---- journal: a quiet book — every page writable, flip or swipe --------
 const JOURNAL_KEY="oneQuestionJournal";
 function loadJournal(){
   try{
     const saved=JSON.parse(localStorage.getItem(JOURNAL_KEY)||"[]");
-    if(Array.isArray(saved)){
-      return saved.filter(e=>e&&typeof e.date==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(e.date))
-        .map(e=>({date:e.date,text:String(e.text||""),updatedAt:Number(e.updatedAt)||0}));
+    if(Array.isArray(saved)&&saved.length){
+      return saved.filter(e=>e&&typeof e.text==="string").map((e,i)=>({
+        id:String(e.id||(e.date||"page")+i),
+        date:String(e.date||""),
+        text:e.text,
+        createdAt:Number(e.createdAt)||Number(e.updatedAt)||Date.now(),
+        updatedAt:Number(e.updatedAt)||0
+      }));
     }
   }catch{}
   return [];
+}
+function journalBlankPage(date){
+  return {id:"p"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    date:date||"",text:"",createdAt:Date.now(),updatedAt:0};
 }
 let journal=loadJournal();
 let journalSpread=0;
 let journalDrag=null;
 let journalSaveTimer=null;
-function journalSorted(){return [...journal].sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0)}
+let journalFocusId=null;
+let journalAnchorEnd=false;
 function journalPages(){
-  const pages=[{kind:"cover"}];
-  const entries=journalSorted();
-  const today=todayKey();
-  let hasToday=false;
-  for(const e of entries){
-    if(e.date===today)hasToday=true;
-    pages.push({kind:"entry",entry:e,today:e.date===today});
-  }
-  // today's page exists even before the first word is written
-  if(!hasToday)pages.push({kind:"entry",entry:{date:today,text:"",updatedAt:0},today:true});
-  // pad to even so the writable page always sits on the right half; the
-  // ornament goes just before today, so the cover pairs with the first entry
-  if(pages.length%2===1)pages.splice(pages.length-1,0,{kind:"spacer"});
+  // the book never runs out: always a blank spread waiting at the end,
+  // and an odd page count gets padded so spreads stay whole
+  const pages=[...journal];
+  while(pages.length<2)pages.push(journalBlankPage(""));
+  if(pages.length%2===1)pages.push(journalBlankPage(pages[pages.length-1].date));
   return pages;
+}
+function journalSpreads(pages){return Math.max(1,Math.ceil(pages.length/2))}
+function journalSave(page,patch){
+  // the blank spread waiting at the end is a padding page — the moment it
+  // is written on, it joins the real journal
+  if(!journal.includes(page))journal.push(page);
+  Object.assign(page,patch);
+  page.updatedAt=Date.now();
+  clearTimeout(journalSaveTimer);
+  journalSaveTimer=setTimeout(()=>cacheSet(JOURNAL_KEY,journal),600);
+}
+// a page ran full while writing — continue on the next one, date following
+function journalOverflow(page){
+  let idx=journal.indexOf(page);
+  if(idx===-1){journal.push(page);idx=journal.length-1;}
+  // only the writing frontier moves on by itself; older pages stay put
+  const frontier=journal.reduce((last,p,i)=>p.text?i:last,-1);
+  if(idx!==frontier)return;
+  let next=journal[idx+1];
+  let madeNew=false;
+  if(!next){next=journalBlankPage(page.date);journal.push(next);madeNew=true;}
+  const spread=Math.floor((idx+1)/2);
+  journalFocusId=next.id;
+  if(spread!==journalSpread||madeNew){
+    journalAnchorEnd=false;
+    if(spread>journalSpread)journalFlipTo(spread);
+    else{journalSpread=spread;renderJournal();}
+  }else{
+    renderJournal();
+  }
+}
+function journalFlipTo(spread){
+  const step=()=>{
+    // the flip's own settle render applies the pending focus — only render
+    // here when no flip is needed (an extra render would drop that focus)
+    if(journalSpread===spread)return;
+    const before=journalSpread;
+    journalFlip(journalSpread<spread?1:-1);
+    if(journalSpread===before)return;
+    setTimeout(step,760);
+  };
+  if(journalSpread===spread){renderJournal();return;}
+  step();
 }
 function journalPageNode(p,side){
   const face=document.createElement("div");
   face.className="pageFace "+(side==="right"?"faceFront":"faceBack");
-  if(p.kind==="blank")return face;
-  if(p.kind==="cover"){
-    face.classList.add("cover");
-    const t=document.createElement("div");t.className="coverTitle";t.textContent="journal";
-    const s=document.createElement("div");s.className="coverSub";s.textContent="a quiet book · one page a day";
-    face.append(t,s);
-    return face;
-  }
-  if(p.kind==="spacer"){
-    face.classList.add("spacer");
-    const m=document.createElement("div");m.className="spacerMark";m.textContent="❧";
-    face.append(m);
-    return face;
-  }
-  const d=p.entry.date.split("-");
-  const label=new Date(Number(d[0]),Number(d[1])-1,Number(d[2])).toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long"});
-  const dateEl=document.createElement("div");
-  dateEl.className="pageDate";
-  dateEl.textContent=label;
-  face.append(dateEl);
-  if(p.today){
-    face.classList.add("writable");
-    const ta=document.createElement("textarea");
-    ta.className="pageTextarea";
-    ta.placeholder="write today's page…";
-    ta.setAttribute("aria-label","journal entry for "+label);
-    ta.value=p.entry.text;
-    ta.addEventListener("input",()=>journalType(p.entry,ta.value));
-    face.append(ta);
-  }else{
-    const body=document.createElement("div");
-    body.className="pageBody";
-    body.textContent=p.entry.text||"";
-    face.append(body);
-  }
+  face.dataset.pid=p.id;
+  // one writing box per page — the date is just written wherever you like
+  const ta=document.createElement("textarea");
+  ta.className="pageTextarea";
+  ta.placeholder="write…";
+  ta.value=p.text;
+  ta.setAttribute("aria-label","journal page");
+  ta.addEventListener("input",()=>{
+    journalSave(p,{text:ta.value});
+    if(ta.scrollHeight>ta.clientHeight+6)journalOverflow(p);
+  });
+  face.append(ta);
   return face;
-}
-function journalType(entry,text){
-  entry.text=text;
-  entry.updatedAt=Date.now();
-  if(!journal.some(e=>e.date===entry.date))journal.push(entry);
-  clearTimeout(journalSaveTimer);
-  journalSaveTimer=setTimeout(()=>{journal=journalSorted();cacheSet(JOURNAL_KEY,journal)},600);
 }
 function renderJournal(){
   const book=$("book");
   if(!book)return;
+  // remember which page held the caret — a rebuild must never eat it
+  const activePid=(document.activeElement&&document.activeElement.closest&&document.activeElement.closest(".pageFace")||{}).dataset?((document.activeElement.closest(".pageFace")).dataset.pid||null):null;
   const pages=journalPages();
-  const spreads=Math.max(1,pages.length/2);
+  const spreads=journalSpreads(pages);
+  if(journalAnchorEnd){journalSpread=spreads-1;journalAnchorEnd=false;}
   journalSpread=Math.max(0,Math.min(journalSpread,spreads-1));
   book.textContent="";
-  // resting halves: the cover waits on the left, blank paper on the right
   const baseL=document.createElement("div");baseL.className="bookBase left";
   const baseR=document.createElement("div");baseR.className="bookBase right";
-  baseL.append(journalPageNode(pages[0],"left"));
   book.append(baseL,baseR);
   const spine=document.createElement("div");spine.className="bookSpine";
   book.append(spine);
-  // a window of leaves around the open spread keeps the dom light
-  const lo=Math.max(0,journalSpread-3),hi=Math.min(spreads-1,journalSpread+3);
-  for(let s=lo;s<=hi;s++){
-    const leaf=document.createElement("div");
-    leaf.className="leaf"+(s<journalSpread?" flipped":"");
-    leaf.dataset.s=String(s);
-    leaf.style.zIndex=String(s<journalSpread?50-(journalSpread-1-s):50-(s-journalSpread));
-    leaf.append(
-      journalPageNode(pages[2*s+1]||{kind:"blank"},"right"),
-      journalPageNode(pages[2*s+2]||{kind:"blank"},"left")
-    );
-    book.append(leaf);
+  // resting pages are plain flat paper — only a turning leaf is ever 3d
+  const stackL=document.createElement("div");stackL.className="pageStack left";
+  const stackR=document.createElement("div");stackR.className="pageStack right";
+  for(let s=journalSpread;s>=Math.max(0,journalSpread-3);s--){
+    const f=journalPageNode(pages[2*s],"left");
+    f.style.zIndex=String(10+(journalSpread-s));
+    stackL.append(f);
   }
+  for(let s=Math.min(spreads-1,journalSpread+3);s>=journalSpread;s--){
+    const f=journalPageNode(pages[2*s+1],"right");
+    f.style.zIndex=String(10+(s-journalSpread));
+    stackR.append(f);
+  }
+  book.append(stackR,stackL);
   const prev=$("journalPrev"),next=$("journalNext");
   if(prev)prev.disabled=journalSpread<=0;
-  if(next)next.disabled=journalSpread>=spreads-1;
+  if(next)next.disabled=false; // the book never ends
+  const wantPid=journalFocusId||activePid;
+  if(wantPid){
+    const face=book.querySelector(`[data-pid="${wantPid}"]`);
+    const ta=face&&face.querySelector(".pageTextarea");
+    if(ta){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);}
+    journalFocusId=null;
+  }
+}
+// the turning sheet: front = the right page it leaves, back = the left page it lands on
+function journalMakeLeaf(pages,s){
+  const leaf=document.createElement("div");
+  leaf.className="leaf";
+  leaf.dataset.s=String(s);
+  leaf.style.zIndex="100";
+  const backPage=pages[2*s+2]||journalBlankPage(pages[2*s+1]&&pages[2*s+1].date);
+  leaf.append(
+    journalPageNode(pages[2*s+1],"right"),
+    journalPageNode(backPage,"left")
+  );
+  return leaf;
 }
 function journalFlip(dir){
-  const pages=journalPages();
-  const spreads=Math.max(1,pages.length/2);
-  const target=dir>0?journalSpread:journalSpread-1;
-  if(dir>0&&journalSpread>=spreads-1)return;
   if(dir<0&&journalSpread<=0)return;
-  const leaf=document.querySelector(`.leaf[data-s="${target}"]`);
-  if(!leaf)return;
-  journalSpread+=dir;
-  leaf.style.zIndex="100";
-  leaf.classList.toggle("flipped",dir>0);
-  setTimeout(()=>renderJournal(),700);
+  const book=$("book");
+  if(!book)return;
+  if(dir>0&&journalSpread>=journalSpreads(journalPages())-1){
+    // opening past the last spread grows the book — it never ends
+    const d=journal[journal.length-1]&&journal[journal.length-1].date||"";
+    journal.push(journalBlankPage(d),journalBlankPage(d));
+  }
+  const freshPages=journalPages();
+  if(dir>0&&journalSpread>=journalSpreads(freshPages)-1)return;
+  const s=dir>0?journalSpread:journalSpread-1;
+  const leaf=journalMakeLeaf(freshPages,s);
+  if(dir<0)leaf.classList.add("flipped"); // starts on the left, turns back
+  book.append(leaf);
+  requestAnimationFrame(()=>{
+    leaf.classList.toggle("flipped",dir>0);
+    journalSpread+=dir;
+    setTimeout(()=>{
+      leaf.remove();
+      renderJournal();
+    },700);
+  });
 }
 function initJournalBook(){
   const book=$("book");
@@ -3129,7 +3178,7 @@ function initJournalBook(){
   $("journalPrev")?.addEventListener("click",()=>journalFlip(-1));
   $("journalNext")?.addEventListener("click",()=>journalFlip(1));
   book.addEventListener("pointerdown",e=>{
-    if(e.target.closest("textarea")||e.target.closest("button"))return;
+    if(e.target.closest("textarea")||e.target.closest("input")||e.target.closest("button"))return;
     const rect=book.getBoundingClientRect();
     journalDrag={x0:e.clientX,y0:e.clientY,dir:0,leaf:null,half:rect.width/2,moved:false};
     try{book.setPointerCapture(e.pointerId)}catch{}
@@ -3140,19 +3189,22 @@ function initJournalBook(){
     if(!journalDrag.moved){
       if(Math.abs(dx)<8)return;
       if(Math.abs(dx)<Math.abs(dy)*1.2){journalDrag=null;return}
-      const pages=journalPages();
-      const spreads=Math.max(1,pages.length/2);
       const dir=dx>0?-1:1;
-      if(dir>0&&journalSpread>=spreads-1)return;
-      if(dir<0&&journalSpread<=0)return;
+      if(dir<0&&journalSpread<=0){journalDrag=null;return}
       const s=dir>0?journalSpread:journalSpread-1;
-      const leaf=book.querySelector(`.leaf[data-s="${s}"]`);
-      if(!leaf){journalDrag=null;return}
+      if(s<0){journalDrag=null;return}
+      if(dir>0&&journalSpread>=journalSpreads(journalPages())-1){
+        // dragging past the end grows the book — same as the next button
+        const d=journal[journal.length-1]&&journal[journal.length-1].date||"";
+        journal.push(journalBlankPage(d),journalBlankPage(d));
+      }
+      const leaf=journalMakeLeaf(journalPages(),s);
+      if(dir<0)leaf.classList.add("flipped");
+      book.append(leaf);
       journalDrag.moved=true;
       journalDrag.dir=dir;
       journalDrag.leaf=leaf;
       leaf.classList.add("dragging");
-      leaf.style.zIndex="100";
     }
     e.preventDefault();
     const p=Math.max(0,Math.min(1,Math.abs(dx)/journalDrag.half));
@@ -3168,10 +3220,10 @@ function initJournalBook(){
       journalSpread+=d.dir;
       d.leaf.style.transform="";
       d.leaf.classList.toggle("flipped",d.dir>0);
-      setTimeout(()=>renderJournal(),700);
+      setTimeout(()=>{d.leaf.remove();renderJournal();},700);
     }else{
       d.leaf.style.transform="";
-      setTimeout(()=>{d.leaf.style.zIndex=""},700);
+      setTimeout(()=>d.leaf.remove(),700);
     }
   };
   book.addEventListener("pointerup",settle);

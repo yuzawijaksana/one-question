@@ -6091,20 +6091,26 @@ body.focusModeVisual #cycleHint {
 }
 
 /* today's page is writable — the rule lines scroll with the words */
-.pageFace.writable .pageTextarea {
+.pageTextarea {
   flex: 1;
   width: 100%;
   border: 0;
   outline: none;
   resize: none;
   background: transparent;
-  font: inherit;
-  font-size: 14px;
+  font-family: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", "Times New Roman", serif;
+  font-size: 15px;
   line-height: 28px;
-  color: #433c2d;
-  caret-color: #b0533a;
-  background-image: repeating-linear-gradient(transparent 27px, rgba(96, 116, 168, .16) 27px, rgba(96, 116, 168, .16) 28px);
-  background-attachment: local
+  color: #33302a;
+  caret-color: #8a4b32;
+  background-image: repeating-linear-gradient(transparent 27px, rgba(96, 116, 168, .22) 27px, rgba(96, 116, 168, .22) 28px);
+  background-attachment: local;
+  background-position: 0 4px
+}
+
+.pageTextarea::placeholder {
+  color: #c6b995;
+  font-family: inherit
 }
 
 /* the inside cover */
@@ -6169,4 +6175,36 @@ body.focusModeVisual #cycleHint {
   font-size: 10px;
   letter-spacing: .08em;
   color: color-mix(in srgb, var(--text) 45%, var(--bg))
+}
+
+/* journal v2: flat resting stacks + editable date lines */
+.pageStack {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%
+}
+
+.pageStack.left {
+  left: 0
+}
+
+.pageStack.right {
+  right: 0
+}
+
+/* the book's backing melts away — only the paper itself reads */
+.bookBase {
+  background: #f8f4ea;
+  border-color: rgba(70, 56, 32, .12);
+  box-shadow: 0 34px 64px rgba(0, 0, 0, .32)
+}
+
+.bookBase.left::after,
+.bookBase.right::after {
+  content: none
+}
+
+.bookSpine {
+  opacity: .55
 }
