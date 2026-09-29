@@ -3113,7 +3113,14 @@ function renderJournal(){
   const activePid=(document.activeElement&&document.activeElement.closest&&document.activeElement.closest(".pageFace")||{}).dataset?((document.activeElement.closest(".pageFace")).dataset.pid||null):null;
   const pages=journalPages();
   const spreads=journalSpreads(pages);
-  if(journalAnchorEnd){journalSpread=spreads-1;journalAnchorEnd=false;}
+  if(journalAnchorEnd){
+    // open the book where the writing actually ends — landing on the blank
+    // frontier made finished pages look like they had vanished
+    let last=-1;
+    pages.forEach((p,i)=>{if(p.text&&p.text.trim())last=i;});
+    journalSpread=last>=0?Math.floor(last/2):spreads-1;
+    journalAnchorEnd=false;
+  }
   journalSpread=Math.max(0,Math.min(journalSpread,spreads-1));
   book.textContent="";
   const baseL=document.createElement("div");baseL.className="bookBase left";
