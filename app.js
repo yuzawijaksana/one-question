@@ -57,7 +57,8 @@ const extensionStorage=(typeof browser!=="undefined"&&browser.storage&&browser.s
   : null;
 const STORAGE_KEYS=[
   "oneQuestionQuestionBank","oneQuestionFocusQuestions","oneQuestionSettings",
-  "oneQuestionHistory","oneQuestionRecent","oneQuestionTodos","oneQuestionNote"
+  "oneQuestionHistory","oneQuestionRecent","oneQuestionTodos","oneQuestionNote",
+  "oneQuestionJournal"
 ];
 
 function cacheSet(key,value){
@@ -634,7 +635,7 @@ function updateModeUI(){
     btn.classList.toggle("active",currentMode==="focus");
     btn.classList.toggle("schedulerActive",currentMode==="scheduler");
     btn.setAttribute("aria-pressed",String(currentMode!=="question"));
-    btn.setAttribute("title",currentMode==="focus"?"question mode":currentMode==="scheduler"?"question mode":"focus mode");
+    btn.setAttribute("title",currentMode==="focus"?"question mode":currentMode==="scheduler"?"question mode":"journal");
   }
   document.body.classList.toggle("todayMode",currentMode==="today");
   document.body.classList.toggle("focusModeVisual",currentMode==="focus");
@@ -644,8 +645,11 @@ function updateModeUI(){
   if(sched)sched.setAttribute("aria-hidden",String(currentMode!=="scheduler"));
   const stickyEl=$("sticky");
   if(stickyEl)stickyEl.setAttribute("aria-hidden",String(currentMode!=="sticky"));
+  const journalEl=$("journal");
+  if(journalEl)journalEl.setAttribute("aria-hidden",String(currentMode!=="focus"));
   if(currentMode==="scheduler")renderScheduler();
   if(currentMode==="sticky")renderStickies();
+  if(currentMode==="focus")renderJournal();
   updateFocusModePreview();
   updateTimerUI();
 }
@@ -1650,8 +1654,9 @@ function updateFocusUI(){
 function enterFocusMode(){
   clearTimeout(cycleTimer);closeCategoryMenu();currentMode="focus";cyclePaused=false;isAnswering=false;
   document.body.classList.add("focusModeVisual");
-  updateModeUI();updateFocusUI();showFocusQuestion(chooseFreshFocusIndex());
-  setCycleStatus("cycling",true);answerEl.focus();
+  answerEl.blur();
+  updateModeUI();
+  renderJournal();
 }
 // ---- day circle (time scheduler) mode --------------------------------
 const SCHEDULE_KEY="oneQuestionSchedule";
@@ -2994,6 +2999,184 @@ function pinCardsData(){
     return {note:stickies.find(s=>s.id===id),depth:d};
   });
 }
+// ---- journal: a quiet book — one page a day, flip or swipe ------------
+const JOURNAL_KEY="oneQuestionJournal";
+function loadJournal(){
+  try{
+    const saved=JSON.parse(localStorage.getItem(JOURNAL_KEY)||"[]");
+    if(Array.isArray(saved)){
+      return saved.filter(e=>e&&typeof e.date==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(e.date))
+        .map(e=>({date:e.date,text:String(e.text||""),updatedAt:Number(e.updatedAt)||0}));
+    }
+  }catch{}
+  return [];
+}
+let journal=loadJournal();
+let journalSpread=0;
+let journalDrag=null;
+let journalSaveTimer=null;
+function journalSorted(){return [...journal].sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0)}
+function journalPages(){
+  const pages=[{kind:"cover"}];
+  const entries=journalSorted();
+  const today=todayKey();
+  let hasToday=false;
+  for(const e of entries){
+    if(e.date===today)hasToday=true;
+    pages.push({kind:"entry",entry:e,today:e.date===today});
+  }
+  // today's page exists even before the first word is written
+  if(!hasToday)pages.push({kind:"entry",entry:{date:today,text:"",updatedAt:0},today:true});
+  // pad to even so the writable page always sits on the right half; the
+  // ornament goes just before today, so the cover pairs with the first entry
+  if(pages.length%2===1)pages.splice(pages.length-1,0,{kind:"spacer"});
+  return pages;
+}
+function journalPageNode(p,side){
+  const face=document.createElement("div");
+  face.className="pageFace "+(side==="right"?"faceFront":"faceBack");
+  if(p.kind==="blank")return face;
+  if(p.kind==="cover"){
+    face.classList.add("cover");
+    const t=document.createElement("div");t.className="coverTitle";t.textContent="journal";
+    const s=document.createElement("div");s.className="coverSub";s.textContent="a quiet book · one page a day";
+    face.append(t,s);
+    return face;
+  }
+  if(p.kind==="spacer"){
+    face.classList.add("spacer");
+    const m=document.createElement("div");m.className="spacerMark";m.textContent="❧";
+    face.append(m);
+    return face;
+  }
+  const d=p.entry.date.split("-");
+  const label=new Date(Number(d[0]),Number(d[1])-1,Number(d[2])).toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long"});
+  const dateEl=document.createElement("div");
+  dateEl.className="pageDate";
+  dateEl.textContent=label;
+  face.append(dateEl);
+  if(p.today){
+    face.classList.add("writable");
+    const ta=document.createElement("textarea");
+    ta.className="pageTextarea";
+    ta.placeholder="write today's page…";
+    ta.setAttribute("aria-label","journal entry for "+label);
+    ta.value=p.entry.text;
+    ta.addEventListener("input",()=>journalType(p.entry,ta.value));
+    face.append(ta);
+  }else{
+    const body=document.createElement("div");
+    body.className="pageBody";
+    body.textContent=p.entry.text||"";
+    face.append(body);
+  }
+  return face;
+}
+function journalType(entry,text){
+  entry.text=text;
+  entry.updatedAt=Date.now();
+  if(!journal.some(e=>e.date===entry.date))journal.push(entry);
+  clearTimeout(journalSaveTimer);
+  journalSaveTimer=setTimeout(()=>{journal=journalSorted();cacheSet(JOURNAL_KEY,journal)},600);
+}
+function renderJournal(){
+  const book=$("book");
+  if(!book)return;
+  const pages=journalPages();
+  const spreads=Math.max(1,pages.length/2);
+  journalSpread=Math.max(0,Math.min(journalSpread,spreads-1));
+  book.textContent="";
+  // resting halves: the cover waits on the left, blank paper on the right
+  const baseL=document.createElement("div");baseL.className="bookBase left";
+  const baseR=document.createElement("div");baseR.className="bookBase right";
+  baseL.append(journalPageNode(pages[0],"left"));
+  book.append(baseL,baseR);
+  const spine=document.createElement("div");spine.className="bookSpine";
+  book.append(spine);
+  // a window of leaves around the open spread keeps the dom light
+  const lo=Math.max(0,journalSpread-3),hi=Math.min(spreads-1,journalSpread+3);
+  for(let s=lo;s<=hi;s++){
+    const leaf=document.createElement("div");
+    leaf.className="leaf"+(s<journalSpread?" flipped":"");
+    leaf.dataset.s=String(s);
+    leaf.style.zIndex=String(s<journalSpread?50-(journalSpread-1-s):50-(s-journalSpread));
+    leaf.append(
+      journalPageNode(pages[2*s+1]||{kind:"blank"},"right"),
+      journalPageNode(pages[2*s+2]||{kind:"blank"},"left")
+    );
+    book.append(leaf);
+  }
+  const prev=$("journalPrev"),next=$("journalNext");
+  if(prev)prev.disabled=journalSpread<=0;
+  if(next)next.disabled=journalSpread>=spreads-1;
+}
+function journalFlip(dir){
+  const pages=journalPages();
+  const spreads=Math.max(1,pages.length/2);
+  const target=dir>0?journalSpread:journalSpread-1;
+  if(dir>0&&journalSpread>=spreads-1)return;
+  if(dir<0&&journalSpread<=0)return;
+  const leaf=document.querySelector(`.leaf[data-s="${target}"]`);
+  if(!leaf)return;
+  journalSpread+=dir;
+  leaf.style.zIndex="100";
+  leaf.classList.toggle("flipped",dir>0);
+  setTimeout(()=>renderJournal(),700);
+}
+function initJournalBook(){
+  const book=$("book");
+  if(!book)return;
+  $("journalPrev")?.addEventListener("click",()=>journalFlip(-1));
+  $("journalNext")?.addEventListener("click",()=>journalFlip(1));
+  book.addEventListener("pointerdown",e=>{
+    if(e.target.closest("textarea")||e.target.closest("button"))return;
+    const rect=book.getBoundingClientRect();
+    journalDrag={x0:e.clientX,y0:e.clientY,dir:0,leaf:null,half:rect.width/2,moved:false};
+    try{book.setPointerCapture(e.pointerId)}catch{}
+  });
+  book.addEventListener("pointermove",e=>{
+    if(!journalDrag)return;
+    const dx=e.clientX-journalDrag.x0,dy=e.clientY-journalDrag.y0;
+    if(!journalDrag.moved){
+      if(Math.abs(dx)<8)return;
+      if(Math.abs(dx)<Math.abs(dy)*1.2){journalDrag=null;return}
+      const pages=journalPages();
+      const spreads=Math.max(1,pages.length/2);
+      const dir=dx>0?-1:1;
+      if(dir>0&&journalSpread>=spreads-1)return;
+      if(dir<0&&journalSpread<=0)return;
+      const s=dir>0?journalSpread:journalSpread-1;
+      const leaf=book.querySelector(`.leaf[data-s="${s}"]`);
+      if(!leaf){journalDrag=null;return}
+      journalDrag.moved=true;
+      journalDrag.dir=dir;
+      journalDrag.leaf=leaf;
+      leaf.classList.add("dragging");
+      leaf.style.zIndex="100";
+    }
+    e.preventDefault();
+    const p=Math.max(0,Math.min(1,Math.abs(dx)/journalDrag.half));
+    journalDrag.p=p;
+    journalDrag.leaf.style.transform=`rotateY(${journalDrag.dir>0?-p*180:-180+p*180}deg)`;
+  });
+  const settle=()=>{
+    if(!journalDrag)return;
+    const d=journalDrag;journalDrag=null;
+    if(!d.moved)return;
+    d.leaf.classList.remove("dragging");
+    if(d.p>0.35){
+      journalSpread+=d.dir;
+      d.leaf.style.transform="";
+      d.leaf.classList.toggle("flipped",d.dir>0);
+      setTimeout(()=>renderJournal(),700);
+    }else{
+      d.leaf.style.transform="";
+      setTimeout(()=>{d.leaf.style.zIndex=""},700);
+    }
+  };
+  book.addEventListener("pointerup",settle);
+  book.addEventListener("pointercancel",settle);
+}
 function enterStickyMode(){
   clearTimeout(cycleTimer);closeCategoryMenu();
   currentMode="sticky";cyclePaused=false;isAnswering=false;
@@ -3262,6 +3445,7 @@ document.addEventListener("keydown",e=>{
 applyAppearance();
 applyModeSwitchExpand();
 applyModeOrder();
+initJournalBook();
 // hardware-acceleration-off friendliness: Chrome composites on the CPU
 // (SwiftShader) when GPU acceleration is disabled, and the decorative blurs
 // and endless motion then dominate the frame budget. Detect it once and let

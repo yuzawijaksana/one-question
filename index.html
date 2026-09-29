@@ -39,9 +39,9 @@
           id="focusRunningTime"></span></span>
       <button id="modeToggle" class="focusModeToggle" type="button" aria-label="switch mode" aria-pressed="false"
         title="switch mode"><span class="modeIcon modeQuestion" aria-hidden="true">?</span><span
-          class="modeIcon modeFocus" aria-hidden="true">#</span><span class="modeIcon modeScheduler"
-          aria-hidden="true">%</span><span class="modeIcon modeSticky"
-          aria-hidden="true">@</span></button>
+          class="modeIcon modeFocus" aria-hidden="true">✎</span><span class="modeIcon modeScheduler"
+            aria-hidden="true">%</span><span class="modeIcon modeSticky"
+            aria-hidden="true">@</span></button>
     </div>
 
     <section id="sticky" class="stickyMode" aria-hidden="true">
@@ -55,7 +55,16 @@
 
     <button id="stickyPin" class="stickyPin" type="button" title="remember wall" aria-label="Open remember wall"></button>
 
-    <div id="focusKicker" class="focusKicker" aria-hidden="true">focus</div>
+    <section id="journal" class="journal" aria-hidden="true">
+      <div class="bookStage">
+        <button id="journalPrev" class="journalArrow" type="button" aria-label="previous page" title="previous page">‹</button>
+        <div id="book" class="book" aria-label="journal book"></div>
+        <button id="journalNext" class="journalArrow" type="button" aria-label="next page" title="next page">›</button>
+      </div>
+      <div class="journalHint">swipe or click the arrows · the newest page is yours to write</div>
+    </section>
+
+    <div id="focusKicker" class="focusKicker" aria-hidden="true">journal</div>
 
     <section class="focus" id="focus" aria-live="polite">
       <div id="focusTodoPreview" class="focusTodoPreview" aria-hidden="true"></div>

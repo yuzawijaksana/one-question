@@ -5924,3 +5924,249 @@ body.softRender .settingsPanel {
 body.softRender .notePanel {
   background: color-mix(in srgb, var(--bg) 97%, transparent) !important
 }
+
+/* ---- journal: a book with white paper, flipping and swipeable -------- */
+.journal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+  animation: schedulerIn .5s cubic-bezier(.2, .7, .2, 1)
+}
+
+body.focusModeVisual .journal {
+  display: flex
+}
+
+/* the question shell rests while the book is open */
+body.focusModeVisual .focus,
+body.focusModeVisual .controlsZone,
+body.focusModeVisual #cycleHint {
+  display: none !important
+}
+
+.bookStage {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  perspective: 2400px
+}
+
+.book {
+  position: relative;
+  width: min(900px, calc(100vw - 170px));
+  height: min(560px, calc(100vh - 230px));
+  transform-style: preserve-3d;
+  touch-action: pan-y;
+  user-select: none
+}
+
+/* the paper halves resting under the leaves */
+.bookBase {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  background: #f4efe3;
+  border: 1px solid rgba(70, 56, 32, .22);
+  box-shadow: 0 26px 60px rgba(0, 0, 0, .5)
+}
+
+.bookBase.left {
+  left: 0;
+  border-radius: 8px 2px 2px 8px
+}
+
+.bookBase.right {
+  right: 0;
+  border-radius: 2px 8px 8px 2px
+}
+
+/* stacked page edges on the outer sides */
+.bookBase.left::after,
+.bookBase.right::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  width: 5px;
+  background: repeating-linear-gradient(to bottom, #f8f4ea 0 3px, #d8d0bc 3px 4px);
+  opacity: .8
+}
+
+.bookBase.left::after {
+  left: -6px;
+  border-radius: 3px 0 0 3px
+}
+
+.bookBase.right::after {
+  right: -6px;
+  border-radius: 0 3px 3px 0
+}
+
+.bookSpine {
+  position: absolute;
+  left: 50%;
+  top: -1px;
+  bottom: -1px;
+  width: 18px;
+  transform: translateX(-50%);
+  z-index: 60;
+  pointer-events: none;
+  background: linear-gradient(90deg,
+    rgba(70, 56, 32, 0) 0%,
+    rgba(70, 56, 32, .22) 38%,
+    rgba(40, 30, 14, .38) 50%,
+    rgba(70, 56, 32, .22) 62%,
+    rgba(70, 56, 32, 0) 100%)
+}
+
+/* one leaf = one sheet: front is the right page, back the next left page */
+.leaf {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 50%;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  transition: transform .65s cubic-bezier(.25, .7, .2, 1);
+  will-change: transform
+}
+
+.leaf.flipped {
+  transform: rotateY(-180deg)
+}
+
+.leaf.dragging {
+  transition: none
+}
+
+.pageFace {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 26px 30px 22px;
+  overflow: hidden;
+  background: #f8f4ea;
+  border: 1px solid rgba(70, 56, 32, .18);
+  color: #3c3628
+}
+
+.pageFace.faceFront {
+  border-radius: 2px 8px 8px 2px
+}
+
+.pageFace.faceBack {
+  transform: rotateY(180deg);
+  border-radius: 8px 2px 2px 8px
+}
+
+.pageDate {
+  font-size: 10px;
+  letter-spacing: .24em;
+  text-transform: lowercase;
+  color: #8d8166
+}
+
+.pageBody {
+  flex: 1;
+  margin: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  line-height: 28px;
+  font-size: 14px;
+  color: #433c2d;
+  background-image: repeating-linear-gradient(transparent 27px, rgba(96, 116, 168, .16) 27px, rgba(96, 116, 168, .16) 28px)
+}
+
+/* today's page is writable — the rule lines scroll with the words */
+.pageFace.writable .pageTextarea {
+  flex: 1;
+  width: 100%;
+  border: 0;
+  outline: none;
+  resize: none;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  line-height: 28px;
+  color: #433c2d;
+  caret-color: #b0533a;
+  background-image: repeating-linear-gradient(transparent 27px, rgba(96, 116, 168, .16) 27px, rgba(96, 116, 168, .16) 28px);
+  background-attachment: local
+}
+
+/* the inside cover */
+.pageFace.cover {
+  background: #efe8d7;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 14px
+}
+
+.coverTitle {
+  font-size: 20px;
+  letter-spacing: .3em;
+  text-transform: lowercase;
+  color: #6b5f45
+}
+
+.coverSub {
+  font-size: 11px;
+  letter-spacing: .12em;
+  color: #93876a
+}
+
+/* a quiet page between spreads */
+.pageFace.spacer {
+  align-items: center;
+  justify-content: center;
+  background: #f5f1e5
+}
+
+.spacerMark {
+  font-size: 16px;
+  color: #a99c7e
+}
+
+.journalArrow {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--muted);
+  background: none;
+  border: 1px solid rgba(235, 232, 224, .14);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color .25s, border-color .25s
+}
+
+.journalArrow:hover {
+  color: var(--text);
+  border-color: rgba(235, 232, 224, .35)
+}
+
+.journalArrow:disabled {
+  opacity: .35;
+  cursor: default
+}
+
+.journalHint {
+  font-size: 10px;
+  letter-spacing: .08em;
+  color: color-mix(in srgb, var(--text) 45%, var(--bg))
+}
