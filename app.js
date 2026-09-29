@@ -3557,15 +3557,19 @@ function updateBookPop(){
   pop.style.top=Math.round(y)+"px";
 }
 // ---- the reader: the whole book, fullscreen, page-flip ------------------
-let readerPages=null,readerSpread=0;
+let readerPages=null,readerSpread=0,readerIndex=0,readerWasSingle=false;
 function readerSpreads(){return Math.max(1,Math.ceil((readerPages||[]).length/2))}
+// phones read one page at a time — the same nominal sheet, alone and
+// scaled to fit, turning a page per tap instead of a spread per flip
+function readerSingle(){return window.matchMedia("(max-width:700px)").matches}
 // the book is always laid out on its nominal 1010×650 spread; a smaller
 // window scales the whole thing down instead of re-flowing the pages, so
 // the preview's 505×650 sheet stays a true 1:1 of the open book
 function readerSyncScale(){
   const bk=$("readerBook");
   if(!bk)return;
-  const s=Math.min(1,(innerWidth-56)/1010,(innerHeight-170)/650);
+  const pageW=readerSingle()?505:1010;
+  const s=Math.min(1,(innerWidth-(readerSingle()?32:56))/pageW,(innerHeight-170)/650);
   bk.style.setProperty("--rdScale",String(Math.max(.3,s)));
 }
 function readerOpen(){
@@ -3573,9 +3577,11 @@ function readerOpen(){
   if(!rd)return;
   rd.classList.add("open");
   rd.setAttribute("aria-hidden","false");
+  readerWasSingle=readerSingle();
   readerSyncScale();
   readerBuild();
   readerSpread=0;
+  readerIndex=0;
   renderReader();
 }
 function readerClose(){
@@ -3706,6 +3712,22 @@ function readerPageNode(p,side){
 function renderReader(leftAnchor,rightAnchor){
   const bk=$("readerBook");
   if(!bk||!readerPages)return;
+  // one page at a time on a phone: the current page alone, centered
+  if(readerSingle()){
+    bk.textContent="";
+    bk.classList.add("single");
+    readerIndex=Math.max(0,Math.min(readerIndex,readerPages.length-1));
+    const f=readerPageNode(readerPages[readerIndex],"right");
+    f.style.zIndex="13";
+    bk.append(f);
+    const prev0=$("bookReaderPrev"),next0=$("bookReaderNext");
+    if(prev0)prev0.disabled=readerIndex<=0;
+    if(next0)next0.disabled=readerIndex>=readerPages.length-1;
+    const close0=$("bookReaderClose");
+    if(close0)close0.classList.toggle("onCover",readerIndex<=1);
+    return;
+  }
+  bk.classList.remove("single");
   // during a turn, the half being uncovered rests on the destination spread
   // while the other half keeps the origin — that is what the leaf reveals
   const LS=Math.max(0,Math.min(leftAnchor==null?readerSpread:leftAnchor,readerSpreads()-1));
@@ -3752,6 +3774,14 @@ function readerMakeLeaf(s){
 }
 function readerFlip(dir){
   if(!readerPages)return;
+  // a phone turns one page per tap — no sheet, just the next page
+  if(readerSingle()){
+    const next=readerIndex+dir;
+    if(next<0||next>readerPages.length-1)return;
+    readerIndex=next;
+    renderReader();
+    return;
+  }
   if(dir<0&&readerSpread<=0)return;
   if(dir>0&&readerSpread>=readerSpreads()-1)return;
   const bk=$("readerBook");
@@ -3775,7 +3805,20 @@ function readerFlip(dir){
 function initReaderControls(){
   const bk=$("readerBook");
   if(!bk)return;
-  window.addEventListener("resize",readerSyncScale);
+  window.addEventListener("resize",()=>{
+    readerSyncScale();
+    // crossing the phone breakpoint swaps spread ↔ single page — carry the
+    // reading position across so the same page stays on screen
+    if(readerIsOpen()){
+      const single=readerSingle();
+      if(single!==readerWasSingle){
+        if(single)readerIndex=2*Math.min(readerSpread,readerSpreads()-1);
+        else readerSpread=Math.min(Math.floor(readerIndex/2),readerSpreads()-1);
+        readerWasSingle=single;
+        renderReader();
+      }
+    }
+  });
   $("bookReaderPrev")?.addEventListener("click",()=>readerFlip(-1));
   $("bookReaderNext")?.addEventListener("click",()=>readerFlip(1));
   // click a half of the book to turn it

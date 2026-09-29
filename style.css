@@ -6656,7 +6656,15 @@ body.focusModeVisual .focusKicker {
   align-items: center;
   gap: 1px;
   padding: 2px 4px;
-  user-select: none
+  user-select: none;
+  /* the strip scrolls on narrow editors instead of spilling out */
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none
+}
+
+.bookToolbar::-webkit-scrollbar {
+  display: none
 }
 
 .tbBtn {
@@ -7172,25 +7180,72 @@ body.focusModeVisual .focusKicker {
   padding-top: 12px
 }
 
-@media (max-width: 840px) {
-  .bookReaderStage {
-    gap: 10px
-  }
-
+/* phones read one page at a time: the nominal page stays 505×650 — the same
+   sheet the pagination measured — and scales to fit the screen, so mobile
+   shows the exact same page breaks as the desktop spread */
+@media (max-width: 700px) {
   .readerBook {
-    width: calc(100vw - 110px);
-    height: calc(100vh - 170px)
+    width: 505px;
+    height: 650px
   }
 
-  .rdFace {
-    padding: 22px 24px 18px
+  .bookReaderStage {
+    position: relative;
+    gap: 0
   }
 
-  .rdTitle {
-    font-size: 19px
+  /* the arrows overlay the page instead of flanking it — a spread-width
+     row cannot fit beside a full-width page */
+  .bookReaderArrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 5;
+    background: color-mix(in srgb, var(--bg) 78%, transparent);
+    backdrop-filter: blur(4px)
   }
 
-  .rdBody {
-    font-size: 13px
+  #bookReaderPrev {
+    left: 6px
   }
+
+  #bookReaderNext {
+    right: 6px
+  }
+
+  .bookReaderClose,
+  .bookReaderFont {
+    top: 12px
+  }
+
+  .bookReaderClose {
+    right: 12px;
+    padding: 5px 9px
+  }
+
+  .bookReaderFont {
+    left: 12px;
+    gap: 4px
+  }
+
+  .bookReaderHint {
+    font-size: 9px;
+    padding: 0 16px;
+    text-align: center
+  }
+
+  /* a lone page reads better without the spread's spine shadow */
+  .rdSpine,
+  .rdBase {
+    display: none
+  }
+}
+
+/* the turning sheet only exists on spreads — a single page just swaps */
+.readerBook.single .rdLeaf {
+  display: none
+}
+
+.readerBook.single .rdFace {
+  border-radius: 8px
 }
