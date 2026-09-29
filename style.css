@@ -6208,3 +6208,31 @@ body.focusModeVisual #cycleHint {
 .bookSpine {
   opacity: .55
 }
+
+/* the writing box IS the paper — paint it so no dark can ever show through,
+   whatever the browser wants to do with form controls */
+.journal {
+  color-scheme: light
+}
+
+.pageTextarea {
+  background-color: #f8f4ea
+}
+
+.pageTextarea::-webkit-scrollbar {
+  width: 8px
+}
+
+.pageTextarea::-webkit-scrollbar-track {
+  background: transparent
+}
+
+.pageTextarea::-webkit-scrollbar-thumb {
+  background: rgba(141, 129, 102, .35);
+  border-radius: 8px
+}
+
+.pageTextarea {
+  scrollbar-color: rgba(141, 129, 102, .35) transparent;
+  scrollbar-width: thin
+}
