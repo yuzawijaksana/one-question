@@ -6283,9 +6283,6 @@ body.focusModeVisual #cycleHint {
   line-height: 28px;
   color: #33302a;
   caret-color: #8a4b32;
-  background-image: repeating-linear-gradient(transparent 27px, rgba(96, 116, 168, .22) 27px, rgba(96, 116, 168, .22) 28px);
-  background-attachment: local;
-  background-position: 0 4px;
   scrollbar-width: thin;
   scrollbar-color: rgba(141, 129, 102, .35) transparent
 }
