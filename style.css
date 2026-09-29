@@ -6314,3 +6314,30 @@ body.focusModeVisual #cycleHint {
 .pageFace.flatRight {
   border-radius: 2px 8px 8px 2px
 }
+
+/* textbook underlines: the writing sits on the lines, anywhere on the page */
+.pageText {
+  background-image: repeating-linear-gradient(transparent 27px, rgba(88, 106, 142, .38) 27px, rgba(88, 106, 142, .38) 28px);
+  background-attachment: local;
+  background-position: 0 6px
+}
+
+/* paper pull: shading follows the fold while the sheet is dragged */
+.leaf::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(20, 14, 4, .26), rgba(20, 14, 4, 0) 55%);
+  opacity: calc(var(--pull, 0) * .9)
+}
+
+.leaf.flipped::after {
+  background: linear-gradient(270deg, rgba(20, 14, 4, .26), rgba(20, 14, 4, 0) 55%)
+}
+
+/* release: the sheet settles or springs back with a paper overshoot */
+.leaf.settling {
+  transition: transform .6s cubic-bezier(.22, 1.5, .36, 1)
+}

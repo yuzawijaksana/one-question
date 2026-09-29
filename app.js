@@ -3105,6 +3105,28 @@ function journalPageNode(p,side,flat){
     const t=(e.clipboardData||window.clipboardData).getData("text/plain");
     document.execCommand("insertText",false,t);
   });
+  // write anywhere: clicking a blank line pads the page with empty lines so
+  // the caret lands exactly where you clicked, like real paper
+  ta.addEventListener("pointerdown",e=>{
+    const rect=ta.getBoundingClientRect();
+    const y=e.clientY-rect.top+ta.scrollTop;
+    const lineIdx=Math.floor(y/28);
+    let text=ta.innerText;
+    const nl=String.fromCharCode(10);
+    const lines=text.split(nl);
+    if(lineIdx>=lines.length){
+      e.preventDefault();
+      while(ta.innerText.split(nl).length<=lineIdx)ta.innerText=ta.innerText+nl;
+      journalSave(p,{text:ta.innerText});
+      ta.focus();
+      const range=document.createRange();
+      range.selectNodeContents(ta);
+      range.collapse(false);
+      const sel=getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+  });
   face.append(ta);
   return face;
 }
@@ -3236,20 +3258,28 @@ function initJournalBook(){
     }
     e.preventDefault();
     const p=Math.max(0,Math.min(1,Math.abs(dx)/journalDrag.half));
+    // paper has stiffness: the pull resists as it approaches the fold, and
+    // the sheet bends a little toward the hand (vertical pull tilts it)
+    const stiff=Math.pow(p,.85);
+    const bend=Math.max(-8,Math.min(8,(e.clientY-journalDrag.y0)*.05));
     journalDrag.p=p;
-    journalDrag.leaf.style.transform=`rotateY(${journalDrag.dir>0?-p*180:-180+p*180}deg)`;
+    journalDrag.leaf.style.setProperty("--pull",p.toFixed(3));
+    const angle=journalDrag.dir>0?-stiff*180:-180+stiff*180;
+    journalDrag.leaf.style.transform=`rotateX(${bend.toFixed(1)}deg) rotateY(${angle.toFixed(1)}deg)`;
   });
   const settle=()=>{
     if(!journalDrag)return;
     const d=journalDrag;journalDrag=null;
     if(!d.moved)return;
     d.leaf.classList.remove("dragging");
+    d.leaf.classList.add("settling");
     if(d.p>0.35){
       journalSpread+=d.dir;
       d.leaf.style.transform="";
       d.leaf.classList.toggle("flipped",d.dir>0);
       setTimeout(()=>{d.leaf.remove();renderJournal();},700);
     }else{
+      // springs back with a little overshoot, like released paper
       d.leaf.style.transform="";
       setTimeout(()=>d.leaf.remove(),700);
     }
