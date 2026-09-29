@@ -5924,3 +5924,1273 @@ body.softRender .settingsPanel {
 body.softRender .notePanel {
   background: color-mix(in srgb, var(--bg) 97%, transparent) !important
 }
+
+/* ---- the book: writing studio in the focus slot ------------------------
+   three panes on the quiet dark desk — a chapter shelf, the cream writing
+   page, and a typeset preview — echoing a book-writing app in miniature. */
+.bookStudio {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  flex-direction: column;
+  gap: 10px;
+  padding: 74px 26px 16px;
+  animation: schedulerIn .5s cubic-bezier(.2, .7, .2, 1)
+}
+
+body.focusModeVisual .bookStudio {
+  display: flex
+}
+
+/* the question shell rests while the book is open; the floating kicker is
+   redundant — the studio carries its own header */
+body.focusModeVisual .focus,
+body.focusModeVisual .controlsZone,
+body.focusModeVisual #cycleHint,
+body.focusModeVisual .focusKicker {
+  display: none !important
+}
+
+/* quiet chrome on the app desk */
+.bookHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 2px
+}
+
+.bookTitleWrap {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0
+}
+
+.bookTitleMark {
+  color: color-mix(in srgb, var(--accent) 80%, var(--text));
+  font-size: 15px;
+  transform: translateY(1px)
+}
+
+.bookTitle {
+  font-size: var(--fs-lg);
+  color: var(--text);
+  font-style: italic;
+  font-family: Georgia, "Times New Roman", serif;
+  letter-spacing: .01em;
+  padding: 2px 6px;
+  margin-left: -6px;
+  border-radius: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: text;
+  transition: background .2s
+}
+
+.bookTitle:hover,
+.bookTitle:focus {
+  background: color-mix(in srgb, var(--text) 7%, transparent)
+}
+
+.bookHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 12px
+}
+
+.bookSaveStatus {
+  font-size: var(--fs-xs);
+  letter-spacing: .08em;
+  color: var(--muted);
+  min-width: 90px;
+  text-align: right
+}
+
+.bookGhostButton {
+  font-size: var(--fs-xs);
+  letter-spacing: .06em;
+  color: var(--muted);
+  padding: 5px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  transition: color .2s, border-color .2s, background .2s
+}
+
+.bookGhostButton:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--text) 30%, transparent);
+  background: color-mix(in srgb, var(--text) 5%, transparent)
+}
+
+.bookShelfToggle {
+  display: none
+}
+
+/* the desk: shelf — page — preview */
+.bookBody {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 218px minmax(0, 1fr) 552px;
+  gap: 18px
+}
+
+.bookShelf {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 12px 10px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--bg) 62%, transparent)
+}
+
+.bookShelfHead,
+.bookPreviewHead {
+  font-size: var(--fs-2xs);
+  letter-spacing: .3em;
+  color: var(--muted);
+  padding: 2px 8px 10px
+}
+
+.bookChapters {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: 2px
+}
+
+.bookChapterRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  padding: 8px 8px;
+  border-radius: 10px;
+  color: var(--muted);
+  position: relative;
+  transition: background .18s, color .18s
+}
+
+.bookChapterRow:hover {
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  color: var(--text)
+}
+
+.bookChapterRow.active {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--text)
+}
+
+.bookChapterRow.active::before {
+  content: "";
+  position: absolute;
+  left: -2px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--accent)
+}
+
+.bookChapterNum {
+  font-size: var(--fs-2xs);
+  color: color-mix(in srgb, var(--text) 38%, var(--bg));
+  font-variant-numeric: tabular-nums
+}
+
+.bookChapterRow.active .bookChapterNum {
+  color: var(--accent)
+}
+
+.bookChapterName {
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis
+}
+
+.bookChapterWords {
+  font-size: var(--fs-2xs);
+  color: color-mix(in srgb, var(--text) 32%, var(--bg));
+  font-variant-numeric: tabular-nums
+}
+
+.bookChapterDelete {
+  font-size: var(--fs-md);
+  line-height: 1;
+  opacity: 0;
+  color: var(--muted);
+  padding: 2px 3px;
+  border-radius: 6px;
+  transition: opacity .15s, color .15s
+}
+
+.bookChapterRow:hover .bookChapterDelete {
+  opacity: .8
+}
+
+.bookChapterDelete:hover {
+  color: #c96b5d
+}
+
+.bookNewChapter {
+  margin-top: 8px;
+  padding: 8px;
+  font-size: var(--fs-xs);
+  letter-spacing: .05em;
+  color: var(--muted);
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  transition: color .2s, border-color .2s
+}
+
+.bookNewChapter:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--text) 28%, transparent)
+}
+
+/* the writing page — cream paper, brown ink, georgia */
+.bookDesk {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  gap: 8px
+}
+
+.bookPageWrap {
+  flex: 1;
+  min-height: 0;
+  display: flex
+}
+
+.bookPage {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 46px 58px 34px 72px;
+  border-radius: 6px 14px 14px 6px;
+  background: linear-gradient(178deg, #f5efdf 0%, #f1e9d5 55%, #ecdfc3 100%);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, .34), inset 0 0 0 1px rgba(120, 96, 60, .14), inset 0 0 60px rgba(120, 96, 60, .07);
+  color: #43382a;
+  font-family: Georgia, "Times New Roman", serif;
+  overflow: hidden
+}
+
+/* red margin rule, like a schoolbook */
+.bookPage::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 46px;
+  width: 1px;
+  background: rgba(168, 82, 66, .32)
+}
+
+.bookPageKicker {
+  font-size: 10px;
+  letter-spacing: .32em;
+  color: #a4906d;
+  margin-bottom: 12px
+}
+
+.bookChapterTitle {
+  margin: 0 0 18px;
+  font-size: 23px;
+  line-height: 1.35;
+  font-weight: 500;
+  font-style: italic;
+  color: #382d20
+}
+
+.bookEditor {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  font-size: 15.5px;
+  line-height: 1.9;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  caret-color: #7d3a2e
+}
+
+.bookEditor.isBlank::after {
+  content: attr(data-placeholder);
+  color: rgba(122, 100, 70, .48);
+  font-style: italic;
+  pointer-events: none
+}
+
+.bookChapterMeta {
+  padding-top: 14px;
+  font-size: 10.5px;
+  letter-spacing: .12em;
+  color: #a4906d;
+  border-top: 1px solid rgba(120, 96, 60, .14);
+  margin-top: 12px
+}
+
+/* rich text inside the page — headings, centered lines, scene breaks */
+.bookEditor p {
+  margin: 0 0 12px
+}
+
+.bookEditor h1,
+.bookEditor h2,
+.bookEditor h3 {
+  font-weight: 600;
+  font-style: normal;
+  color: #382d20;
+  line-height: 1.35
+}
+
+.bookEditor h1 {
+  font-size: 25px;
+  margin: 22px 0 12px
+}
+
+.bookEditor h2 {
+  font-size: 20px;
+  margin: 18px 0 10px
+}
+
+.bookEditor h3 {
+  font-size: 16px;
+  margin: 14px 0 8px
+}
+
+.bookEditor h1:first-child,
+.bookEditor h2:first-child,
+.bookEditor h3:first-child {
+  margin-top: 0
+}
+
+.bookEditor .sceneBreak {
+  text-align: center;
+  letter-spacing: .34em;
+  color: #8a6f4d;
+  margin: 18px 0
+}
+
+/* paper scrollbar for the writing page */
+.bookEditor {
+  color-scheme: light;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(120, 96, 60, .35) transparent
+}
+
+.bookEditor::-webkit-scrollbar {
+  width: 9px
+}
+
+.bookEditor::-webkit-scrollbar-thumb {
+  background: rgba(120, 96, 60, .28);
+  border-radius: 8px
+}
+
+.bookEditor::-webkit-scrollbar-track {
+  background: transparent
+}
+
+/* the preview column — a typeset page in miniature */
+.bookPreviewCol {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 12px 12px 10px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--bg) 62%, transparent)
+}
+
+/* the preview column: the chapter's pages stacked like a pile of finished
+   paper — current page on top, the next ones right below, scroll to read */
+.bookPreviewPage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 0 6px 12px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--text) 22%, transparent) transparent;
+  /* the paper width must never change between the pagination probe and the
+     rendered pages — a scrollbar appearing only once they overflow would
+     narrow them and cut a line, so its gutter is always reserved */
+  scrollbar-gutter: stable
+}
+
+.bookPreviewPage::-webkit-scrollbar {
+  width: 8px
+}
+
+.bookPreviewPage::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--text) 18%, transparent);
+  border-radius: 8px
+}
+
+.bookPreviewPage::-webkit-scrollbar-track {
+  background: transparent
+}
+
+/* a preview page IS a page of the open book: the reader's own 505×650
+   sheet at full size, stacked down the column — same type, same breaks */
+.bkPage {
+  position: relative;
+  flex: none;
+  width: 505px;
+  height: 650px;
+  border-radius: 10px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, .28)
+}
+
+.bkKicker {
+  font-size: 9px;
+  letter-spacing: .3em;
+  color: #a4906d;
+  margin-bottom: 8px
+}
+
+/* the preview's continuation papers mirror the reader: category and folio
+   share the running head at the top, and no number sits at the foot */
+.bkRunning {
+  font-size: 8.5px;
+  letter-spacing: .28em;
+  text-align: left;
+  color: #ab9873;
+  margin-bottom: 12px
+}
+
+.bkTitle {
+  font-size: 15px;
+  line-height: 1.4;
+  font-style: italic;
+  color: #3a2f21;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(120, 96, 60, .18);
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical
+}
+
+.bkBody {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  font-size: 11.5px;
+  line-height: 1.75;
+  text-align: justify;
+  hyphens: auto;
+  overflow-wrap: anywhere
+}
+
+.bkBody p {
+  margin: 0 0 9px;
+  overflow-wrap: anywhere
+}
+
+.bkBody p:first-child {
+  text-indent: 0
+}
+
+.bkDrop::first-letter {
+  float: left;
+  font-size: 34px;
+  line-height: .86;
+  padding: 3px 7px 0 0;
+  color: #7d3a2e
+}
+
+.bkEmpty {
+  margin: auto;
+  max-width: 180px;
+  text-align: center;
+  font-style: italic;
+  font-size: 11px;
+  line-height: 1.8;
+  color: rgba(122, 100, 70, .6)
+}
+
+.bkMore {
+  flex: none;
+  font-size: var(--fs-2xs);
+  letter-spacing: .08em;
+  color: var(--muted);
+  padding: 4px 0 2px
+}
+
+.bkFoot {
+  text-align: center;
+  font-size: 9.5px;
+  letter-spacing: .2em;
+  color: #a4906d;
+  padding-top: 10px
+}
+
+.bookPreviewNav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding-top: 10px
+}
+
+.bookPreviewNav button {
+  font-size: var(--fs-lg);
+  color: var(--muted);
+  padding: 2px 10px;
+  border-radius: 8px;
+  transition: color .2s, background .2s
+}
+
+.bookPreviewNav button:hover:not(:disabled) {
+  color: var(--text);
+  background: color-mix(in srgb, var(--text) 7%, transparent)
+}
+
+.bookPreviewNav button:disabled {
+  opacity: .25;
+  cursor: default
+}
+
+#bookPreviewCount {
+  font-size: var(--fs-2xs);
+  letter-spacing: .14em;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums
+}
+
+/* status bar — padded inward so it never runs under the corner tools
+   (notepad dock bottom-left, theme + settings fabs bottom-right) */
+.bookStatusBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 2px 126px 0 66px
+}
+
+.bookStats {
+  font-size: var(--fs-xs);
+  letter-spacing: .07em;
+  color: var(--muted)
+}
+
+.bookChapterNav {
+  display: flex;
+  align-items: center;
+  gap: 12px
+}
+
+.bookChapterNav button {
+  font-size: var(--fs-xs);
+  letter-spacing: .05em;
+  color: var(--muted);
+  padding: 5px 10px;
+  border-radius: 999px;
+  transition: color .2s, background .2s
+}
+
+.bookChapterNav button:hover:not(:disabled) {
+  color: var(--text);
+  background: color-mix(in srgb, var(--text) 7%, transparent)
+}
+
+.bookChapterNav button:disabled {
+  opacity: .25;
+  cursor: default
+}
+
+#bookChapterPosition {
+  font-size: var(--fs-2xs);
+  letter-spacing: .14em;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums
+}
+
+/* the fullscreen reader and inline authoring live in the v2 block below */
+
+/* narrow desks: preview folds away first, then the shelf becomes a drawer */
+@media (max-width: 1150px) {
+  .bookBody {
+    grid-template-columns: 200px minmax(0, 1fr)
+  }
+
+  .bookPreviewCol {
+    display: none
+  }
+}
+
+@media (max-width: 840px) {
+  .bookStudio {
+    padding: 72px 14px 12px
+  }
+
+  .bookStatusBar {
+    padding: 2px 112px 0 60px
+  }
+
+  .bookBody {
+    grid-template-columns: minmax(0, 1fr)
+  }
+
+  .bookShelfToggle {
+    display: block
+  }
+
+  .bookShelf {
+    display: none;
+    position: absolute;
+    top: 60px;
+    bottom: 54px;
+    left: 14px;
+    width: min(280px, calc(100% - 28px));
+    z-index: 6;
+    background: color-mix(in srgb, var(--bg) 96%, transparent);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, .5)
+  }
+
+  .bookShelf.open {
+    display: flex
+  }
+
+  .bookPage {
+    padding: 30px 26px 22px 40px
+  }
+
+  .bookPage::before {
+    left: 26px
+  }
+
+  .bookChapterTitle {
+    font-size: 19px
+  }
+
+  .bookSaveStatus {
+    display: none
+  }
+}
+
+/* ---- the book v2: inline authoring, formatting, fullscreen reading ------ */
+
+/* editable chapter title + category: quiet fields on the paper */
+.bookChapterTitle {
+  cursor: text;
+  border-radius: 6px;
+  margin-left: -6px;
+  padding: 2px 6px;
+  transition: background .2s
+}
+
+.bookChapterTitle:hover,
+.bookChapterTitle:focus {
+  background: rgba(120, 96, 60, .08)
+}
+
+.bookChapterTitle.isBlank:empty::after,
+.bookCategory.isBlank:empty::after,
+.bookTitle.isBlank:empty::after {
+  content: attr(data-placeholder);
+  color: rgba(122, 100, 70, .45);
+  font-style: italic;
+  pointer-events: none
+}
+
+.bookTitle.isBlank:empty::after {
+  color: color-mix(in srgb, var(--text) 42%, var(--bg))
+}
+
+.bookKickerSep {
+  margin: 0 6px;
+  color: rgba(164, 144, 109, .6)
+}
+
+.bookCategory {
+  cursor: text;
+  border-radius: 4px;
+  padding: 1px 3px;
+  margin-left: -3px;
+  transition: background .2s
+}
+
+.bookCategory:hover,
+.bookCategory:focus {
+  background: rgba(120, 96, 60, .08)
+}
+
+.bookCategory.isBlank {
+  display: inline-block;
+  min-width: 74px
+}
+
+.bookChapterName.untitled,
+.bkTitle.untitled,
+.rdTitle.untitled,
+.rdCoverTitle.untitled {
+  font-style: italic;
+  opacity: .65
+}
+
+/* the formatting bar above the page */
+.bookToolbar {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding: 2px 4px;
+  user-select: none
+}
+
+.tbBtn {
+  min-width: 30px;
+  height: 26px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 11.5px;
+  letter-spacing: .02em;
+  color: var(--muted);
+  transition: color .15s, background .15s
+}
+
+.tbBtn:hover {
+  color: var(--text);
+  background: color-mix(in srgb, var(--text) 7%, transparent)
+}
+
+.tbBtn.active {
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 18%, transparent)
+}
+
+.tbBtn svg {
+  fill: currentColor
+}
+
+.tbSep {
+  width: 1px;
+  height: 15px;
+  background: var(--line);
+  margin: 0 7px
+}
+
+/* the floating popup over selected text */
+.bookFormatPop {
+  position: absolute;
+  display: none;
+  align-items: center;
+  gap: 1px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg) 94%, transparent);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, .5);
+  z-index: 8;
+  user-select: none
+}
+
+.bookFormatPop.open {
+  display: flex;
+  animation: schedulerIn .18s ease-out
+}
+
+/* preview header carries the fullscreen read */
+.bookPreviewHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px
+}
+
+.bookPreviewOpen {
+  font-size: var(--fs-2xs);
+  letter-spacing: .08em;
+  color: var(--muted);
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  transition: color .2s, border-color .2s
+}
+
+.bookPreviewOpen:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--text) 28%, transparent)
+}
+
+/* rich blocks inside the small preview */
+.bkBody h1 {
+  font-size: 15px;
+  font-weight: 600;
+  font-style: normal;
+  margin: 4px 0 8px
+}
+
+.bkBody h2 {
+  font-size: 13.5px;
+  font-weight: 600;
+  font-style: normal;
+  margin: 4px 0 7px
+}
+
+.bkBody h3 {
+  font-size: 12px;
+  font-weight: 600;
+  font-style: normal;
+  margin: 3px 0 6px
+}
+
+.bkBody .sceneBreak {
+  text-align: center;
+  letter-spacing: .3em;
+  color: #a4906d;
+  margin: 10px 0
+}
+
+/* ---- the reader: fullscreen book, real turning pages -------------------- */
+.bookReader {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  z-index: 7;
+  animation: schedulerIn .35s cubic-bezier(.2, .7, .2, 1)
+}
+
+.bookReader.open {
+  display: flex
+}
+
+.bookReaderClose {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  font-size: var(--fs-xs);
+  letter-spacing: .08em;
+  color: var(--muted);
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  transition: color .2s, border-color .2s, opacity .25s;
+  z-index: 3
+}
+
+/* resting on the cover spread, the reader shows just the book — the close
+   control fades out until the first page is turned */
+.bookReaderClose.onCover {
+  opacity: 0;
+  pointer-events: none
+}
+
+/* text size: one step in, the whole book re-breaks around the new measure */
+.bookReaderFont {
+  position: absolute;
+  top: 18px;
+  left: 22px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 3
+}
+
+.bookFontBtn {
+  font-size: var(--fs-xs);
+  letter-spacing: .04em;
+  color: var(--muted);
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  transition: color .2s, border-color .2s
+}
+
+.bookFontBtn:hover:not(:disabled) {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--text) 30%, transparent)
+}
+
+.bookFontBtn:disabled {
+  opacity: .35;
+  cursor: default
+}
+
+.bookFontLabel {
+  font-size: 10px;
+  letter-spacing: .08em;
+  color: var(--muted);
+  min-width: 34px;
+  text-align: center
+}
+
+.bookFontMini .bookFontBtn {
+  padding: 3px 8px;
+  font-size: 10px
+}
+
+.bookReaderClose:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--text) 30%, transparent)
+}
+
+.bookReaderStage {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  perspective: 2600px
+}
+
+.bookReaderArrow {
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  transition: color .25s, border-color .25s
+}
+
+.bookReaderArrow:hover:not(:disabled) {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--text) 35%, transparent)
+}
+
+.bookReaderArrow:disabled {
+  opacity: .3;
+  cursor: default
+}
+
+.bookReaderHint {
+  font-size: var(--fs-2xs);
+  letter-spacing: .08em;
+  color: color-mix(in srgb, var(--text) 45%, var(--bg))
+}
+
+.readerBook {
+  position: relative;
+  /* the spread is always the nominal 1010×650 — pagination flows this size,
+     and a smaller window scales it down rather than re-breaking the pages */
+  width: 1010px;
+  height: 650px;
+  flex: none;
+  transform: scale(var(--rdScale, 1));
+  transform-style: preserve-3d;
+  user-select: none
+}
+
+/* the paper halves resting under the leaves */
+.rdBase {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  background: #e9dfc6;
+  border: 1px solid rgba(120, 96, 60, .18);
+  border-radius: 8px 2px 2px 8px;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, .3)
+}
+
+.rdBase.right {
+  right: 0;
+  border-radius: 2px 8px 8px 2px
+}
+
+.rdSpine {
+  position: absolute;
+  left: 50%;
+  top: -1px;
+  bottom: -1px;
+  width: 20px;
+  transform: translateX(-50%);
+  z-index: 60;
+  pointer-events: none;
+  background: linear-gradient(90deg,
+    rgba(70, 56, 32, 0) 0%,
+    rgba(120, 96, 60, .28) 38%,
+    rgba(60, 44, 20, .4) 50%,
+    rgba(120, 96, 60, .28) 62%,
+    rgba(70, 56, 32, 0) 100%);
+  opacity: .6
+}
+
+.rdStack {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%
+}
+
+.rdStack.left {
+  left: 0
+}
+
+.rdStack.right {
+  right: 0
+}
+
+/* one leaf = one sheet: front is the right page, back the next left page.
+   the turn is a quick, flat sweep — snappy, no waiting */
+.rdLeaf {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 50%;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  will-change: transform
+}
+
+.rdLeaf.flipped {
+  transform: rotateY(-180deg)
+}
+
+@keyframes rdTurnFwd {
+  from {
+    transform: rotateY(0deg)
+  }
+
+  to {
+    transform: rotateY(-180deg)
+  }
+}
+
+@keyframes rdTurnBack {
+  from {
+    transform: rotateY(-180deg)
+  }
+
+  to {
+    transform: rotateY(0deg)
+  }
+}
+
+.rdLeaf.turning {
+  animation: rdTurnFwd .48s cubic-bezier(.34, .28, .24, 1) both
+}
+
+.rdLeaf.turning.back {
+  animation-name: rdTurnBack
+}
+
+.rdFace {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 38px 46px 30px;
+  overflow: hidden;
+  background: linear-gradient(177deg, #f0e7d0 0%, #ece2ca 60%, #e6d9ba 100%);
+  border: 1px solid rgba(120, 96, 60, .2);
+  color: #4a3d2c;
+  font-family: Georgia, "Times New Roman", serif
+}
+
+.rdFace.left {
+  border-radius: 10px 2px 2px 10px
+}
+
+.rdFace.right {
+  border-radius: 2px 10px 10px 2px
+}
+
+/* only a turning leaf is 3d — resting pages stay flat or they vanish */
+.rdLeaf .rdFace {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden
+}
+
+.rdLeaf .rdFace.left {
+  transform: rotateY(180deg)
+}
+
+.rdFace.cover {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 14px;
+  background: linear-gradient(172deg, #e9dec1 0%, #e2d4b0 70%, #dbc99e 100%);
+  box-shadow: inset 0 0 0 10px rgba(120, 96, 60, .1), inset 0 0 0 11px rgba(120, 96, 60, .16)
+}
+
+.rdCoverMark {
+  font-size: 30px;
+  color: #8a6f4d
+}
+
+.rdCoverTitle {
+  font-size: 27px;
+  font-style: italic;
+  color: #382d20;
+  max-width: 78%;
+  line-height: 1.4
+}
+
+.rdCoverSub {
+  font-size: 11px;
+  letter-spacing: .3em;
+  color: #a4906d
+}
+
+.rdKicker {
+  font-size: 10px;
+  letter-spacing: .32em;
+  color: #a4906d;
+  margin-bottom: 6px
+}
+
+.rdTitle {
+  font-size: 24px;
+  line-height: 1.4;
+  font-style: italic;
+  color: #382d20;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(120, 96, 60, .18);
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical
+}
+
+.rdRunning {
+  font-size: 9.5px;
+  letter-spacing: .3em;
+  color: #ab9873;
+  margin-bottom: 14px
+}
+
+/* the running head hugs the outer edge of the page it sits on — left page
+   flush left, right page flush right — with no rule under it, so the body
+   text below keeps the space the border used to take */
+.rdFace.left .rdRunning {
+  text-align: left
+}
+
+.rdFace.right .rdRunning {
+  text-align: right;
+  margin-right: -.3em
+}
+
+/* the reading size lives in one variable — the pagination probe measures
+   through these same rules, so a size change re-breaks every page to fit */
+.rdBody {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  font-size: calc(15px * var(--bookFontScale, 1));
+  line-height: 1.85;
+  text-align: left;
+  overflow-wrap: anywhere
+}
+
+.rdBody p {
+  margin: 0 0 13px;
+  overflow-wrap: anywhere
+}
+
+.rdBody h1,
+.rdBody h2,
+.rdBody h3 {
+  font-weight: 600;
+  font-style: normal;
+  color: #382d20;
+  line-height: 1.35
+}
+
+.rdBody h1 {
+  font-size: calc(24px * var(--bookFontScale, 1));
+  margin: 20px 0 12px
+}
+
+.rdBody h2 {
+  font-size: calc(19px * var(--bookFontScale, 1));
+  margin: 16px 0 10px
+}
+
+.rdBody h3 {
+  font-size: calc(15.5px * var(--bookFontScale, 1));
+  margin: 12px 0 8px
+}
+
+.rdBody .sceneBreak {
+  text-align: center;
+  letter-spacing: .34em;
+  color: #8a6f4d;
+  margin: 18px 0
+}
+
+.rdDrop::first-letter {
+  float: left;
+  font-size: calc(46px * var(--bookFontScale, 1));
+  line-height: .84;
+  padding: 4px 9px 0 0;
+  color: #7d3a2e
+}
+
+.rdEmpty {
+  margin: auto;
+  padding: 0 20px;
+  text-align: center;
+  font-style: italic;
+  font-size: 12.5px;
+  letter-spacing: .04em;
+  color: rgba(122, 100, 70, .55)
+}
+
+.rdFoot {
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: .2em;
+  color: #a4906d;
+  padding-top: 12px
+}
+
+@media (max-width: 840px) {
+  .bookReaderStage {
+    gap: 10px
+  }
+
+  .readerBook {
+    width: calc(100vw - 110px);
+    height: calc(100vh - 170px)
+  }
+
+  .rdFace {
+    padding: 22px 24px 18px
+  }
+
+  .rdTitle {
+    font-size: 19px
+  }
+
+  .rdBody {
+    font-size: 13px
+  }
+}

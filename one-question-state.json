@@ -257,7 +257,7 @@
       ]
     },
     "oneQuestionHistory": {
-      "updatedAt": 1790005328788,
+      "updatedAt": 1790657327950,
       "value": [
         {
           "question": "What's been taking up more of your mental space than it deserves?",
@@ -590,7 +590,24 @@
     "oneQuestionNote": {
       "updatedAt": 1790143698763,
       "value": "my secret note"
+    },
+    "oneQuestionBook": {
+      "updatedAt": 1790669798842,
+      "value": {
+        "title": "",
+        "chapters": [
+          {
+            "id": "ch-mumekblm",
+            "title": "",
+            "category": "",
+            "html": "",
+            "createdAt": 1790669798842,
+            "updatedAt": 1790669798842
+          }
+        ],
+        "activeId": "ch-mumekblm"
+      }
     }
   },
-  "updatedAt": 1790438514084
+  "updatedAt": 1790669798844
 }

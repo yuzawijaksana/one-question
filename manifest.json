@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "One Question — Zen",
-  "version": "2.16.4",
+  "version": "2.16.5",
   "description": "A quiet reflective new-tab for Zen Browser and Firefox with question, focus, fullscreen Today modes, and optional shared local storage.",
   "browser_specific_settings": {
     "gecko": {

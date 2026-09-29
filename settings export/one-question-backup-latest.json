@@ -1,7 +1,7 @@
 {
   "format": "one-question-zen-backup",
   "version": "2.21.3",
-  "exportedAt": "2026-09-29T01:24:09Z",
+  "exportedAt": "2026-09-29T08:16:38Z",
   "data": {
     "questions": [
       [
@@ -541,6 +541,20 @@
         "y": 60.8,
         "z": "17"
       }
-    ]
+    ],
+    "book": {
+      "title": "",
+      "chapters": [
+        {
+          "id": "ch-mumekblm",
+          "title": "",
+          "category": "",
+          "html": "",
+          "createdAt": 1790669798842,
+          "updatedAt": 1790669798842
+        }
+      ],
+      "activeId": "ch-mumekblm"
+    }
   }
 }
