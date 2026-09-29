@@ -3105,23 +3105,47 @@ function journalPageNode(p,side,flat){
     const t=(e.clipboardData||window.clipboardData).getData("text/plain");
     document.execCommand("insertText",false,t);
   });
-  // write anywhere: clicking a blank line pads the page with empty lines so
-  // the caret lands exactly where you clicked, like real paper
+  // write anywhere: clicking a blank spot pads the page with empty lines and
+  // spaces so the caret lands exactly under the cursor, pen-on-paper style
   ta.addEventListener("pointerdown",e=>{
     const rect=ta.getBoundingClientRect();
     const y=e.clientY-rect.top+ta.scrollTop;
     const lineIdx=Math.floor(y/28);
-    let text=ta.innerText;
     const nl=String.fromCharCode(10);
-    const lines=text.split(nl);
-    if(lineIdx>=lines.length){
+    const arr=ta.innerText.split(nl);
+    // average character width of this page's font, measured live
+    const meas=document.createElement("span");
+    meas.style.cssText="position:absolute;visibility:hidden;white-space:pre";
+    meas.style.font=getComputedStyle(ta).font;
+    meas.textContent="0000000000";
+    document.body.append(meas);
+    const charW=meas.getBoundingClientRect().width/10||8;
+    meas.remove();
+    const col=Math.max(0,Math.round((e.clientX-rect.left)/charW));
+    const cur=(arr[lineIdx]||"").length;
+    const blankLine=lineIdx>=arr.length||!arr[lineIdx].trim();
+    if(lineIdx>=arr.length||cur<col&&(blankLine||cur===0&&col>0)){
       e.preventDefault();
-      while(ta.innerText.split(nl).length<=lineIdx)ta.innerText=ta.innerText+nl;
-      journalSave(p,{text:ta.innerText});
+      while(arr.length<=lineIdx)arr.push("");
+      if((arr[lineIdx]||"").length<col)arr[lineIdx]=(arr[lineIdx]||"")+" ".repeat(col-(arr[lineIdx]||"").length);
+      // rebuild as text nodes + brs so the caret can aim at the exact line
+      ta.textContent="";
+      const nodes=[];
+      arr.forEach((line,i)=>{
+        if(i>0)ta.append(document.createElement("br"));
+        if(line){const tn=document.createTextNode(line);ta.append(tn);nodes.push(tn);}
+        else nodes.push(null);
+      });
+      journalSave(p,{text:arr.join(nl)});
       ta.focus();
       const range=document.createRange();
-      range.selectNodeContents(ta);
-      range.collapse(false);
+      if(nodes[lineIdx])range.setStart(nodes[lineIdx],nodes[lineIdx].length);
+      else{
+        const brs=ta.querySelectorAll("br");
+        if(brs[lineIdx])range.setStartBefore(brs[lineIdx]);
+        else{range.selectNodeContents(ta);range.collapse(false);}
+      }
+      range.collapse(true);
       const sel=getSelection();
       sel.removeAllRanges();
       sel.addRange(range);

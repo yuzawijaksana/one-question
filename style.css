@@ -6196,8 +6196,8 @@ body.focusModeVisual #cycleHint {
 /* the book's backing melts away — only the paper itself reads */
 .bookBase {
   background: #f8f4ea;
-  border-color: rgba(70, 56, 32, .12);
-  box-shadow: 0 34px 64px rgba(0, 0, 0, .32)
+  border-color: rgba(70, 56, 32, .1);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, .24)
 }
 
 .bookBase.left::after,
@@ -6317,7 +6317,7 @@ body.focusModeVisual #cycleHint {
 
 /* textbook underlines: the writing sits on the lines, anywhere on the page */
 .pageText {
-  background-image: repeating-linear-gradient(transparent 27px, rgba(88, 106, 142, .38) 27px, rgba(88, 106, 142, .38) 28px);
+  background-image: repeating-linear-gradient(transparent 27px, rgba(88, 106, 142, .3) 27px, rgba(88, 106, 142, .3) 28px);
   background-attachment: local;
   background-position: 0 6px
 }
