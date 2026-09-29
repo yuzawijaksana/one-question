@@ -7263,7 +7263,26 @@ body.focusModeVisual .focusKicker {
   position: relative
 }
 
+/* the pdf sheet IS the book page — 505×650, edge to edge. engines that
+   insist on a fixed paper size get the page centered on it instead */
+@page {
+  size: 505px 650px;
+  margin: 0
+}
+
 @media print {
+  /* the app's screen body (100% size, overflow hidden) would clip and
+     offset the printed flow — reset it to a plain document */
+  html,
+  body {
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: none !important
+  }
+
   body > *:not(#bookPrintRoot) {
     display: none !important
   }
@@ -7272,12 +7291,8 @@ body.focusModeVisual .focusKicker {
     display: block
   }
 
-  @page {
-    size: 505px 650px;
-    margin: 0
-  }
-
   .pgPrintPage {
+    margin: 0 auto;
     break-after: page;
     page-break-after: always;
     print-color-adjust: exact;
