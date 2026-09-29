@@ -3897,7 +3897,9 @@ function initBookStudio(){
     const t=(e.clipboardData||window.clipboardData).getData("text/plain").replace(/\s+/g," ").trim();
     document.execCommand("insertText",false,t);
   });
-  $("bookGather")?.addEventListener("click",gatherBookAnswers);
+  // the header's open-book button replaces the old gather-answers one — on
+  // phones the preview column is hidden, so this is the reader's entry point
+  $("bookReadHeader")?.addEventListener("click",readerOpen);
   $("bookNewChapter")?.addEventListener("click",addBookChapter);
   $("bookPrevChapter")?.addEventListener("click",()=>bookChapterStep(-1));
   $("bookNextChapter")?.addEventListener("click",()=>bookChapterStep(1));
