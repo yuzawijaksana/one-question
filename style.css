@@ -5924,3 +5924,433 @@ body.softRender .settingsPanel {
 body.softRender .notePanel {
   background: color-mix(in srgb, var(--bg) 97%, transparent) !important
 }
+
+/* ---- journal: a book with white paper, flipping and swipeable -------- */
+.journal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+  animation: schedulerIn .5s cubic-bezier(.2, .7, .2, 1)
+}
+
+body.focusModeVisual .journal {
+  display: flex
+}
+
+/* the question shell rests while the book is open */
+body.focusModeVisual .focus,
+body.focusModeVisual .controlsZone,
+body.focusModeVisual #cycleHint {
+  display: none !important
+}
+
+.bookStage {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  perspective: 2400px
+}
+
+.book {
+  position: relative;
+  width: min(900px, calc(100vw - 170px));
+  height: min(560px, calc(100vh - 230px));
+  transform-style: preserve-3d;
+  touch-action: pan-y;
+  user-select: none
+}
+
+/* the paper halves resting under the leaves */
+.bookBase {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  background: #dfcfa9;
+  border: 1px solid rgba(92, 70, 38, .3);
+  box-shadow: 0 26px 60px rgba(0, 0, 0, .5)
+}
+
+.bookBase.left {
+  left: 0;
+  border-radius: 8px 2px 2px 8px
+}
+
+.bookBase.right {
+  right: 0;
+  border-radius: 2px 8px 8px 2px
+}
+
+/* stacked page edges on the outer sides */
+.bookBase.left::after,
+.bookBase.right::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  width: 5px;
+  background: repeating-linear-gradient(to bottom, #e7d8b8 0 3px, #d8d0bc 3px 4px);
+  opacity: .8
+}
+
+.bookBase.left::after {
+  left: -6px;
+  border-radius: 3px 0 0 3px
+}
+
+.bookBase.right::after {
+  right: -6px;
+  border-radius: 0 3px 3px 0
+}
+
+.bookSpine {
+  position: absolute;
+  left: 50%;
+  top: -1px;
+  bottom: -1px;
+  width: 18px;
+  transform: translateX(-50%);
+  z-index: 60;
+  pointer-events: none;
+  background: linear-gradient(90deg,
+    rgba(70, 56, 32, 0) 0%,
+    rgba(92, 70, 38, .3) 38%,
+    rgba(60, 44, 20, .42) 50%,
+    rgba(92, 70, 38, .3) 62%,
+    rgba(70, 56, 32, 0) 100%)
+}
+
+/* one leaf = one sheet: front is the right page, back the next left page */
+.leaf {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 50%;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  transition: transform .65s cubic-bezier(.25, .7, .2, 1);
+  will-change: transform
+}
+
+.leaf.flipped {
+  transform: rotateY(-180deg)
+}
+
+.leaf.dragging {
+  transition: none
+}
+
+.pageFace {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 26px 30px 22px;
+  overflow: hidden;
+  background: #e7d8b8;
+  border: 1px solid rgba(92, 70, 38, .26);
+  color: #3b2d1c
+}
+
+.pageFace.faceFront {
+  border-radius: 2px 8px 8px 2px
+}
+
+.pageFace.faceBack {
+  transform: rotateY(180deg);
+  border-radius: 8px 2px 2px 8px
+}
+
+.pageDate {
+  font-size: 10px;
+  letter-spacing: .24em;
+  text-transform: lowercase;
+  color: #7a6541
+}
+
+.pageBody {
+  flex: 1;
+  margin: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  line-height: 28px;
+  font-size: 14px;
+  color: #433c2d;
+  background-image: repeating-linear-gradient(transparent 27px, rgba(96, 116, 168, .16) 27px, rgba(96, 116, 168, .16) 28px)
+}
+
+/* today's page is writable — the rule lines scroll with the words */
+.pageTextarea {
+  flex: 1;
+  width: 100%;
+  border: 0;
+  outline: none;
+  resize: none;
+  background: transparent;
+  font-family: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+  font-size: 18px;
+  line-height: 28px;
+  color: #3b2d1c;
+  caret-color: #7a4a24;
+  background-image: repeating-linear-gradient(transparent 27px, rgba(96, 116, 168, .22) 27px, rgba(96, 116, 168, .22) 28px);
+  background-attachment: local;
+  background-position: 0 4px
+}
+
+.pageTextarea::placeholder {
+  color: #b5a375;
+  font-family: inherit
+}
+
+/* the inside cover */
+.pageFace.cover {
+  background: #efe8d7;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 14px
+}
+
+.coverTitle {
+  font-size: 20px;
+  letter-spacing: .3em;
+  text-transform: lowercase;
+  color: #6d5836
+}
+
+.coverSub {
+  font-size: 11px;
+  letter-spacing: .12em;
+  color: #8a744c
+}
+
+/* a quiet page between spreads */
+.pageFace.spacer {
+  align-items: center;
+  justify-content: center;
+  background: #e3d4b1
+}
+
+.spacerMark {
+  font-size: 16px;
+  color: #9c8a62
+}
+
+.journalArrow {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--muted);
+  background: none;
+  border: 1px solid rgba(235, 232, 224, .14);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color .25s, border-color .25s
+}
+
+.journalArrow:hover {
+  color: var(--text);
+  border-color: rgba(235, 232, 224, .35)
+}
+
+.journalArrow:disabled {
+  opacity: .35;
+  cursor: default
+}
+
+.journalHint {
+  font-size: 10px;
+  letter-spacing: .08em;
+  color: color-mix(in srgb, var(--text) 45%, var(--bg))
+}
+
+/* journal v2: flat resting stacks + editable date lines */
+.pageStack {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%
+}
+
+.pageStack.left {
+  left: 0
+}
+
+.pageStack.right {
+  right: 0
+}
+
+/* the book's backing melts away — only the paper itself reads */
+.bookBase {
+  background: #e7d8b8;
+  border-color: rgba(92, 70, 38, .18);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, .24)
+}
+
+.bookBase.left::after,
+.bookBase.right::after {
+  content: none
+}
+
+.bookSpine {
+  opacity: .55
+}
+
+/* the writing box IS the paper — paint it so no dark can ever show through,
+   whatever the browser wants to do with form controls */
+.journal {
+  color-scheme: light
+}
+
+.pageTextarea {
+  background-color: #e7d8b8
+}
+
+.pageTextarea::-webkit-scrollbar {
+  width: 8px
+}
+
+.pageTextarea::-webkit-scrollbar-track {
+  background: transparent
+}
+
+.pageTextarea::-webkit-scrollbar-thumb {
+  background: rgba(141, 129, 102, .35);
+  border-radius: 8px
+}
+
+.pageTextarea {
+  scrollbar-color: rgba(141, 129, 102, .35) transparent;
+  scrollbar-width: thin
+}
+/* EB Garamond 400 italic — bundled so the journal works offline */
+@font-face {
+  font-family: "EB Garamond";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/eb-garamond-400-italic.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* EB Garamond 400 normal — bundled so the journal works offline */
+@font-face {
+  font-family: "EB Garamond";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/eb-garamond-400.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* EB Garamond 500 normal — bundled so the journal works offline */
+@font-face {
+  font-family: "EB Garamond";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("fonts/eb-garamond-500.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* editable paper: a contenteditable, not a form control — no browser
+   dark box is possible behind the words */
+.pageText {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+  -webkit-user-select: text;
+  outline: none;
+  background-color: #e7d8b8;
+  font-family: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+  font-size: 18px;
+  line-height: 28px;
+  color: #3b2d1c;
+  caret-color: #7a4a24;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(141, 129, 102, .35) transparent
+}
+
+.pageText:empty::before {
+  content: attr(data-placeholder);
+  color: #b5a375;
+  pointer-events: none
+}
+
+.pageText::-webkit-scrollbar {
+  width: 8px
+}
+
+.pageText::-webkit-scrollbar-track {
+  background: transparent
+}
+
+.pageText::-webkit-scrollbar-thumb {
+  background: rgba(141, 129, 102, .35);
+  border-radius: 8px
+}
+
+/* resting pages: same paper, corners matched to their side, no 3d */
+.pageFace.flatLeft {
+  border-radius: 8px 2px 2px 8px
+}
+
+.pageFace.flatRight {
+  border-radius: 2px 8px 8px 2px
+}
+
+/* textbook underlines: the writing sits on the lines, anywhere on the page */
+.pageText {
+  background-image: repeating-linear-gradient(transparent 27px, rgba(112, 84, 50, .32) 27px, rgba(112, 84, 50, .32) 28px);
+  background-attachment: local;
+  background-position: 0 6px
+}
+
+/* paper pull: shading follows the fold while the sheet is dragged */
+.leaf::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(20, 14, 4, .26), rgba(20, 14, 4, 0) 55%);
+  opacity: calc(var(--pull, 0) * .9)
+}
+
+.leaf.flipped::after {
+  background: linear-gradient(270deg, rgba(20, 14, 4, .26), rgba(20, 14, 4, 0) 55%)
+}
+
+/* release: the sheet settles or springs back with a paper overshoot */
+.leaf.settling {
+  transition: transform .6s cubic-bezier(.22, 1.5, .36, 1)
+}
+
+/* textbook margin rule down each page */
+.pageText {
+  border-left: 1px solid rgba(158, 84, 66, .38)
+}
+
+.pageFace {
+  padding-left: 34px
+}
+
+.pageText {
+  padding-left: 12px
+}
