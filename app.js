@@ -3300,11 +3300,13 @@ function flowChapterPages(c){
   startPage();
   // the drop cap narrows a paragraph's first lines, so every measurement —
   // candidates included — must wear the same cap the final piece will
+  // (carved pieces are plain paragraphs too — they just carry a class)
+  const plainP=p=>p.tag==="p"&&(!p.cls||p.cls==="carveHead");
   const dress=(el,p)=>{
-    if(dropPending&&p.tag==="p"&&!p.cls)el.classList.add("rdDrop");
+    if(dropPending&&plainP(p))el.classList.add("rdDrop");
   };
   const consume=p=>{
-    if(dropPending&&p.tag==="p"&&!p.cls)dropPending=false;
+    if(dropPending&&plainP(p))dropPending=false;
   };
   // carve the largest prefix of a paragraph that fits the space left on the
   // page — binary search over its text, so a huge block is cut at the page's
@@ -3341,7 +3343,7 @@ function flowChapterPages(c){
     // a cut inside a word carries a hyphen over the break, the way books do;
     // the hyphen itself takes width, so back off until the head truly fits
     const wordChar=ch=>/[A-Za-z0-9]/.test(ch||"");
-    const hyphenated=(n,hyph)=>({tag:"p",cls:"",html:bookEscapeHtml(text.slice(0,n))+(hyph?"-":""),words:1});
+    const hyphenated=(n,hyph)=>({tag:"p",cls:"carveHead",html:bookEscapeHtml(text.slice(0,n))+(hyph?"-":""),words:1});
     const headFits=(n,hyph)=>{
       const h=hyphenated(n,hyph);
       const el=makeEl(h);
@@ -3769,7 +3771,7 @@ function readerPageNode(p,side){
     const el=document.createElement(b.tag);
     if(b.cls)el.className=b.cls;
     el.innerHTML=b.html;
-    if(!dropUsed&&b.tag==="p"&&!b.cls){
+    if(!dropUsed&&b.tag==="p"&&(!b.cls||b.cls==="carveHead")){
       el.classList.add("rdDrop");
       dropUsed=true;
     }
