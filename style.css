@@ -6926,6 +6926,14 @@ body.focusModeVisual .focusKicker {
   text-align: center
 }
 
+/* the preview-head variant drops the reader-overlay positioning — absolute
+   would tear it out of the header and pin it over the app's date line */
+.bookFontMini {
+  position: static;
+  top: auto;
+  left: auto
+}
+
 .bookFontMini .bookFontBtn {
   padding: 3px 8px;
   font-size: 10px
