@@ -3225,6 +3225,34 @@ function bookChapterBlocks(c){
   });
   return blocks;
 }
+// legal hyphenation points inside one word, per the book rules. Indonesian
+// syllabification (PUEBI/EYD): vowel pairs split (bu-ah), a single consonant
+// joins the next syllable (ba-pak), two consonants split between (man-di,
+// cap-lok), and the digraphs kh/ng/ny/sy never come apart — so "misalnya"
+// breaks mi-sal-nya, never mis-alnya. English digraphs and vowel pairs are
+// kept whole so borrowed words break sensibly too
+function bookHyphenPoints(word){
+  const s=(word||"").toLowerCase();
+  const V="aiueo";
+  const dig=["ng","ny","kh","sy","ch","sh","th","ph","wh","gh","ck"];
+  const keep=["ai","au","oi","ee","oo","ea","ou","ie","oa","ue","ui"];
+  const at=i=>i>=0&&i<s.length?s[i]:" ";
+  const isV=c=>V.includes(c);
+  const onset=i=>{
+    if(i>=s.length||isV(at(i)))return false;
+    if(isV(at(i+1)))return true;
+    return dig.includes(at(i)+at(i+1))&&isV(at(i+2));
+  };
+  const pts=[];
+  for(let p=1;p<s.length-1;p++){
+    const pair=at(p-1)+at(p);
+    if(dig.includes(pair)||keep.includes(pair))continue;
+    if(isV(at(p-1))&&isV(at(p))){pts.push(p);continue}
+    if(isV(at(p-1))&&onset(p)){pts.push(p);continue}
+    if(!isV(at(p-1))&&(isV(at(p-2))||dig.includes(at(p-2)+at(p-1)))&&onset(p)){pts.push(p);continue}
+  }
+  return pts;
+}
 // flow a chapter's blocks through a real, hidden page box — the browser
 // itself measures where each page ends, so nothing is ever cut, skipped,
 // or reshuffled between pages. every page is the book's one nominal page,
@@ -3340,9 +3368,20 @@ function flowChapterPages(c){
       best--;
     }
     if(best>=text.length)return null;
-    // a cut inside a word carries a hyphen over the break, the way books do;
-    // the hyphen itself takes width, so back off until the head truly fits
+    // a cut inside a word carries a hyphen over the break — but only on a
+    // legal syllable boundary ("mi-sal-nya", never "mis-alnya"); anywhere
+    // else in the word is rounded to the nearest legal point, or the cut
+    // moves to the word edge and no hyphen is needed
     const wordChar=ch=>/[A-Za-z0-9]/.test(ch||"");
+    const snap=n=>{
+      if(!(wordChar(text.charAt(n-1))&&wordChar(text.charAt(n))))return{n,hyphen:false};
+      let ws=n-1,we=n;
+      while(ws>0&&wordChar(text.charAt(ws-1)))ws--;
+      while(we<text.length&&wordChar(text.charAt(we)))we++;
+      const pts=bookHyphenPoints(text.slice(ws,we)).map(o=>o+ws).filter(o=>o<=n&&o>ws&&o<we-1);
+      if(pts.length)return{n:pts[pts.length-1],hyphen:true};
+      return{n:ws,hyphen:false};
+    };
     const hyphenated=(n,hyph)=>({tag:"p",cls:"carveHead",html:bookEscapeHtml(text.slice(0,n))+(hyph?"-":""),words:1});
     const headFits=(n,hyph)=>{
       const h=hyphenated(n,hyph);
@@ -3353,11 +3392,16 @@ function flowChapterPages(c){
       el.remove();
       return ok;
     };
-    let hyphen=wordChar(text.charAt(best-1))&&wordChar(text.charAt(best));
+    // the hyphen itself takes width, so back off until the head truly fits
+    let placed=snap(best);
+    best=placed.n;
+    let hyphen=placed.hyphen;
     while(best>1&&!headFits(best,hyphen)){
-      best--;
-      hyphen=wordChar(text.charAt(best-1))&&wordChar(text.charAt(best));
+      const cand=snap(best-1);
+      best=cand.n;
+      hyphen=cand.hyphen;
     }
+    if(best<1)return null;
     // typographic minimums, the way books break paragraphs:
     // — at least two lines must stay on this page; anything less is not
     //   worth the cut, so the whole paragraph is combined and pushed to the
@@ -3391,8 +3435,10 @@ function flowChapterPages(c){
       let guard=6;
       while(tailLines<3&&best>1&&guard-->0){
         const perLine=Math.max(12,Math.round(best/Math.max(1,headLines)));
-        best=Math.max(1,best-perLine);
-        hyphen=wordChar(text.charAt(best-1))&&wordChar(text.charAt(best));
+        const cand=snap(Math.max(1,best-perLine));
+        if(cand.n>=best){best=best-1;}
+        else{best=cand.n;hyphen=cand.hyphen;}
+        if(best<1)break;
         tailLines=tailLinesOf(best);
       }
     }
