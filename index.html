@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>One Question</title>
-  <link rel="stylesheet" href="style.css?v=2.45.0">
+  <link rel="stylesheet" href="style.css?v=2.46.0">
 </head>
 
 <body>
@@ -73,9 +73,14 @@
       </header>
       <div class="bookBody">
         <aside class="bookShelf" aria-label="Chapters">
-          <div class="bookShelfHead">chapters</div>
+          <div class="bookShelfHead">
+            <span class="bookShelfTitle">chapters</span>
+            <button id="bookShelfCollapse" class="bookShelfCollapse" type="button" title="hide chapters"
+              aria-label="toggle the chapters panel">‹</button>
+          </div>
           <div id="bookChapters" class="bookChapters" role="list"></div>
-          <button id="bookNewChapter" class="bookNewChapter" type="button">+ new chapter</button>
+          <button id="bookNewChapter" class="bookNewChapter" type="button">+ <span
+              class="bnLabel">new chapter</span></button>
         </aside>
         <div class="bookDesk">
           <div class="bookToolbar" id="bookToolbar" role="toolbar" aria-label="Text formatting">
@@ -671,7 +676,7 @@
     </section>
     <div id="cycleHint">questions change quietly · move toward an edge</div>
   </main>
-  <script src="app.js?v=2.45.0"></script>
+  <script src="app.js?v=2.46.0"></script>
 </body>
 
 </html>

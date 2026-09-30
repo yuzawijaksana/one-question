@@ -6031,12 +6031,13 @@ body.focusModeVisual .focusKicker {
   display: none
 }
 
-/* the desk: shelf — page — preview */
+/* the desk: shelf — page — preview. the shelf column rides a variable so it
+   can fold to a slim rail without touching the other two columns */
 .bookBody {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 218px minmax(0, 1fr) 552px;
+  grid-template-columns: var(--bookShelfW, 218px) minmax(0, 1fr) 552px;
   gap: 18px
 }
 
@@ -6047,7 +6048,71 @@ body.focusModeVisual .focusKicker {
   padding: 12px 10px;
   border: 1px solid var(--line);
   border-radius: 16px;
-  background: color-mix(in srgb, var(--bg) 62%, transparent)
+  background: color-mix(in srgb, var(--bg) 62%, transparent);
+  overflow: hidden
+}
+
+/* the fold: on wide desks the shelf can collapse to a slim rail, the way
+   a good sidebar does — the column itself animates, state persists */
+.bookBody {
+  transition: grid-template-columns .28s cubic-bezier(.2, .7, .2, 1)
+}
+
+.bookShelfHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px
+}
+
+.bookShelfCollapse {
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0 0 1px;
+  transition: color .2s, border-color .2s, transform .28s
+}
+
+.bookShelfCollapse:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--text) 30%, transparent)
+}
+
+@media (min-width: 1151px) {
+  body.bookShelfSlim .bookBody {
+    --bookShelfW: 46px
+  }
+
+  body.bookShelfSlim .bookShelf {
+    padding: 12px 6px;
+    align-items: center
+  }
+
+  body.bookShelfSlim .bookShelfTitle,
+  body.bookShelfSlim .bookChapters,
+  body.bookShelfSlim .bnLabel {
+    display: none
+  }
+
+  body.bookShelfSlim .bookNewChapter {
+    width: 34px;
+    padding: 8px 0;
+    flex: none
+  }
+
+  body.bookShelfSlim .bookShelfCollapse {
+    transform: rotate(180deg)
+  }
 }
 
 .bookShelfHead,
@@ -6545,6 +6610,11 @@ body.focusModeVisual .focusKicker {
 @media (max-width: 840px) {
   .bookStudio {
     padding: 72px 14px 12px
+  }
+
+  /* the drawer has its own toggle — the fold chevron is desktop-only */
+  .bookShelfCollapse {
+    display: none
   }
 
   .bookStatusBar {

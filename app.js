@@ -3995,6 +3995,14 @@ function initBookStudio(){
     if(v>=BOOK_FONT_MIN&&v<=BOOK_FONT_MAX)bookFontScale=v;
   }catch{}
   bookApplyFont();
+  // the shelf fold is remembered between visits
+  try{
+    if(localStorage.getItem("oneQuestionBookShelf")==="slim"){
+      document.body.classList.add("bookShelfSlim");
+      const btn=$("bookShelfCollapse");
+      if(btn)btn.title="show chapters";
+    }
+  }catch{}
   document.querySelectorAll(".bookFontBtn").forEach(b=>{
     b.addEventListener("click",()=>bookSetFont(parseFloat(b.dataset.dir||"1")));
   });
@@ -4058,6 +4066,14 @@ function initBookStudio(){
   // phones the preview column is hidden, so this is the reader's entry point
   $("bookReadHeader")?.addEventListener("click",readerOpen);
   $("bookExportPdf")?.addEventListener("click",bookExportPdf);
+  // the chapters shelf folds to a slim rail on wide desks; the fold is
+  // remembered like a good sidebar remembers
+  $("bookShelfCollapse")?.addEventListener("click",()=>{
+    const slim=document.body.classList.toggle("bookShelfSlim");
+    try{localStorage.setItem("oneQuestionBookShelf",slim?"slim":"wide")}catch{}
+    const btn=$("bookShelfCollapse");
+    if(btn)btn.title=slim?"show chapters":"hide chapters";
+  });
   $("bookNewChapter")?.addEventListener("click",addBookChapter);
   $("bookPrevChapter")?.addEventListener("click",()=>bookChapterStep(-1));
   $("bookNextChapter")?.addEventListener("click",()=>bookChapterStep(1));
