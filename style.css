@@ -7132,7 +7132,8 @@ body.focusModeVisual .focusKicker {
 /* a paragraph carved at a page break ends the page mid-flow — its last
    line is not a paragraph end, so it justifies to the margin like a book;
    real paragraph endings keep their ragged last line */
-.rdBody p.carveHead {
+.rdBody p.carveHead,
+.rdBody p.pageEnd {
   text-align-last: justify;
   -moz-text-align-last: justify
 }

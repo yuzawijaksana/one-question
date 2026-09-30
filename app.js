@@ -3358,6 +3358,44 @@ function flowChapterPages(c){
       best--;
       hyphen=wordChar(text.charAt(best-1))&&wordChar(text.charAt(best));
     }
+    // typographic minimums, the way books break paragraphs:
+    // — at least two lines must stay on this page; anything less is not
+    //   worth the cut, so the whole paragraph is combined and pushed to the
+    //   next page, and the page that ends early closes flush to the margin
+    // — the next page must open with at least three lines; if the tail came
+    //   out shorter the split point is pulled back a line at a time until
+    //   it isn't. a block that alone overflows a full page has nothing to
+    //   push in front of it, so it splits regardless
+    const tailLinesOf=n=>{
+      const tEl=makeEl(piece(n,text.length));
+      const stash=[...body.children];
+      body.textContent="";
+      body.append(tEl);
+      const lines=Math.round(tEl.getBoundingClientRect().height/lineH);
+      tEl.remove();
+      body.append(...stash);
+      return lines;
+    };
+    if(cur.length){
+      const headEl=makeEl(hyphenated(best,hyphen));
+      dress(headEl,hyphenated(best,hyphen));
+      body.append(headEl);
+      const headLines=Math.round(headEl.getBoundingClientRect().height/lineH);
+      headEl.remove();
+      if(headLines<2){
+        const last=cur[cur.length-1];
+        if(last)last.cls=(last.cls?last.cls+" ":"")+"pageEnd";
+        return null;
+      }
+      let tailLines=tailLinesOf(best);
+      let guard=6;
+      while(tailLines<3&&best>1&&guard-->0){
+        const perLine=Math.max(12,Math.round(best/Math.max(1,headLines)));
+        best=Math.max(1,best-perLine);
+        hyphen=wordChar(text.charAt(best-1))&&wordChar(text.charAt(best));
+        tailLines=tailLinesOf(best);
+      }
+    }
     // head fills this page, tail carries the REST of the text onward —
     // slice(best), not a second prefix, or the paragraph would restart
     return [hyphenated(best,hyphen),piece(best,text.length)];
