@@ -3338,9 +3338,27 @@ function flowChapterPages(c){
       best--;
     }
     if(best>=text.length)return null;
+    // a cut inside a word carries a hyphen over the break, the way books do;
+    // the hyphen itself takes width, so back off until the head truly fits
+    const wordChar=ch=>/[A-Za-z0-9]/.test(ch||"");
+    const hyphenated=(n,hyph)=>({tag:"p",cls:"",html:bookEscapeHtml(text.slice(0,n))+(hyph?"-":""),words:1});
+    const headFits=(n,hyph)=>{
+      const h=hyphenated(n,hyph);
+      const el=makeEl(h);
+      dress(el,h);
+      body.append(el);
+      const ok=fits();
+      el.remove();
+      return ok;
+    };
+    let hyphen=wordChar(text.charAt(best-1))&&wordChar(text.charAt(best));
+    while(best>1&&!headFits(best,hyphen)){
+      best--;
+      hyphen=wordChar(text.charAt(best-1))&&wordChar(text.charAt(best));
+    }
     // head fills this page, tail carries the REST of the text onward —
     // slice(best), not a second prefix, or the paragraph would restart
-    return [piece(0,best),piece(best,text.length)];
+    return [hyphenated(best,hyphen),piece(best,text.length)];
   };
   for(const b of blocks){
     const el=makeEl(b);
