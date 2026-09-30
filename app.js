@@ -3315,10 +3315,10 @@ function flowChapterPages(c){
     d.innerHTML=p.html||"";
     const text=(d.textContent||"").trim();
     if(text.length<2)return null;
-    const piece=n=>({tag:"p",cls:"",html:bookEscapeHtml(text.slice(0,n)),words:1});
+    const piece=(from,to)=>({tag:"p",cls:"",html:bookEscapeHtml(text.slice(from,to)),words:1});
     const tryFit=n=>{
-      const el=makeEl(piece(n));
-      dress(el,piece(n));
+      const el=makeEl(piece(0,n));
+      dress(el,piece(0,n));
       body.append(el);
       const ok=fits();
       el.remove();
@@ -3338,7 +3338,9 @@ function flowChapterPages(c){
       best--;
     }
     if(best>=text.length)return null;
-    return [piece(best),piece(text.length-best)];
+    // head fills this page, tail carries the REST of the text onward —
+    // slice(best), not a second prefix, or the paragraph would restart
+    return [piece(0,best),piece(best,text.length)];
   };
   for(const b of blocks){
     const el=makeEl(b);
