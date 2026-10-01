@@ -2,30 +2,26 @@
   "version": 1,
   "keys": {
     "oneQuestionSettings": {
-      "updatedAt": 1790438514084,
+      "updatedAt": 1790847177701,
       "value": {
         "categories": [
           "all"
         ],
         "cycleSeconds": 6.5,
-        "modeSwitchExpand": "hover",
+        "modeSwitchExpand": "always",
         "modeOrder": [
           "question",
           "focus",
           "scheduler",
           "sticky"
         ],
+        "hiddenModes": [],
         "stickyCategories": [
-          "general",
-          "friend",
-          "skill",
-          "assignment",
-          "book",
-          "film"
+          "general"
         ],
         "stickyPush": 110,
         "stickyTilt": 1.8,
-        "stickyScale": 12,
+        "stickyScale": 26,
         "stickySpread": 100,
         "tidyAnchor": "center-center",
         "hydrationMinutes": 60,
@@ -37,7 +33,7 @@
         "animation": true,
         "timerAnimation": true,
         "lowercase": false,
-        "schedulerListVisible": true,
+        "schedulerListVisible": false,
         "appearance": {
           "backgroundColor": "#10100f",
           "textColor": "#ebe8e0",
@@ -59,6 +55,7 @@
           "textSize": 100,
           "fontWeight": 400
         },
+        "syncToken": "fdfbecb3b31a290f935f556e6c6f858e",
         "syncServer": "http://103.47.225.99:8080/"
       }
     },
@@ -283,20 +280,20 @@
       ]
     },
     "oneQuestionRecent": {
-      "updatedAt": 1790436967228,
+      "updatedAt": 1790847446212,
       "value": [
-        20,
-        34,
-        19,
-        32,
-        10,
-        23,
-        28,
+        9,
+        7,
+        13,
+        31,
+        38,
         2,
-        33,
-        6,
-        24,
-        15
+        42,
+        5,
+        3,
+        22,
+        18,
+        27
       ]
     },
     "oneQuestionTodos": {
@@ -304,7 +301,7 @@
       "value": []
     },
     "oneQuestionHydration": {
-      "updatedAt": 1790435719486,
+      "updatedAt": 1790829355348,
       "value": {
         "lastDrinkAt": 1789772245794,
         "drinkCount": 2,
@@ -328,7 +325,7 @@
       }
     },
     "oneQuestionSchedule": {
-      "updatedAt": 1789987230066,
+      "updatedAt": 1790828586337,
       "value": [
         {
           "start": 270,
@@ -337,7 +334,7 @@
           "color": "#7d8c7c"
         },
         {
-          "start": 719,
+          "start": 720,
           "end": 780,
           "label": "dzuhur/lunch",
           "color": "#7d8c7c"
@@ -355,8 +352,8 @@
           "color": "#7c829c"
         },
         {
-          "start": 899,
-          "end": 915,
+          "start": 900,
+          "end": 960,
           "label": "ashar",
           "color": "#7d8c7c"
         },
@@ -405,7 +402,7 @@
       ]
     },
     "oneQuestionStickies": {
-      "updatedAt": 1790436961290,
+      "updatedAt": 1790847148174,
       "value": [
         {
           "id": "22f379cc-b095-48a9-95dc-efecef1440f1",
@@ -413,7 +410,7 @@
           "created": 1790086231973,
           "done": false,
           "cat": "book",
-          "x": 11.1,
+          "x": 11,
           "y": 30.8
         },
         {
@@ -422,8 +419,8 @@
           "created": 1790086198918,
           "done": false,
           "cat": "book",
-          "x": 22.5,
-          "y": 35.2
+          "x": 22.6,
+          "y": 35.1
         },
         {
           "id": "ff46289a-c71d-407d-ba27-c32abe602215",
@@ -431,8 +428,8 @@
           "created": 1790086092926,
           "done": false,
           "cat": "film",
-          "x": 35.8,
-          "y": 30.2,
+          "x": 35.9,
+          "y": 30.1,
           "z": "13"
         },
         {
@@ -441,8 +438,8 @@
           "created": 1790004800440,
           "done": false,
           "cat": "book",
-          "x": 46.5,
-          "y": 34.9,
+          "x": 46.4,
+          "y": 34.7,
           "z": "33"
         },
         {
@@ -462,7 +459,7 @@
           "done": false,
           "cat": "book",
           "x": 66.4,
-          "y": 35.2,
+          "y": 35.1,
           "z": "45"
         },
         {
@@ -471,8 +468,8 @@
           "created": 1790004750032,
           "done": false,
           "cat": "book",
-          "x": 16.5,
-          "y": 44.2,
+          "x": 16.4,
+          "y": 44,
           "z": "13"
         },
         {
@@ -481,7 +478,7 @@
           "created": 1789816515228,
           "done": false,
           "cat": "friend",
-          "x": 28.9,
+          "x": 29,
           "y": 48.1,
           "z": "12"
         },
@@ -491,7 +488,7 @@
           "created": 1789816364531,
           "done": false,
           "cat": "friend",
-          "x": 38,
+          "x": 37.9,
           "y": 42.8,
           "z": "12"
         },
@@ -502,7 +499,7 @@
           "done": false,
           "cat": "friend",
           "x": 49.2,
-          "y": 46.5,
+          "y": 46.1,
           "z": "15"
         },
         {
@@ -511,8 +508,8 @@
           "created": 1789816337074,
           "done": false,
           "cat": "skill",
-          "x": 58.3,
-          "y": 44.3,
+          "x": 58.2,
+          "y": 44,
           "z": "20"
         },
         {
@@ -521,7 +518,7 @@
           "created": 1789816315707,
           "done": false,
           "cat": "skill",
-          "x": 67.3,
+          "x": 67.2,
           "y": 47.5,
           "z": "18"
         },
@@ -531,7 +528,7 @@
           "created": 1789815892883,
           "done": false,
           "cat": "friend",
-          "x": 13.4,
+          "x": 13.3,
           "y": 56.9,
           "z": "16"
         },
@@ -551,7 +548,7 @@
           "created": 1789814800974,
           "done": false,
           "cat": "friend",
-          "x": 32.4,
+          "x": 32.3,
           "y": 56.4,
           "z": "16"
         },
@@ -562,7 +559,7 @@
           "done": false,
           "cat": "friend",
           "x": 42.3,
-          "y": 59.8,
+          "y": 59.6,
           "z": "19"
         },
         {
@@ -571,7 +568,7 @@
           "created": 1789804934229,
           "done": false,
           "cat": "assignment",
-          "x": 53.2,
+          "x": 53.1,
           "y": 56.3,
           "z": "28"
         },
@@ -581,8 +578,8 @@
           "created": 1789804390454,
           "done": false,
           "cat": "skill",
-          "x": 63.9,
-          "y": 60.8,
+          "x": 63.8,
+          "y": 60.5,
           "z": "17"
         }
       ]
@@ -591,23 +588,42 @@
       "updatedAt": 1790143698763,
       "value": "my secret note"
     },
+    "oneQuestionJournal": {
+      "updatedAt": 1790655894619,
+      "value": [
+        {
+          "id": "pmum5u4mlwg69",
+          "date": "",
+          "text": "         \n   \n\n                    right here\n\n\n                                   \n\n                        \n\n                             \n\n\n                \n                          \n\n                           ",
+          "createdAt": 1790655139821,
+          "updatedAt": 1790655891498
+        },
+        {
+          "id": "pmum5u4mlir5p",
+          "date": "",
+          "text": "                                   \n                                       \n     \n                                           \n                                        \n                                     \n            \n                      \n                                        \n                     \n                   \n             \n\n                                      \n                         \n                   \n                    \n                              ",
+          "createdAt": 1790655139821,
+          "updatedAt": 1790655894018
+        }
+      ]
+    },
     "oneQuestionBook": {
-      "updatedAt": 1790671483039,
+      "updatedAt": 1790833280524,
       "value": {
         "title": "",
         "chapters": [
           {
-            "id": "ch-mumfkf4v",
-            "title": "",
-            "category": "",
-            "html": "",
-            "createdAt": 1790671483039,
-            "updatedAt": 1790671483039
+            "id": "ch-recovered-mup3wavg",
+            "title": "starting point(not really)",
+            "category": "everyday journal",
+            "html": "<p>I know that everyday feels wierd, kalau coba buat masuk ke mode fokus kadang bikin otak pusing ditambah yang kerasa itu perasaan nyambung ke otak, feels like they're battle-ing each other in some ways. and theres times when it feels like their pushing you away from doing things.</p><p>You also sometimes feels that you wanted to do things that you felt that you don't want to do it but you feel like you need it, its sometimes wierd that minds works like that. its kinda like your brain forces you to do something that you don't but you kept on doing it.</p><p>Like, for example right now aku malah ngomong kaya gini tiba tiba pengen pake bahasa inggris</p>",
+            "createdAt": 1790833280524,
+            "updatedAt": 1790833280524
           }
         ],
-        "activeId": "ch-mumfkf4v"
+        "activeId": "ch-recovered-mup3wavg"
       }
     }
   },
-  "updatedAt": 1790671483040
+  "updatedAt": 1790847447843
 }
