@@ -58,7 +58,7 @@ const extensionStorage=(typeof browser!=="undefined"&&browser.storage&&browser.s
 const STORAGE_KEYS=[
   "oneQuestionQuestionBank","oneQuestionFocusQuestions","oneQuestionSettings",
   "oneQuestionHistory","oneQuestionRecent","oneQuestionTodos","oneQuestionNote",
-  "oneQuestionBook"
+  "oneQuestionBook","oneQuestionQuotes"
 ];
 
 function cacheSet(key,value){
@@ -502,7 +502,7 @@ const DEFAULT_APPEARANCE={
   textSize:100,
   fontWeight:400
 };
-const DEFAULT_SETTINGS={categories:["all"],cycleSeconds:6.5,modeSwitchExpand:"hover",modeOrder:["question","focus","scheduler","sticky"],stickyCategories:["general"],stickyPush:110,stickyTilt:1.8,stickyScale:12,stickySpread:100,tidyAnchor:"center-center",hydrationMinutes:DEFAULT_HYDRATION_MINUTES,hydrationSize:DEFAULT_HYDRATION_SIZE,hydrationWave:true,hydrationHoverEnabled:false,hydrationHoverScale:DEFAULT_HYDRATION_HOVER_SCALE,screenScale:DEFAULT_SCREEN_SCALE,animation:true,timerAnimation:true,lowercase:false,schedulerListVisible:true,appearance:{...DEFAULT_APPEARANCE}};
+const DEFAULT_SETTINGS={categories:["all"],cycleSeconds:6.5,modeSwitchExpand:"hover",modeOrder:["question","focus","scheduler","sticky","quotes"],hiddenModes:[],stickyCategories:["general"],stickyPush:110,stickyTilt:1.8,stickyScale:12,stickySpread:100,tidyAnchor:"center-center",hydrationMinutes:DEFAULT_HYDRATION_MINUTES,hydrationSize:DEFAULT_HYDRATION_SIZE,hydrationWave:true,hydrationHoverEnabled:false,hydrationHoverScale:DEFAULT_HYDRATION_HOVER_SCALE,screenScale:DEFAULT_SCREEN_SCALE,animation:true,timerAnimation:true,lowercase:false,schedulerListVisible:true,appearance:{...DEFAULT_APPEARANCE}};
 let settings=loadSettings();
 
 function loadSettings(){
@@ -512,19 +512,46 @@ function loadSettings(){
     return {...DEFAULT_SETTINGS,...saved,categories,appearance:{...DEFAULT_APPEARANCE,...(saved.appearance||{})}};
   }catch{return {...DEFAULT_SETTINGS,appearance:{...DEFAULT_APPEARANCE}}}
 }
-const MODE_ORDER_CLASSES={question:"modeQuestion",focus:"modeFocus",scheduler:"modeScheduler",sticky:"modeSticky"};
-const MODE_ORDER_LABELS={question:"question",focus:"book",scheduler:"scheduler",sticky:"remember wall"};
+const MODE_ORDER_CLASSES={question:"modeQuestion",focus:"modeFocus",scheduler:"modeScheduler",sticky:"modeSticky",quotes:"modeQuotes"};
+const MODE_ORDER_LABELS={question:"question",focus:"book",scheduler:"scheduler",sticky:"remember wall",quotes:"quiet feed"};
 function normalizedModeOrder(){
   const valid=Object.keys(MODE_ORDER_CLASSES);
   const saved=Array.isArray(settings.modeOrder)?settings.modeOrder.filter(k=>valid.includes(k)):[];
   return [...saved,...valid.filter(k=>!saved.includes(k))];
 }
+// modes the user switched off (settings → mode switch order, the ◉ toggle);
+// hiding everything is refused so cycling always has somewhere to go
+function hiddenModeSet(){
+  const all=normalizedModeOrder();
+  const hidden=new Set(Array.isArray(settings.hiddenModes)?all.filter(k=>settings.hiddenModes.includes(k)):[]);
+  return hidden.size>=all.length?new Set():hidden;
+}
+function activeModes(){
+  const hidden=hiddenModeSet();
+  return normalizedModeOrder().filter(k=>!hidden.has(k));
+}
+function toggleModeHidden(key){
+  const all=normalizedModeOrder();
+  const hidden=Array.isArray(settings.hiddenModes)?[...settings.hiddenModes]:[];
+  if(hidden.includes(key)){
+    settings.hiddenModes=hidden.filter(k=>k!==key);
+  }else{
+    if(all.length-hidden.length<=1)return;
+    settings.hiddenModes=[...hidden,key];
+  }
+  saveSettings();
+  applyModeOrder();
+  renderModeOrderSetting();
+}
 function applyModeOrder(){
   const toggle=$("modeToggle");
   if(!toggle)return;
+  const hidden=hiddenModeSet();
   normalizedModeOrder().forEach(key=>{
     const icon=toggle.querySelector(`.modeIcon.${MODE_ORDER_CLASSES[key]}`);
-    if(icon)toggle.appendChild(icon);
+    if(!icon)return;
+    icon.classList.toggle("isHidden",hidden.has(key));
+    toggle.appendChild(icon);
   });
 }
 function renderModeOrderSetting(){
@@ -532,12 +559,23 @@ function renderModeOrderSetting(){
   if(!list)return;
   list.innerHTML="";
   const order=normalizedModeOrder();
+  const hidden=hiddenModeSet();
   order.forEach((key,index)=>{
     const row=document.createElement("div");
     row.className="modeOrderRow";
+    if(hidden.has(key))row.classList.add("isOff");
     const name=document.createElement("span");
     name.className="modeOrderName";
     name.textContent=MODE_ORDER_LABELS[key]||key;
+    const eye=document.createElement("button");
+    eye.type="button";
+    eye.className="modeOrderBtn modeEye";
+    eye.textContent=hidden.has(key)?"◌":"◉";
+    eye.setAttribute("aria-label",hidden.has(key)?`Show ${name.textContent} in the mode switch`:`Hide ${name.textContent} from the mode switch`);
+    eye.title=hidden.has(key)?"hidden — tap to show this mode":"shown — tap to hide this mode";
+    // never let the last visible mode be hidden too
+    eye.disabled=!hidden.has(key)&&order.length-hidden.size<=1;
+    eye.onclick=()=>toggleModeHidden(key);
     const up=document.createElement("button");
     up.type="button";
     up.className="modeOrderBtn";
@@ -552,7 +590,7 @@ function renderModeOrderSetting(){
     down.setAttribute("aria-label",`Move ${name.textContent} down`);
     down.disabled=index===order.length-1;
     down.onclick=()=>moveModeOrder(index,index+1);
-    row.append(name,up,down);
+    row.append(name,eye,up,down);
     list.append(row);
   });
 }
@@ -641,14 +679,18 @@ function updateModeUI(){
   document.body.classList.toggle("focusModeVisual",currentMode==="focus");
   document.body.classList.toggle("schedulerVisual",currentMode==="scheduler");
   document.body.classList.toggle("stickyVisual",currentMode==="sticky");
+  document.body.classList.toggle("quotesVisual",currentMode==="quotes");
   const sched=$("scheduler");
   if(sched)sched.setAttribute("aria-hidden",String(currentMode!=="scheduler"));
   const stickyEl=$("sticky");
   if(stickyEl)stickyEl.setAttribute("aria-hidden",String(currentMode!=="sticky"));
+  const quotesEl=$("quotes");
+  if(quotesEl)quotesEl.setAttribute("aria-hidden",String(currentMode!=="quotes"));
   const bookEl=$("bookStudio");
   if(bookEl)bookEl.setAttribute("aria-hidden",String(currentMode!=="focus"));
   if(currentMode==="scheduler")renderScheduler();
   if(currentMode==="sticky")renderStickies();
+  if(currentMode==="quotes")renderQuotesFeed();
   if(currentMode==="focus")renderBookStudio();
   updateFocusModePreview();
   updateTimerUI();
@@ -661,11 +703,9 @@ function toggleModeMenu(e){
     if(icon.classList.contains("modeFocus")){enterFocusMode();return;}
     if(icon.classList.contains("modeScheduler")){enterSchedulerMode();return;}
     if(icon.classList.contains("modeSticky")){enterStickyMode();return;}
+    if(icon.classList.contains("modeQuotes")){enterQuotesMode();return;}
   }
-  if(currentMode==="question")enterFocusMode();
-  else if(currentMode==="focus")enterSchedulerMode();
-  else if(currentMode==="scheduler")enterStickyMode();
-  else enterQuestionMode();
+  cycleMode(1);
 }
 function renderQuestion(i){
   currentIndex=i;
@@ -1429,6 +1469,7 @@ function buildBackup(){
       todos:getTodos(),
       schedule:schedulerBlocks.slice(),
       stickies:stickies.map(s=>({...s})),
+      quotes:quotes.map(q=>({...q})),
       book:book?JSON.parse(JSON.stringify(book)):null
     }
   };
@@ -1484,6 +1525,16 @@ async function importBackup(file){
       d.stickies.forEach(s=>{if(s&&typeof s.text==="string"&&s.text.trim())stickies.push({id:String(s.id||crypto.randomUUID()),text:s.text.trim(),created:Number(s.created)||Date.now(),done:!!s.done,cat:typeof s.cat==="string"?s.cat.trim().toLowerCase():undefined})});
       saveStickies();
       renderStickyPin();
+    }
+    if(Array.isArray(d.quotes)){
+      quotes.length=0;
+      d.quotes.forEach(q=>{
+        if(!q||typeof q.text!=="string"||!q.text.trim())return;
+        quotes.push({id:String(q.id||crypto.randomUUID()),text:q.text.trim(),author:typeof q.author==="string"?q.author.trim():"",created:Number(q.created)||Date.now()});
+      });
+      quoteIndex=0;
+      saveQuotes();
+      if(currentMode==="quotes")renderQuotesFeed();
     }
     const importedBook=normalizeBook(d.book);
     if(importedBook){
@@ -2949,7 +3000,7 @@ let tidyWallRef=null;
     }
   });
   if(window.__stickyGhostEl)list.append(window.__stickyGhostEl);
-
+  renderStickyDeck();
 }
 function addSticky(text,xPct,yPct,keepId){
   const clean=String(text||"").trim();
@@ -2960,6 +3011,175 @@ function addSticky(text,xPct,yPct,keepId){
   stickies.unshift(s);
   saveStickies();renderStickies();renderStickyPin();
   return true;
+}
+// ---- remember deck: the phone view of the wall --------------------------
+// the wall's free drag doesn't work on a small screen, so mobile deals the
+// notes one at a time like a card stack: swipe right to mark remembered,
+// swipe left to leave it for later. same stickies, same sync.
+let stickyDeckId=null;
+function stickyDeckOrder(){
+  return [...stickies.filter(s=>!s.done),...stickies.filter(s=>s.done)];
+}
+function stickyDeckIndex(order){
+  order=order||stickyDeckOrder();
+  let i=stickyDeckId?order.findIndex(s=>s.id===stickyDeckId):-1;
+  return i<0?0:i;
+}
+function stickyDeckAdvance(){
+  const order=stickyDeckOrder();
+  if(!order.length)return;
+  stickyDeckId=order[(stickyDeckIndex(order)+1)%order.length].id;
+}
+async function stickyDeckMoveCategory(s){
+  const catsNow=stickyCats();
+  const options=[...catsNow.filter(c=>c!==stickyCatOf(s)),"+ new category…"];
+  const picked=await appDialog({message:"move this note to:",choices:options,cancelText:"cancel"});
+  if(!picked)return;
+  if(picked==="+ new category…"){
+    const name=cleanCategoryName(await appDialog({message:"new category name:",inputLabel:"category name…",okText:"add"}));
+    if(!name)return;
+    if(!catsNow.includes(name)){
+      settings.stickyCategories=[...stickyCats(),name];
+      saveSettings();
+    }
+    s.cat=name;
+  }else{
+    s.cat=picked;
+  }
+  saveStickies();renderStickies();renderStickyPin();
+}
+function renderStickyDeck(){
+  const stack=$("stickyDeckStack");
+  if(!stack)return;
+  const count=$("stickyDeckCount");
+  const order=stickyDeckOrder();
+  if(count){
+    if(!order.length)count.textContent="0";
+    else{
+      const remembered=order.filter(s=>s.done).length;
+      count.textContent=`${stickyDeckIndex(order)+1} / ${order.length}${remembered?` · ${remembered} remembered`:""}`;
+    }
+  }
+  stack.textContent="";
+  if(!order.length){
+    const empty=document.createElement("div");
+    empty.className="stickyCard stickyCardEmpty";
+    empty.textContent="nothing to remember yet — add your first note";
+    stack.append(empty);
+    return;
+  }
+  const current=order[stickyDeckIndex(order)];
+  stickyDeckId=current.id;
+  // top card first in DOM order; up to two face-down cards peek behind it
+  const stackCards=[current];
+  for(let d=1;d<3&&d<order.length;d++)stackCards.push(order[(stickyDeckIndex(order)+d)%order.length]);
+  stackCards.reverse().forEach((s,d)=>{
+    const depth=Math.abs(d-(stackCards.length-1));
+    const card=document.createElement("div");
+    card.className="stickyCard"+(depth===0?" isTop":"")+(s.done?" isDone":"");
+    card.dataset.depth=String(depth);
+    if(depth!==0){
+      const ghost=document.createElement("div");
+      ghost.className="stickyCardText";
+      ghost.textContent=s.text;
+      card.append(ghost);
+      stack.append(card);
+      return;
+    }
+    const cat=document.createElement("button");
+    cat.type="button";
+    cat.className="stickyCardCat";
+    cat.textContent=stickyCatOf(s);
+    cat.title="move category";
+    cat.onclick=()=>stickyDeckMoveCategory(s);
+    const text=document.createElement("div");
+    text.className="stickyCardText";
+    text.textContent=s.text;
+    const meta=document.createElement("div");
+    meta.className="stickyCardMeta";
+    meta.textContent=(s.done?"remembered · ":"")+stickyAgeLabel(s);
+    card.append(cat,text,meta);
+    attachStickyDeckDrag(card,s);
+    stack.append(card);
+  });
+}
+function attachStickyDeckDrag(card,s){
+  let sx=0,sy=0,dx=0,dy=0,dragging=false;
+  card.addEventListener("pointerdown",e=>{
+    if(e.target.closest("button"))return;
+    try{card.setPointerCapture(e.pointerId);}catch{}
+    dragging=true;
+    sx=e.clientX;sy=e.clientY;dx=0;dy=0;
+    card.classList.add("dragging");
+  });
+  card.addEventListener("pointermove",e=>{
+    if(!dragging)return;
+    dx=e.clientX-sx;
+    dy=e.clientY-sy;
+    card.style.transform=`translate(${dx}px,${dy*.25}px) rotate(${dx*.06}deg)`;
+  });
+  const end=()=>{
+    if(!dragging)return;
+    dragging=false;
+    card.classList.remove("dragging");
+    const TH=80;
+    if(dx>TH){
+      // swipe right: remembered — deal the next card
+      card.classList.add("fly");
+      card.style.transform=`translate(${dx*3+160}px,${dy}px) rotate(${dx*.15}deg)`;
+      const order=stickyDeckOrder();
+      const next=order[(stickyDeckIndex(order)+1)%order.length];
+      if(!s.done){s.done=true;saveStickies();}
+      stickyDeckId=next?next.id:null;
+      setTimeout(()=>{renderStickyDeck();renderStickyPin();},240);
+    }else if(dx<-TH){
+      // swipe left: leave it for later
+      card.classList.add("fly");
+      card.style.transform=`translate(${dx*3-160}px,${dy}px) rotate(${dx*.15}deg)`;
+      stickyDeckAdvance();
+      setTimeout(()=>renderStickyDeck(),240);
+    }else{
+      card.style.transform="";
+    }
+  };
+  card.addEventListener("pointerup",end);
+  card.addEventListener("pointercancel",end);
+}
+function initStickyDeck(){
+  const deck=$("stickyDeck");
+  if(!deck)return;
+  $("stickyDeckAdd")?.addEventListener("click",async()=>{
+    const text=await appDialog({message:"new note:",inputLabel:"what should you remember?…",okText:"add"});
+    if(text==null)return;
+    if(!addSticky(text))return;
+    stickyDeckId=stickies[0].id;
+    renderStickyDeck();
+  });
+  deck.querySelectorAll(".stickyDeckActions button").forEach(btn=>{
+    btn.addEventListener("click",async()=>{
+      const order=stickyDeckOrder();
+      const s=order[stickyDeckIndex(order)];
+      if(!s)return;
+      const act=btn.dataset.act;
+      if(act==="done"){
+        s.done=!s.done;
+        saveStickies();renderStickies();renderStickyPin();
+      }else if(act==="edit"){
+        const text=await appDialog({message:"edit note:",inputLabel:"note text…",initialValue:s.text,okText:"save"});
+        if(text==null)return;
+        const clean=text.trim();
+        if(!clean)return;
+        s.text=clean;
+        saveStickies();renderStickies();renderStickyPin();
+      }else if(act==="del"){
+        const preview=s.text.length>42?`${s.text.slice(0,42)}…`:s.text;
+        const ok=await appDialog({message:`remove "${preview}"?`,okText:"remove",cancelText:"keep",danger:true});
+        if(!ok)return;
+        stickies.splice(stickies.indexOf(s),1);
+        saveStickies();renderStickies();renderStickyPin();
+      }
+    });
+  });
 }
 function syncPinOrder(){
   // urutan tumpukan diacak; kartu lama pertahankan posisinya, kartu baru
@@ -3090,11 +3310,13 @@ function bookNewChapterObj(title="",category="",html=""){
     title,category,html,createdAt:Date.now(),updatedAt:Date.now()};
 }
 function bookEnsure(){
-  // first open: one blank page waits under a blank title — all yours
+  // first open: one blank page waits under a blank title — all yours.
+  // the placeholder lives in memory only: persisting here would push an
+  // empty book to the sync server and overwrite real chapters on every
+  // fresh device. the first real edit persists it.
   if(book&&book.chapters.length)return;
   book={title:"",chapters:[bookNewChapterObj()],activeId:null};
   book.activeId=book.chapters[0].id;
-  persistBook();
 }
 function addBookChapter(){
   const c=bookNewChapterObj();
@@ -4096,6 +4318,355 @@ function initBookStudio(){
     else if(e.key==="ArrowLeft"){e.preventDefault();e.stopPropagation();readerFlip(-1);}
   },true);
 }
+// ---- quiet feed (quotes) mode -----------------------------------------
+// a reels-style vertical feed, but calm: one text quote per screen, a feed
+// that ends on purpose, and no autoplay. scroll/snap does the navigation.
+// the feed starts empty — the quotes are yours, added from inside the feed.
+const QUOTES_KEY="oneQuestionQuotes";
+function loadQuotes(){
+  try{
+    const saved=JSON.parse(localStorage.getItem(QUOTES_KEY)||"null");
+    if(Array.isArray(saved)){
+      return saved.filter(q=>q&&typeof q.text==="string"&&q.text.trim()).map(q=>({id:String(q.id||crypto.randomUUID()),text:q.text.trim(),author:typeof q.author==="string"?q.author.trim():"",created:Number(q.created)||Date.now()}));
+    }
+  }catch{}
+  return [];
+}
+let quotes=loadQuotes();
+function saveQuotes(){cacheSet(QUOTES_KEY,quotes)}
+let quoteIndex=0;
+let quoteObserver=null;
+let quoteSessionStart=0;
+function quoteSizeFor(text){
+  const len=text.length;
+  if(len<=50)return "xl";
+  if(len<=110)return "l";
+  if(len<=210)return "m";
+  return "s";
+}
+function renderQuotesFeed(){
+  const feed=$("quoteFeed");
+  if(!feed)return;
+  feed.innerHTML="";
+  const dots=$("quoteDots");
+  if(dots)dots.innerHTML="";
+  quotes.forEach((q,i)=>{
+    const slide=document.createElement("article");
+    slide.className="quoteSlide";
+    slide.dataset.index=String(i);
+    slide.dataset.size=quoteSizeFor(q.text);
+    const inner=document.createElement("div");
+    inner.className="quoteInner";
+    const mark=document.createElement("span");
+    mark.className="quoteMark";
+    mark.setAttribute("aria-hidden","true");
+    mark.textContent="❝";
+    const text=document.createElement("p");
+    text.className="quoteText";
+    text.textContent=q.text;
+    inner.append(mark,text);
+    if(q.author){
+      const a=document.createElement("span");
+      a.className="quoteAuthor";
+      a.textContent=q.author;
+      inner.append(a);
+    }
+    slide.append(inner);
+    feed.append(slide);
+    if(dots&&quotes.length<=40){
+      const d=document.createElement("span");
+      d.className="quoteDot";
+      dots.append(d);
+    }
+  });
+  if(quotes.length){
+    // the feed deliberately ends — no infinite scroll
+    const end=document.createElement("article");
+    end.className="quoteSlide quoteEnd";
+    end.dataset.index=String(quotes.length);
+    const inner=document.createElement("div");
+    inner.className="quoteInner";
+    const text=document.createElement("p");
+    text.className="quoteEndText";
+    text.textContent="the feed ends here — that's the point.";
+    const sub=document.createElement("p");
+    sub.className="quoteEndSub";
+    sub.textContent=`you read ${quotes.length} ${quotes.length===1?"quote":"quotes"} · let your eyes rest on something far away`;
+    const actions=document.createElement("div");
+    actions.className="quoteEndActions";
+    const again=document.createElement("button");
+    again.type="button";
+    again.className="quoteEndBtn";
+    again.dataset.again="1";
+    again.textContent="read again ↺";
+    actions.append(again);
+    inner.append(text,sub,actions);
+    end.append(inner);
+    feed.append(end);
+    if(dots&&quotes.length<=40){
+      const d=document.createElement("span");
+      d.className="quoteDot";
+      dots.append(d);
+    }
+  }else{
+    const empty=document.createElement("article");
+    empty.className="quoteSlide quoteEmpty";
+    empty.dataset.index="0";
+    const inner=document.createElement("div");
+    inner.className="quoteInner";
+    const text=document.createElement("p");
+    text.className="quoteEndText";
+    text.textContent="the feed is empty.";
+    const sub=document.createElement("p");
+    sub.className="quoteEndSub";
+    sub.textContent="add a quote you love and it will live here, one calm screen at a time.";
+    const actions=document.createElement("div");
+    actions.className="quoteEndActions";
+    const add=document.createElement("button");
+    add.type="button";
+    add.className="quoteEndBtn";
+    add.dataset.add="1";
+    add.textContent="+ add a quote";
+    actions.append(add);
+    inner.append(text,sub,actions);
+    empty.append(inner);
+    feed.append(empty);
+    if(dots){
+      const d=document.createElement("span");
+      d.className="quoteDot";
+      dots.append(d);
+    }
+  }
+  if(quoteObserver){
+    quoteObserver.disconnect();
+    [...feed.children].forEach(slide=>quoteObserver.observe(slide));
+  }
+  // restore the position without playing the entrance
+  quoteIndex=Math.max(0,Math.min(quoteIndex,feed.children.length-1));
+  const target=feed.children[quoteIndex];
+  if(target)feed.scrollTop=target.offsetTop;
+  updateQuoteMeta();
+}
+function updateQuoteMeta(){
+  const count=$("quoteCount");
+  const section=$("quotes");
+  const atEnd=!quotes.length||quoteIndex>=quotes.length;
+  if(count){
+    if(!quotes.length)count.textContent="0";
+    else if(atEnd)count.textContent="end";
+    else count.textContent=`${quoteIndex+1} / ${quotes.length}`;
+  }
+  if(section)section.classList.toggle("isEnd",atEnd&&quotes.length>0);
+  const dots=$("quoteDots");
+  if(dots){
+    [...dots.children].forEach((d,i)=>d.classList.toggle("on",i===quoteIndex));
+    // hide the rail when there is nothing to paginate (empty feed)
+    dots.style.display=quotes.length>0?"":"none";
+  }
+}
+function quotesGoto(i,smooth=true){
+  const feed=$("quoteFeed");
+  if(!feed||!feed.children.length)return;
+  const target=Math.max(0,Math.min(i,feed.children.length-1));
+  const slide=feed.children[target];
+  if(!slide)return;
+  quotesScrollTo(slide.offsetTop,smooth);
+}
+// native smooth scrollTo is ignored by some embedded webviews (and by
+// prefers-reduced-motion), so the feed tweens with rAF and falls back to
+// an instant jump when animation is off
+let quoteTweenId=0,quoteTweenWatch=0;
+function quotesScrollTo(top,smooth=true){
+  const feed=$("quoteFeed");
+  if(!feed)return;
+  cancelAnimationFrame(quoteTweenId);
+  clearInterval(quoteTweenWatch);
+  const reduceMotion=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const start=feed.scrollTop;
+  const distance=top-start;
+  if(!smooth||!settings.animation||reduceMotion||!isFinite(distance)||Math.abs(distance)<1){
+    feed.scrollTop=top;
+    return;
+  }
+  const t0=performance.now();
+  const dur=Math.min(680,240+Math.abs(distance)*.3);
+  let done=false;
+  const finish=()=>{
+    if(done)return;
+    done=true;
+    cancelAnimationFrame(quoteTweenId);
+    clearInterval(quoteTweenWatch);
+  };
+  const step=ts=>{
+    if(done)return;
+    const p=Math.min(1,(ts-t0)/dur);
+    const ease=1-Math.pow(1-p,3);
+    feed.scrollTop=start+distance*ease;
+    if(p<1)quoteTweenId=requestAnimationFrame(step);
+    else finish();
+  };
+  quoteTweenId=requestAnimationFrame(step);
+  // rAF can be throttled or frozen (hidden webviews, Wallpaper Engine pause):
+  // watch for stalled progress and land directly on the target
+  let lastPos=start;
+  quoteTweenWatch=setInterval(()=>{
+    if(done){clearInterval(quoteTweenWatch);return;}
+    if(Math.abs(feed.scrollTop-lastPos)>=2){lastPos=feed.scrollTop;return;}
+    finish();
+    feed.scrollTop=top;
+  },140);
+}
+function enterQuotesMode(){
+  clearTimeout(cycleTimer);closeCategoryMenu();
+  currentMode="quotes";cyclePaused=false;isAnswering=false;
+  document.body.classList.remove("focusModeVisual");
+  quoteSessionStart=Date.now();
+  updateModeUI();updateFocusUI();
+  setCycleStatus("quiet feed",false);
+  answerEl.blur();
+  updateQuoteSession();
+}
+function updateQuoteSession(){
+  const el=$("quoteSession");
+  if(!el)return;
+  if(currentMode!=="quotes"||!quoteSessionStart){
+    el.textContent="";
+    el.setAttribute("aria-hidden","true");
+    return;
+  }
+  const mins=Math.floor((Date.now()-quoteSessionStart)/60000);
+  if(mins<1){
+    el.textContent="";
+    el.setAttribute("aria-hidden","true");
+    return;
+  }
+  el.textContent=`here for ${mins} min`;
+  el.setAttribute("aria-hidden","false");
+}
+async function quoteAddFlow(){
+  const text=await appDialog({message:"new quote",inputLabel:"the quote…",okText:"add"});
+  if(text==null)return;
+  const trimmed=text.trim();
+  if(!trimmed)return;
+  const author=await appDialog({message:"who said it?",inputLabel:"author — leave empty if unknown",okText:"save"});
+  if(author==null)return;
+  quotes.push({id:crypto.randomUUID(),text:trimmed,author:author.trim(),created:Date.now()});
+  saveQuotes();
+  quoteIndex=quotes.length-1;
+  renderQuotesFeed();
+}
+async function quoteEditFlow(){
+  const q=quotes[quoteIndex];
+  if(!q)return;
+  const text=await appDialog({message:"edit quote",inputLabel:"the quote…",initialValue:q.text,okText:"save"});
+  if(text==null)return;
+  const trimmed=text.trim();
+  if(!trimmed)return;
+  const author=await appDialog({message:"who said it?",inputLabel:"author — leave empty if unknown",initialValue:q.author||"",okText:"save"});
+  if(author==null)return;
+  q.text=trimmed;
+  q.author=author.trim();
+  saveQuotes();
+  renderQuotesFeed();
+}
+async function quoteRemoveFlow(){
+  const q=quotes[quoteIndex];
+  if(!q)return;
+  const preview=q.text.length>42?`${q.text.slice(0,42)}…`:q.text;
+  const ok=await appDialog({message:`remove "${preview}"?`,okText:"remove",cancelText:"keep",danger:true});
+  if(!ok)return;
+  quotes.splice(quoteIndex,1);
+  quoteIndex=Math.max(0,Math.min(quoteIndex,quotes.length-1));
+  saveQuotes();
+  renderQuotesFeed();
+}
+function quoteShuffleNow(){
+  for(let i=quotes.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [quotes[i],quotes[j]]=[quotes[j],quotes[i]];
+  }
+  saveQuotes();
+  quoteIndex=0;
+  renderQuotesFeed();
+}
+function initQuotesMode(){
+  const feed=$("quoteFeed");
+  if(!feed)return;
+  quoteObserver=new IntersectionObserver(entries=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting&&entry.intersectionRatio>=.55){
+        quoteIndex=Number(entry.target.dataset.index)||0;
+        entry.target.classList.add("isLive");
+        updateQuoteMeta();
+      }else if(entry.target.classList.contains("isLive")&&entry.intersectionRatio<.4){
+        entry.target.classList.remove("isLive");
+      }
+    });
+  },{root:feed,threshold:[0,.4,.55]});
+  renderQuotesFeed();
+  $("quoteShuffle")?.addEventListener("click",quoteShuffleNow);
+  $("quoteAdd")?.addEventListener("click",quoteAddFlow);
+  $("quoteEdit")?.addEventListener("click",quoteEditFlow);
+  $("quoteRemove")?.addEventListener("click",quoteRemoveFlow);
+  $("quotePrev")?.addEventListener("click",()=>quotesGoto(quoteIndex-1));
+  $("quoteNext")?.addEventListener("click",()=>quotesGoto(quoteIndex+1));
+  feed.addEventListener("click",e=>{
+    if(e.target.closest("[data-again]")){quotesGoto(0);return;}
+    if(e.target.closest("[data-add]"))quoteAddFlow();
+  });
+  // reels-style wheel: one quote per gesture, not free scrolling —
+  // native snap still covers touch; this makes the mouse wheel deterministic
+  let quoteWheelLock=0;
+  feed.addEventListener("wheel",e=>{
+    if(currentMode!=="quotes")return;
+    e.preventDefault();
+    const now=performance.now();
+    if(now<quoteWheelLock)return;
+    if(Math.abs(e.deltaY)<12)return;
+    quoteWheelLock=now+400;
+    quotesGoto(quoteIndex+(e.deltaY>0?1:-1));
+  },{passive:false});
+  // a touch swipe owns the scroll — stop any running tween immediately
+  feed.addEventListener("touchstart",()=>cancelAnimationFrame(quoteTweenId),{passive:true});
+  // fallback live-index tracking for webviews where IntersectionObserver
+  // callbacks are lazy or throttled — scroll events still tell the position
+  feed.addEventListener("scroll",()=>{
+    const h=feed.clientHeight;
+    if(!h)return;
+    const idx=Math.max(0,Math.min(Math.round(feed.scrollTop/h),feed.children.length-1));
+    if(idx!==quoteIndex){
+      quoteIndex=idx;
+      [...feed.children].forEach(slide=>slide.classList.toggle("isLive",Number(slide.dataset.index)===idx));
+      updateQuoteMeta();
+    }
+  },{passive:true});
+  // reels-style keyboard navigation: one quote per key press
+  document.addEventListener("keydown",e=>{
+    if(currentMode!=="quotes")return;
+    if(e.altKey||e.ctrlKey||e.metaKey)return;
+    if(document.querySelector(".appDialog.open"))return;
+    if($("settingsPanel").classList.contains("open"))return;
+    if($("historyPanel").classList.contains("open"))return;
+    if($("todoFullscreen").classList.contains("open"))return;
+    const t=e.target;
+    if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.isContentEditable))return;
+    const last=(feed.children.length||1)-1;
+    if(e.key==="ArrowDown"||e.key==="PageDown"||e.key===" "){
+      e.preventDefault();
+      quotesGoto(quoteIndex+1);
+    }else if(e.key==="ArrowUp"||e.key==="PageUp"){
+      e.preventDefault();
+      quotesGoto(quoteIndex-1);
+    }else if(e.key==="Home"){
+      e.preventDefault();
+      quotesGoto(0);
+    }else if(e.key==="End"){
+      e.preventDefault();
+      quotesGoto(last);
+    }
+  });
+  setInterval(updateQuoteSession,15000);
+}
 function enterStickyMode(){
   clearTimeout(cycleTimer);closeCategoryMenu();
   currentMode="sticky";cyclePaused=false;isAnswering=false;
@@ -4344,7 +4915,19 @@ document.addEventListener("keydown",e=>{
   closeCategoryMenu();
 });
 
-// arrow keys cycle through the modes (order matches the mode toggle)
+// arrow keys and swipes cycle through the visible modes (order + ◉ setting)
+function cycleMode(dir){
+  const order=activeModes();
+  if(!order.length)return;
+  const idx=Math.max(0,order.indexOf(currentMode));
+  const next=order[(idx+dir+order.length)%order.length];
+  if(next===currentMode)return;
+  if(next==="question")enterQuestionMode();
+  else if(next==="focus")enterFocusMode();
+  else if(next==="scheduler")enterSchedulerMode();
+  else if(next==="sticky")enterStickyMode();
+  else if(next==="quotes")enterQuotesMode();
+}
 document.addEventListener("keydown",e=>{
   if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight")return;
   if(e.altKey||e.ctrlKey||e.metaKey)return;
@@ -4352,17 +4935,46 @@ document.addEventListener("keydown",e=>{
   if(document.querySelector(".appDialog.open"))return;
   const t=e.target;
   if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.isContentEditable))return;
-  const order=normalizedModeOrder();
-  if(!order.length)return;
-  const idx=Math.max(0,order.indexOf(currentMode));
-  const dir=e.key==="ArrowRight"?1:order.length-1;
-  const next=order[(idx+dir)%order.length];
   e.preventDefault();
-  if(next==="question")enterQuestionMode();
-  else if(next==="focus")enterFocusMode();
-  else if(next==="scheduler")enterSchedulerMode();
-  else if(next==="sticky")enterStickyMode();
+  cycleMode(e.key==="ArrowRight"?1:-1);
 });
+
+// mobile: a decisive horizontal swipe cycles modes the way ← → do.
+// vertical movement is left alone — it scrolls the feed, drags notes,
+// selects text in the book.
+(function initModeSwipe(){
+  const SWIPE_MIN=56;          // px of travel before it counts as a swipe
+  const SWIPE_SLOPE=1.6;       // horizontal must clearly win
+  const SWIPE_MS=700;          // slow drags are gestures, not swipes
+  let sx=0,sy=0,st=0,tracking=false;
+  const busyOverlay=()=>document.querySelector(".appDialog.open")
+    ||$("settingsPanel").classList.contains("open")
+    ||$("historyPanel").classList.contains("open")
+    ||$("todoFullscreen").classList.contains("open")
+    ||$("calendarPanel").classList.contains("open");
+  document.addEventListener("touchstart",e=>{
+    tracking=false;
+    if(e.touches.length!==1)return;
+    if(busyOverlay())return;
+    if(readerIsOpen())return;
+    const t=e.target;
+    if(t&&t.closest&&t.closest("input,textarea,[contenteditable],.stickyNote,.stickyPad,.stickyCard,.stickyDeckStack,.stickyDeckActions,.schedulerClock,.schedulerEditor,.notePanel"))return;
+    tracking=true;
+    sx=e.touches[0].clientX;
+    sy=e.touches[0].clientY;
+    st=Date.now();
+  },{passive:true});
+  document.addEventListener("touchend",e=>{
+    if(!tracking)return;
+    tracking=false;
+    const touch=e.changedTouches&&e.changedTouches[0];
+    if(!touch)return;
+    const dx=touch.clientX-sx,dy=touch.clientY-sy;
+    if(Date.now()-st>SWIPE_MS)return;
+    if(Math.abs(dx)<SWIPE_MIN||Math.abs(dx)<Math.abs(dy)*SWIPE_SLOPE)return;
+    cycleMode(dx<0?1:-1);
+  },{passive:true});
+})();
 
 applyAppearance();
 applyModeSwitchExpand();
@@ -4391,6 +5003,8 @@ renderTodos();
 renderCalendar();
 initSchedulerMode();
 initBookStudio();
+initQuotesMode();
+initStickyDeck();
 updateModeUI();
 updateCycleToggle();
 initHydrationReminder();
@@ -4417,6 +5031,7 @@ pushSyncToServer();
 hydrateBrowserStorage().then(()=>{
   questions=loadQuestionBank();
   focusQuestions=loadFocusQuestions();
+  quotes=loadQuotes();
   settings=loadSettings();
   if(Object.keys(wallpaperEngineProperties).length) applyWallpaperEngineProperties(wallpaperEngineProperties);
   renderSettings();

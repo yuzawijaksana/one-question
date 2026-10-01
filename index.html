@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>One Question</title>
-  <link rel="stylesheet" href="style.css?v=2.47.0">
+  <link rel="stylesheet" href="style.css?v=2.48.0">
 </head>
 
 <body>
@@ -38,10 +38,10 @@
       <span id="focusRunningBadge" class="focusRunningBadge"><i aria-hidden="true"></i><span
           id="focusRunningTime"></span></span>
       <button id="modeToggle" class="focusModeToggle" type="button" aria-label="switch mode" aria-pressed="false"
-        title="switch mode"><span class="modeIcon modeQuestion" aria-hidden="true">?</span><span
-          class="modeIcon modeFocus" aria-hidden="true">#</span><span class="modeIcon modeScheduler"
-            aria-hidden="true">%</span><span class="modeIcon modeSticky"
-            aria-hidden="true">@</span></button>
+          title="switch mode"><span class="modeIcon modeQuestion" aria-hidden="true">?</span><span
+            class="modeIcon modeFocus" aria-hidden="true">#</span><span class="modeIcon modeScheduler"
+              aria-hidden="true">%</span><span class="modeIcon modeSticky"
+                aria-hidden="true">@</span><span class="modeIcon modeQuotes" aria-hidden="true">❝</span></button>
     </div>
 
     <section id="sticky" class="stickyMode" aria-hidden="true">
@@ -50,7 +50,43 @@
         <span>new card</span>
       </div>
       <div id="stickyList" class="stickyList" aria-label="Remember notes"></div>
+      <div id="stickyDeck" class="stickyDeck" aria-hidden="true">
+        <div class="stickyDeckHead">
+          <span id="stickyDeckCount" class="stickyDeckCount"></span>
+          <button id="stickyDeckAdd" type="button" class="stickyDeckAdd">+ add</button>
+        </div>
+        <div id="stickyDeckStack" class="stickyDeckStack"></div>
+        <div class="stickyDeckActions" role="toolbar" aria-label="Card actions">
+          <button type="button" data-act="done">✓</button>
+          <button type="button" data-act="edit">✎</button>
+          <button type="button" data-act="del">×</button>
+        </div>
+        <div class="stickyDeckHint">swipe → remembered · swipe ← for later</div>
+      </div>
       <div class="stickyHint">drag a note from the pad · ✓ handled · ✎ edit · × delete · # move category</div>
+    </section>
+
+    <section id="quotes" class="quotesMode" aria-hidden="true">
+      <div class="quotesTop">
+        <span class="quotesKicker">quiet feed</span>
+        <span id="quoteCount" class="quoteCount"></span>
+        <span id="quoteSession" class="quoteSession" aria-hidden="true"></span>
+        <span class="quotesTools" role="toolbar" aria-label="Quiet feed tools">
+          <button id="quoteShuffle" type="button" title="shuffle the order">⤨ shuffle</button>
+          <button id="quoteAdd" type="button" title="add a quote">+ add</button>
+          <button id="quoteEdit" type="button" title="edit this quote">✎</button>
+          <button id="quoteRemove" type="button" title="remove this quote">×</button>
+        </span>
+      </div>
+      <div id="quoteFeed" class="quoteFeed"></div>
+      <div id="quoteDots" class="quoteDots" aria-hidden="true"></div>
+      <div class="quoteArrows">
+        <button id="quotePrev" type="button" aria-label="previous quote" title="previous quote">↑</button>
+        <button id="quoteNext" type="button" aria-label="next quote" title="next quote">↓</button>
+      </div>
+      <div class="quotesHint"><span class="hintPointer">scroll or ↑ ↓ to read · ← → switch
+          modes</span><span class="hintTouch">swipe up or down to read · swipe left or right to
+          switch modes</span></div>
     </section>
 
     <button id="stickyPin" class="stickyPin" type="button" title="remember wall" aria-label="Open remember wall"></button>
@@ -373,7 +409,8 @@
           <div class="appearanceControl modeOrderControl">
             <div class="appearanceControlHead"><span>mode switch order</span></div>
             <div id="modeOrderList" class="modeOrderList" aria-label="Mode switch order"></div>
-            <div class="settingHint">Use the arrows to reorder the mode switch buttons.</div>
+            <div class="settingHint">Use the arrows to reorder the modes. Tap ◉ to hide a mode — hidden
+              modes leave the switcher and the swipe cycle.</div>
           </div>
 
           <div class="appearanceControl">
@@ -676,7 +713,7 @@
     </section>
     <div id="cycleHint">questions change quietly · move toward an edge</div>
   </main>
-  <script src="app.js?v=2.47.0"></script>
+  <script src="app.js?v=2.48.0"></script>
 </body>
 
 </html>

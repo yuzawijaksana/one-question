@@ -25,6 +25,7 @@ STATE_KEYS = {
     "oneQuestionStickies",
     "oneQuestionHydration",
     "oneQuestionBook",
+    "oneQuestionQuotes",
 }
 
 # maps backup field names to state keys for the settings export snapshot
@@ -39,6 +40,7 @@ EXPORT_MAP = {
     "schedule": "oneQuestionSchedule",
     "stickies": "oneQuestionStickies",
     "book": "oneQuestionBook",
+    "quotes": "oneQuestionQuotes",
 }
 
 
@@ -52,6 +54,28 @@ def load_state():
         return data
     except Exception:
         return {"version": 1, "keys": {}}
+
+
+def book_is_empty(value):
+    """A book with no title and no chapter content is a fresh placeholder —
+    a client-side placeholder must never overwrite real writing."""
+    if not isinstance(value, dict):
+        return True
+    if str(value.get("title") or "").strip():
+        return False
+    chapters = value.get("chapters")
+    if not isinstance(chapters, list):
+        return True
+    for chapter in chapters:
+        if not isinstance(chapter, dict):
+            continue
+        if str(chapter.get("title") or "").strip():
+            return False
+        if str(chapter.get("category") or "").strip():
+            return False
+        if str(chapter.get("html") or "").strip():
+            return False
+    return True
 
 
 def save_state(state):
@@ -149,6 +173,9 @@ class Handler(SimpleHTTPRequestHandler):
                     if key not in STATE_KEYS or not isinstance(entry, dict):
                         continue
                     value = entry.get("value")
+                    # guard: a blank placeholder book never overwrites stored writing
+                    if key == "oneQuestionBook" and book_is_empty(value):
+                        continue
                     updated_at = int(entry.get("updatedAt", 0))
                     if updated_at <= 0:
                         updated_at = int(time.time() * 1000)

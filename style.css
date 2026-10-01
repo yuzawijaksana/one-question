@@ -2660,10 +2660,11 @@ body.lowercase [contenteditable] {
 }
 
 /* collapsed: only the active mode's icon stays visible */
-body:not(.focusModeVisual):not(.schedulerVisual):not(.stickyVisual) .focusModeToggle .modeIcon.modeQuestion,
+body:not(.focusModeVisual):not(.schedulerVisual):not(.stickyVisual):not(.quotesVisual) .focusModeToggle .modeIcon.modeQuestion,
 body.focusModeVisual .focusModeToggle .modeIcon.modeFocus,
 body.schedulerVisual .focusModeToggle .modeIcon.modeScheduler,
-body.stickyVisual .focusModeToggle .modeIcon.modeSticky {
+body.stickyVisual .focusModeToggle .modeIcon.modeSticky,
+body.quotesVisual .focusModeToggle .modeIcon.modeQuotes {
   width: 38px !important;
   min-width: 38px !important;
   opacity: 1;
@@ -2680,10 +2681,11 @@ body.modeExpandAlways .focusModeToggle:focus-within .modeIcon {
   pointer-events: auto
 }
 
-body:not(.focusModeVisual):not(.schedulerVisual):not(.stickyVisual) .modeQuestion,
+body:not(.focusModeVisual):not(.schedulerVisual):not(.stickyVisual):not(.quotesVisual) .modeQuestion,
 body.focusModeVisual .modeFocus,
 body.schedulerVisual .modeScheduler,
-body.stickyVisual .modeSticky {
+body.stickyVisual .modeSticky,
+body.quotesVisual .modeQuotes {
   color: var(--text) !important;
   background: rgba(235, 232, 224, .12);
 }
@@ -4752,7 +4754,7 @@ body.stickyVisual .stickyMode {
   pointer-events: none
 }
 
-body:not(.focusModeVisual):not(.schedulerVisual):not(.stickyVisual) .stickyPin.hasNotes {
+body:not(.focusModeVisual):not(.schedulerVisual):not(.stickyVisual):not(.quotesVisual) .stickyPin.hasNotes {
   display: flex;
   opacity: .72;
   transform: none;
@@ -7399,5 +7401,778 @@ body.focusModeVisual .focusKicker {
     box-shadow: none;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact
+  }
+}
+
+/* ---- quiet feed (quotes) mode -------------------------------------------
+   a reels-style vertical feed with text only: one quote per screen,
+   hard snap, deliberate end. works with wheel + touch + arrow keys. */
+.quotesMode {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  flex-direction: column;
+  /* clear the top bar band (date) so the feed header doesn't sit on it */
+  padding: calc(64px + env(safe-area-inset-top)) 0 calc(10px + env(safe-area-inset-bottom));
+  animation: schedulerIn .5s cubic-bezier(.2, .7, .2, 1)
+}
+
+body.quotesVisual .quotesMode {
+  display: flex
+}
+
+body.quotesVisual .focus,
+body.quotesVisual .controlsZone,
+body.quotesVisual #cycleHint,
+body.quotesVisual .miniClock,
+body.quotesVisual .stickyPin {
+  display: none !important
+}
+
+.quotesTop {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 0 clamp(18px, 5vw, 48px);
+  min-height: 32px
+}
+
+.quotesKicker {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 300;
+  letter-spacing: .34em;
+  opacity: .7
+}
+
+.quoteCount {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .08em
+}
+
+.quoteSession {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .06em;
+  opacity: .75
+}
+
+.quotesTools {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px
+}
+
+.quotesTools button {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  letter-spacing: .04em;
+  padding: 5px 9px;
+  border-radius: 999px;
+  transition: color .25s, background .25s
+}
+
+.quotesTools button:hover {
+  color: var(--text);
+  background: rgba(235, 232, 224, .08)
+}
+
+/* on the end card there is nothing to edit or remove */
+.quotesMode.isEnd #quoteEdit,
+.quotesMode.isEnd #quoteRemove {
+  visibility: hidden
+}
+
+.quoteFeed {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none
+}
+
+.quoteFeed::-webkit-scrollbar {
+  display: none
+}
+
+.quoteSlide {
+  position: relative;
+  height: 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* side padding clears the dot rail (left) and arrow buttons (right) */
+  padding: 12px clamp(72px, 12vw, 200px) 44px;
+  overflow-y: auto;
+  scrollbar-width: none
+}
+
+.quoteSlide::-webkit-scrollbar {
+  display: none
+}
+
+.quoteInner {
+  max-width: min(880px, 100%);
+  text-align: center;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity .75s cubic-bezier(.22, .7, .2, 1), transform .75s cubic-bezier(.22, .7, .2, 1)
+}
+
+.quoteSlide.isLive .quoteInner {
+  opacity: 1;
+  transform: none
+}
+
+.quoteMark {
+  display: block;
+  color: var(--muted);
+  opacity: .55;
+  font-size: clamp(18px, 1.6vw, 24px);
+  margin-bottom: 14px
+}
+
+.quoteText {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 400;
+  line-height: 1.42;
+  text-wrap: balance
+}
+
+/* size by length so every quote fits one calm screen */
+.quoteSlide[data-size="xl"] .quoteText {
+  font-size: clamp(30px, 3.2vw + 2.6vh, 58px)
+}
+
+.quoteSlide[data-size="l"] .quoteText {
+  font-size: clamp(25px, 2.7vw + 2vh, 44px)
+}
+
+.quoteSlide[data-size="m"] .quoteText {
+  font-size: clamp(21px, 2.1vw + 1.5vh, 32px)
+}
+
+.quoteSlide[data-size="s"] .quoteText {
+  font-size: clamp(17px, 1.5vw + 1vh, 24px);
+  line-height: 1.55
+}
+
+.quoteAuthor {
+  display: block;
+  margin-top: 24px;
+  color: var(--muted);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: var(--fs-md);
+  letter-spacing: .22em
+}
+
+.quoteEndText,
+.quoteEmpty .quoteEndText {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 400;
+  font-size: clamp(21px, 2vw + 1.5vh, 32px)
+}
+
+.quoteEndSub {
+  margin: 18px 0 0;
+  color: var(--muted);
+  font-size: var(--fs-base);
+  line-height: 1.65
+}
+
+.quoteEndActions {
+  margin-top: 28px;
+  display: flex;
+  gap: 12px;
+  justify-content: center
+}
+
+.quoteEndBtn {
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 9px 20px;
+  font-size: var(--fs-base);
+  letter-spacing: .04em;
+  transition: color .25s, border-color .25s
+}
+
+.quoteEndBtn:hover {
+  color: var(--text);
+  border-color: rgba(235, 232, 224, .4)
+}
+
+/* progress dots — left rail */
+.quoteDots {
+  position: absolute;
+  left: clamp(10px, 2vw, 20px);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  pointer-events: none;
+  max-height: 56vh;
+  overflow: hidden
+}
+
+.quoteDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(235, 232, 224, .18);
+  transition: height .3s, background .3s
+}
+
+.quoteDot.on {
+  height: 18px;
+  background: rgba(235, 232, 224, .75)
+}
+
+/* prev / next arrows — pointer devices with room for them; touch and
+   narrow screens swipe instead */
+.quoteArrows {
+  position: absolute;
+  right: clamp(12px, 2.4vw, 24px);
+  top: 50%;
+  transform: translateY(-50%);
+  display: none;
+  flex-direction: column;
+  gap: 10px
+}
+
+.quoteArrows button {
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  backdrop-filter: blur(4px);
+  transition: color .25s, border-color .25s
+}
+
+.quoteArrows button:hover {
+  color: var(--text);
+  border-color: rgba(235, 232, 224, .4)
+}
+
+@media (hover:hover) and (pointer:fine) and (min-width:701px) {
+  .quoteArrows {
+    display: flex
+  }
+}
+
+.quotesHint {
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  letter-spacing: .12em;
+  opacity: .6;
+  padding-top: 8px
+}
+
+@media (max-width:700px) {
+  .quotesTop {
+    gap: 10px;
+    padding: 0 16px
+  }
+
+  .quoteSlide {
+    padding: 10px 44px 40px
+  }
+
+  .quoteAuthor {
+    margin-top: 18px;
+    letter-spacing: .18em
+  }
+
+  .quoteDots {
+    left: 10px
+  }
+
+  .quoteEndActions {
+    flex-direction: column;
+    align-items: center
+  }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .quoteInner {
+    transition: none
+  }
+
+  .quotesMode {
+    animation: none
+  }
+}
+
+/* the feed hint names the right input: arrows on pointer devices, swipes on touch */
+.quotesHint .hintTouch {
+  display: none
+}
+
+@media (hover:none), (pointer:coarse) {
+  .quotesHint .hintTouch {
+    display: inline
+  }
+
+  .quotesHint .hintPointer {
+    display: none
+  }
+}
+
+/* ---- remember deck: the phone view of the wall --------------------------
+   one card at a time, dealt like a card stack; swipe right = remembered,
+   swipe left = later. the wall stays for desktop pointers. */
+.stickyDeck {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  padding: 0 4px calc(6px + env(safe-area-inset-bottom))
+}
+
+.stickyDeckHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(420px, 92vw)
+}
+
+.stickyDeckCount {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  letter-spacing: .08em;
+  font-variant-numeric: tabular-nums
+}
+
+.stickyDeckAdd {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  letter-spacing: .04em;
+  padding: 6px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  transition: color .25s, border-color .25s
+}
+
+.stickyDeckAdd:hover {
+  color: var(--text);
+  border-color: rgba(235, 232, 224, .4)
+}
+
+.stickyDeckStack {
+  position: relative;
+  width: min(340px, 88vw);
+  height: min(46vh, 380px)
+}
+
+.stickyCard {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 16px 14px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, .3);
+  overflow: hidden
+}
+
+.stickyCard[data-depth="1"] {
+  transform: translateY(12px) scale(.95) rotate(1.6deg);
+  opacity: .5;
+  pointer-events: none
+}
+
+.stickyCard[data-depth="2"] {
+  transform: translateY(24px) scale(.9) rotate(-2.2deg);
+  opacity: .28;
+  pointer-events: none
+}
+
+.stickyCard.isTop {
+  cursor: grab;
+  touch-action: none;
+  user-select: none
+}
+
+.stickyCard.isTop.dragging {
+  transition: none;
+  cursor: grabbing;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, .45)
+}
+
+.stickyCard.fly {
+  transition: transform .28s cubic-bezier(.2, .7, .3, 1), opacity .28s;
+  opacity: 0
+}
+
+.stickyCard.isDone .stickyCardText {
+  opacity: .45
+}
+
+.stickyCardCat {
+  align-self: flex-start;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  letter-spacing: .18em;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 11px;
+  transition: color .2s, border-color .2s
+}
+
+.stickyCardCat:hover {
+  color: var(--text);
+  border-color: rgba(235, 232, 224, .4)
+}
+
+.stickyCardText {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: clamp(19px, 5.4vw, 26px);
+  font-weight: 300;
+  line-height: 1.45;
+  overflow-wrap: anywhere
+}
+
+.stickyCardMeta {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  letter-spacing: .1em;
+  text-align: center
+}
+
+.stickyCardEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--fs-base);
+  line-height: 1.6;
+  padding: 24px
+}
+
+.stickyDeckActions {
+  display: flex;
+  gap: 14px
+}
+
+.stickyDeckActions button {
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  backdrop-filter: blur(4px);
+  transition: color .25s, border-color .25s
+}
+
+.stickyDeckActions button:hover {
+  color: var(--text);
+  border-color: rgba(235, 232, 224, .4)
+}
+
+.stickyDeckHint {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  letter-spacing: .12em;
+  opacity: .6;
+  text-align: center
+}
+
+@media (max-width:700px) {
+  /* the wall is a pointer playground — on a phone, deal the cards instead */
+  .stickyMode {
+    padding: calc(60px + env(safe-area-inset-top)) 14px 12px;
+    gap: 14px
+  }
+
+  .stickyPad,
+  .stickyList,
+  .stickyHint {
+    display: none !important
+  }
+
+  .stickyDeck {
+    display: flex
+  }
+}
+
+/* ---- scheduler on phones: the clock keeps the circle, the now/next info
+   moves below it — the hub is too small for three lines of text -------- */
+@media (max-width:700px) {
+  .scheduler {
+    padding: calc(56px + env(safe-area-inset-top)) 16px 16px;
+    gap: 6px;
+    justify-content: flex-start;
+    overflow-y: auto
+  }
+
+  .schedulerLayout {
+    margin: auto 0;
+    gap: 12px
+  }
+
+  .schedulerClockWrap {
+    aspect-ratio: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: min(86vw, 46vh)
+  }
+
+  .schedulerClock {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1
+  }
+
+  .schedulerCenter {
+    position: static;
+    inset: auto;
+    padding: 0;
+    margin-top: 14px;
+    gap: 5px
+  }
+
+  .schedulerNowTime {
+    font-size: clamp(26px, 8vw, 36px)
+  }
+
+  .schedulerCurrent {
+    font-size: 15px;
+    white-space: normal
+  }
+
+  .schedulerNext {
+    font-size: 11px;
+    white-space: normal
+  }
+
+  .scheduleList {
+    width: min(420px, 88vw)
+  }
+
+  .schedulerHint {
+    display: none
+  }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .stickyCard.fly {
+    transition: none
+  }
+}
+
+/* deck polish: the standard top-center mode title stays; the deck starts
+   below it, and the stack peeks further out */
+@media (max-width:700px) {
+  .stickyMode {
+    padding-top: calc(96px + env(safe-area-inset-top));
+    align-items: stretch
+  }
+
+  .stickyDeck {
+    align-items: center
+  }
+
+  .stickyCard[data-depth="1"] {
+    transform: translateY(32px) scale(.93) rotate(2.2deg);
+    opacity: .5
+  }
+
+  .stickyCard[data-depth="2"] {
+    transform: translateY(58px) scale(.86) rotate(-3.2deg);
+    opacity: .32
+  }
+}
+
+/* ---- settings: the mode ◉ show/hide toggle ---- */
+.modeOrderRow.isOff .modeOrderName {
+  opacity: .38
+}
+
+.modeOrderBtn.modeEye {
+  margin-right: 2px
+}
+
+.modeOrderBtn.modeEye:disabled {
+  opacity: .25;
+  cursor: default
+}
+
+/* ---- phone pass: the top band clears out --------------------------------
+   swiping already switches modes, so the pill row goes; the remember pile
+   docks bottom-center where thumbs reach; the answer field stops hiding
+   behind hover states a phone never has. */
+@media (max-width:700px) {
+
+  /* the mode pills overlap the date/pile band — swiping replaces them */
+  .modePicker {
+    display: none !important
+  }
+
+  /* the remember pile: bottom-center dock, above the nav row */
+  .stickyPin {
+    top: auto !important;
+    right: auto !important;
+    left: 50% !important;
+    bottom: calc(128px + env(safe-area-inset-bottom)) !important;
+    transform: translateX(-50%) !important;
+    max-width: min(320px, 86vw) !important
+  }
+
+  .stickyPinLabel {
+    text-align: center
+  }
+
+  .stickyPinCard {
+    text-align: left
+  }
+
+  /* the answer is a real, findable text field on touch — no hover to
+     reveal it, so it shows itself */
+  .answer {
+    opacity: .85 !important;
+    font-size: 17px !important;
+    min-height: 34px !important
+  }
+
+  .answer:empty:before {
+    content: attr(data-placeholder) !important;
+    color: #6b675f
+  }
+
+  .answerRule {
+    opacity: .6 !important;
+    background: rgba(235, 232, 224, .3) !important;
+    margin-top: 4px !important
+  }
+
+  .answerMeta {
+    font-size: 11px
+  }
+
+  /* a touch more presence for the question itself */
+  .focus h1 {
+    font-size: clamp(30px, 8.8vw, 52px) !important
+  }
+}
+
+/* touch devices wider than 700px (tablets) still deserve a visible answer */
+@media (hover:none) {
+  .answer {
+    opacity: .85 !important
+  }
+
+  .answer:empty:before {
+    content: attr(data-placeholder) !important;
+    color: #6b675f
+  }
+
+  .answerRule {
+    opacity: .6 !important
+  }
+}
+
+/* a mode switched off in settings leaves the switcher entirely */
+.modeIcon.isHidden {
+  display: none !important
+}
+
+/* the answer meta (enter-to-save hint, cycle status) hides until hover on
+   desktop — phones never hover, so it shows softly */
+@media (max-width:700px) {
+  .answerMeta {
+    opacity: .55 !important
+  }
+}
+
+/* the previous / next / history row only reveals on hover — a phone never
+   hovers, so on touch it shows softly and stays tappable */
+@media (hover:none) {
+  .controlsZone .centerControls {
+    opacity: .6 !important;
+    transform: translateY(0) !important;
+    pointer-events: auto !important
+  }
+}
+
+@media (max-width:700px) {
+  .controlsZone .centerControls {
+    opacity: .6 !important;
+    transform: translateY(0) !important;
+    pointer-events: auto !important
+  }
+
+  .controlsZone {
+    top: calc(50% + 148px) !important
+  }
+}
+
+/* ---- book studio on phones: the bottom bar stops squeezing --------------
+   the word-count line is desktop vanity — on a phone it hid behind the
+   chapter nav anyway. the nav centers into one clean tappable row. */
+@media (max-width:700px) {
+  .bookStatusBar {
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 14px calc(46px + env(safe-area-inset-bottom))
+  }
+
+  .bookStats {
+    display: none
+  }
+
+  .bookChapterNav {
+    justify-content: center;
+    gap: 4px
+  }
+
+  .bookChapterNav button {
+    padding: 9px 14px
+  }
+
+  #bookChapterPosition {
+    padding: 0 6px
   }
 }
