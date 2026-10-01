@@ -3324,6 +3324,9 @@ function addBookChapter(){
   book.activeId=c.id;
   persistBook();
   renderBookStudio();
+  // on phones the shelf is an overlay drawer — starting a chapter means
+  // you're done picking, so it folds away on its own
+  document.querySelector(".bookShelf")?.classList.remove("open");
   // the cursor lands in the title — name the chapter, enter, write
   const t=$("bookChapterTitle");
   if(t){
@@ -3339,10 +3342,16 @@ function addBookChapter(){
 }
 function openBookChapter(id){
   const c=book.chapters.find(x=>x.id===id);
-  if(!c||id===book.activeId)return;
+  if(!c||id===book.activeId){
+    // even re-picking the open chapter closes the phone drawer
+    document.querySelector(".bookShelf")?.classList.remove("open");
+    return;
+  }
   book.activeId=id;
   persistBook();
   renderBookStudio();
+  // same fold-away after picking a chapter to read or edit
+  document.querySelector(".bookShelf")?.classList.remove("open");
   // caret to the end of the page, ready to continue writing
   const ed=$("bookEditor");
   if(ed){
