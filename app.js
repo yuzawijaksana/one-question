@@ -57,7 +57,8 @@ const extensionStorage=(typeof browser!=="undefined"&&browser.storage&&browser.s
   : null;
 const STORAGE_KEYS=[
   "oneQuestionQuestionBank","oneQuestionFocusQuestions","oneQuestionSettings",
-  "oneQuestionHistory","oneQuestionRecent","oneQuestionTodos","oneQuestionNote"
+  "oneQuestionHistory","oneQuestionRecent","oneQuestionTodos","oneQuestionNote",
+  "oneQuestionBook"
 ];
 
 function cacheSet(key,value){
@@ -110,6 +111,12 @@ let syncPushTimer=null,syncBusy=false;
 function syncBase(){
   return ((settings&&settings.syncServer)||SYNC_BASE).replace(/\/+$/,"");
 }
+function syncHeaders(extra){
+  const headers=Object.assign({"Content-Type":"application/json"},extra||{});
+  const token=(settings&&settings.syncToken)||"";
+  if(token)headers["Authorization"]=`Bearer ${token}`;
+  return headers;
+}
 function readSyncTimes(){
   try{return JSON.parse(localStorage.getItem("oneQuestionSyncTimes")||"{}")}catch{return{}}
 }
@@ -122,8 +129,8 @@ function scheduleSyncPush(){
   clearTimeout(syncPushTimer);
   syncPushTimer=setTimeout(pushSyncToServer,800);
 }
-async function pushSyncToServer(){
-  if(syncBusy)return;
+async function pushSyncToServer(base){
+  if(syncBusy)return false;
   syncBusy=true;
   try{
     const times=readSyncTimes();
@@ -135,19 +142,24 @@ async function pushSyncToServer(){
       try{value=JSON.parse(raw)}catch{continue}
       changes[key]={value,updatedAt:times[key]||Date.now()-60000};
     }
-    if(!Object.keys(changes).length)return;
-    await fetch(`${syncBase()}/api/state`,{
-      method:"PUT",headers:{"Content-Type":"application/json"},cache:"no-store",
+    if(!Object.keys(changes).length)return true;
+    const target=String(base||syncBase()).replace(/\/+$/,"");
+    const res=await fetch(`${target}/api/state`,{
+      method:"PUT",headers:syncHeaders(),cache:"no-store",
       body:JSON.stringify({changes})
     });
+    if(!res.ok)throw new Error(`server answered ${res.status}`);
     setDataStatus("synced to server");
+    return true;
   }catch(e){
     console.warn("One Question: sync push failed",e);
+    setDataStatus("sync push failed");
+    return false;
   }finally{syncBusy=false}
 }
 async function pullSyncFromServer(){
   try{
-    const res=await fetch(`${syncBase()}/api/state`,{cache:"no-store"});
+    const res=await fetch(`${syncBase()}/api/state`,{cache:"no-store",headers:syncHeaders()});
     if(!res.ok)return;
     const data=await res.json();
     const entries=data&&data.keys||{};
@@ -187,6 +199,24 @@ async function pullSyncFromServer(){
   }catch(e){
     console.warn("One Question: sync pull unavailable",e);
   }
+}
+// manual sync: push this device's changes, pull the server's back, and — when
+// the sync server lives elsewhere — mirror the same push to the local server
+// so one-question-state.json and the settings export keep updating on this PC
+async function syncNow(){
+  const btn=$("syncNowBtn");
+  if(btn)btn.disabled=true;
+  setDataStatus("syncing…");
+  const ok=await pushSyncToServer();
+  if(ok)await pullSyncFromServer();
+  let status=ok?"synced with server":"sync failed — check server address / token";
+  if(ok&&syncBase()!==SYNC_BASE){
+    setDataStatus("refreshing local state file…");
+    const localOk=await pushSyncToServer(SYNC_BASE);
+    status=localOk?"synced · local state file refreshed":"synced with server · local refresh failed";
+  }
+  setDataStatus(status);
+  if(btn)btn.disabled=false;
 }
 
 function loadQuestionBank(){
@@ -348,7 +378,7 @@ function writeHydrationLocal(value){
 }
 async function fetchHydrationState(){
   try{
-    const response=await fetch(`${SYNC_BASE}/api/state`,{cache:"no-store"});
+    const response=await fetch(`${syncBase()}/api/state`,{cache:"no-store",headers:syncHeaders()});
     if(!response.ok)throw new Error(`server returned ${response.status}`);
     const data=await response.json();
     const entry=data?.keys?.[HYDRATION_KEY];
@@ -362,8 +392,8 @@ async function saveHydrationState(){
   if(hydrationServerBusy)return;
   hydrationServerBusy=true;
   try{
-    await fetch(`${SYNC_BASE}/api/state`,{
-      method:"PUT",headers:{"Content-Type":"application/json"},cache:"no-store",
+    await fetch(`${syncBase()}/api/state`,{
+      method:"PUT",headers:syncHeaders(),cache:"no-store",
       body:JSON.stringify({changes:{[HYDRATION_KEY]:{value:hydrationState,updatedAt:Date.now()}}})
     });
   }catch(e){
@@ -483,7 +513,7 @@ function loadSettings(){
   }catch{return {...DEFAULT_SETTINGS,appearance:{...DEFAULT_APPEARANCE}}}
 }
 const MODE_ORDER_CLASSES={question:"modeQuestion",focus:"modeFocus",scheduler:"modeScheduler",sticky:"modeSticky"};
-const MODE_ORDER_LABELS={question:"question",focus:"focus",scheduler:"scheduler",sticky:"remember wall"};
+const MODE_ORDER_LABELS={question:"question",focus:"book",scheduler:"scheduler",sticky:"remember wall"};
 function normalizedModeOrder(){
   const valid=Object.keys(MODE_ORDER_CLASSES);
   const saved=Array.isArray(settings.modeOrder)?settings.modeOrder.filter(k=>valid.includes(k)):[];
@@ -615,8 +645,11 @@ function updateModeUI(){
   if(sched)sched.setAttribute("aria-hidden",String(currentMode!=="scheduler"));
   const stickyEl=$("sticky");
   if(stickyEl)stickyEl.setAttribute("aria-hidden",String(currentMode!=="sticky"));
+  const bookEl=$("bookStudio");
+  if(bookEl)bookEl.setAttribute("aria-hidden",String(currentMode!=="focus"));
   if(currentMode==="scheduler")renderScheduler();
   if(currentMode==="sticky")renderStickies();
+  if(currentMode==="focus")renderBookStudio();
   updateFocusModePreview();
   updateTimerUI();
 }
@@ -1127,7 +1160,7 @@ function closeHistory(){
   historyReturnMode="question";
   updateModeUI();
   updateFocusUI();
-  if(currentMode==="focus"){showFocusQuestion(chooseFreshFocusIndex());answerEl.focus();}
+  if(currentMode==="focus"){renderBookStudio();}
   else if(currentMode==="question"){showQuestion(chooseFreshIndex());}
 }
 function historyPrevious(){
@@ -1395,7 +1428,8 @@ function buildBackup(){
       recent:getRecent(),
       todos:getTodos(),
       schedule:schedulerBlocks.slice(),
-      stickies:stickies.map(s=>({...s}))
+      stickies:stickies.map(s=>({...s})),
+      book:book?JSON.parse(JSON.stringify(book)):null
     }
   };
 }
@@ -1450,6 +1484,12 @@ async function importBackup(file){
       d.stickies.forEach(s=>{if(s&&typeof s.text==="string"&&s.text.trim())stickies.push({id:String(s.id||crypto.randomUUID()),text:s.text.trim(),created:Number(s.created)||Date.now(),done:!!s.done,cat:typeof s.cat==="string"?s.cat.trim().toLowerCase():undefined})});
       saveStickies();
       renderStickyPin();
+    }
+    const importedBook=normalizeBook(d.book);
+    if(importedBook){
+      book=importedBook;
+      cacheSet(BOOK_KEY,book);
+      if(currentMode==="focus")renderBookStudio();
     }
     applyAppearance();
     renderSettings();
@@ -1526,6 +1566,8 @@ function renderSettings(){
   });
   const syncInput=$("syncServer");
   if(syncInput)syncInput.value=settings.syncServer||"";
+  const tokenInput=$("syncToken");
+  if(tokenInput)tokenInput.value=settings.syncToken||"";
   setSettingsTab("questions");
   applyHydrationAppearance();
   applyScreenScale();
@@ -1619,8 +1661,23 @@ function updateFocusUI(){
 function enterFocusMode(){
   clearTimeout(cycleTimer);closeCategoryMenu();currentMode="focus";cyclePaused=false;isAnswering=false;
   document.body.classList.add("focusModeVisual");
-  updateModeUI();updateFocusUI();showFocusQuestion(chooseFreshFocusIndex());
-  setCycleStatus("cycling",true);answerEl.focus();
+  answerEl.blur();
+  readerClose();
+  const pop=$("bookFormatPop");
+  if(pop){pop.classList.remove("open");pop.setAttribute("aria-hidden","true");}
+  updateModeUI();
+  setCycleStatus("the book",false);
+  // the book opens ready to write — caret at the end of the current chapter
+  const ed=$("bookEditor");
+  if(ed){
+    ed.focus();
+    const r=document.createRange();
+    r.selectNodeContents(ed);
+    r.collapse(false);
+    const sel=getSelection();
+    sel.removeAllRanges();
+    sel.addRange(r);
+  }
 }
 // ---- day circle (time scheduler) mode --------------------------------
 const SCHEDULE_KEY="oneQuestionSchedule";
@@ -2948,7 +3005,8 @@ function makePinCard(note,depth){
   el.style.setProperty("--d",String(depth));
   el.style.setProperty("--qtx",`${depth%2?8:-8}px`);
   el.style.opacity=depth===0?"1":String(1-depth*.15);
-  el.innerHTML=`<span class="stickyPinLabel">remember</span><span class="stickyPinNote"></span>`;
+  el.innerHTML=`<span class="stickyPinLabel"></span><span class="stickyPinNote"></span>`;
+  el.querySelector(".stickyPinLabel").textContent=`remember • ${stickyCatOf(note)}`;
   el.querySelector(".stickyPinNote").textContent=note.text;
   return el;
 }
@@ -2961,6 +3019,1082 @@ function pinCardsData(){
     const id=pinOrderIds[(stickyPinIndex+d)%n];
     return {note:stickies.find(s=>s.id===id),depth:d};
   });
+}
+// ---- the book: a writing studio in the focus slot -----------------------
+// a real little book: you name it, you name its chapters, and you write them
+// in rich text — bold, headings, centered lines — then read the whole thing
+// fullscreen as a flipping book.
+const BOOK_KEY="oneQuestionBook";
+const BOOK_ORDINALS=["one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve"];
+function bookEscapeHtml(t){return String(t||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+function bookTextToHtml(t){
+  return String(t||"").split(/\n/).map(l=>l.trim()?`<p>${bookEscapeHtml(l)}</p>`:"").join("");
+}
+function normalizeBook(saved){
+  if(!saved||typeof saved!=="object"||!Array.isArray(saved.chapters))return null;
+  const chapters=[];
+  saved.chapters.forEach((c,i)=>{
+    if(!c||typeof c!=="object")return;
+    const fromV1=typeof c.question==="string";
+    // v1 chapters were seeded from stock questions the user never chose —
+    // the title and category are theirs to write now, so seeds don't carry
+    let html=typeof c.html==="string"?c.html:"";
+    if(!html.trim()&&typeof c.text==="string"&&c.text.trim())html=bookTextToHtml(c.text);
+    chapters.push({
+      id:String(c.id||"c"+i+Date.now().toString(36)),
+      title:fromV1?"":String(c.title||"").trim(),
+      category:fromV1&&String(c.category||"").trim().toLowerCase()==="focus"?"":String(c.category||"").trim(),
+      html,
+      createdAt:Number(c.createdAt)||Date.now(),
+      updatedAt:Number(c.updatedAt)||0
+    });
+  });
+  if(!chapters.length)return null;
+  return {
+    title:typeof saved.title==="string"&&saved.title.trim()&&saved.title.trim()!=="the book of one question"?saved.title.trim():"",
+    chapters,
+    activeId:typeof saved.activeId==="string"?saved.activeId:chapters[0].id
+  };
+}
+function loadBook(){
+  try{return normalizeBook(JSON.parse(localStorage.getItem(BOOK_KEY)||"null"))}catch{}
+  return null;
+}
+let book=loadBook();
+let bookSaveTimer=null;
+let bookPreviewTimer=null;
+function bookHtmlWords(html){
+  const d=document.createElement("div");
+  d.innerHTML=html||"";
+  const t=(d.textContent||"").trim();
+  return t?t.split(/\s+/).length:0;
+}
+function bookWordCount(c){return c?bookHtmlWords(c.html):0}
+function bookTotalWords(){return book?book.chapters.reduce((n,c)=>n+bookWordCount(c),0):0}
+function bookActiveChapter(){return book?book.chapters.find(c=>c.id===book.activeId)||null:null}
+function bookOrdinal(n){return BOOK_ORDINALS[n-1]||String(n)}
+function bookStatus(text){
+  const s=$("bookSaveStatus");
+  if(s)s.textContent=text;
+}
+function persistBook(){
+  clearTimeout(bookSaveTimer);
+  bookStatus("saving…");
+  bookSaveTimer=setTimeout(()=>{
+    cacheSet(BOOK_KEY,book);
+    bookStatus("saved");
+  },500);
+}
+function bookNewChapterObj(title="",category="",html=""){
+  return {id:"c"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    title,category,html,createdAt:Date.now(),updatedAt:Date.now()};
+}
+function bookEnsure(){
+  // first open: one blank page waits under a blank title — all yours
+  if(book&&book.chapters.length)return;
+  book={title:"",chapters:[bookNewChapterObj()],activeId:null};
+  book.activeId=book.chapters[0].id;
+  persistBook();
+}
+function addBookChapter(){
+  const c=bookNewChapterObj();
+  book.chapters.push(c);
+  book.activeId=c.id;
+  persistBook();
+  renderBookStudio();
+  // the cursor lands in the title — name the chapter, enter, write
+  const t=$("bookChapterTitle");
+  if(t){
+    t.focus();
+    const r=document.createRange();
+    r.selectNodeContents(t);
+    r.collapse(false);
+    const sel=getSelection();
+    sel.removeAllRanges();
+    sel.addRange(r);
+  }
+  return c;
+}
+function openBookChapter(id){
+  const c=book.chapters.find(x=>x.id===id);
+  if(!c||id===book.activeId)return;
+  book.activeId=id;
+  persistBook();
+  renderBookStudio();
+  // caret to the end of the page, ready to continue writing
+  const ed=$("bookEditor");
+  if(ed){
+    ed.focus();
+    const r=document.createRange();
+    r.selectNodeContents(ed);
+    r.collapse(false);
+    const sel=getSelection();
+    sel.removeAllRanges();
+    sel.addRange(r);
+  }
+}
+function bookDeleteChapter(id){
+  const i=book.chapters.findIndex(c=>c.id===id);
+  if(i<0)return;
+  book.chapters.splice(i,1);
+  if(!book.chapters.length){
+    bookEnsure(); // the book never loses its last page — a fresh one begins
+  }else if(book.activeId===id){
+    book.activeId=book.chapters[Math.min(i,book.chapters.length-1)].id;
+  }
+  persistBook();
+  renderBookStudio();
+}
+function renderBookChapters(){
+  const list=$("bookChapters");
+  if(!list||!book)return;
+  list.textContent="";
+  book.chapters.forEach((c,i)=>{
+    const row=document.createElement("button");
+    row.type="button";
+    row.className="bookChapterRow"+(c.id===book.activeId?" active":"");
+    row.title=c.title||"untitled chapter";
+    const num=document.createElement("span");
+    num.className="bookChapterNum";
+    num.textContent=String(i+1).padStart(2,"0");
+    const name=document.createElement("span");
+    name.className="bookChapterName"+(c.title?"":" untitled");
+    name.textContent=c.title||"untitled";
+    const words=document.createElement("span");
+    words.className="bookChapterWords";
+    const w=bookWordCount(c);
+    words.textContent=w?`${w}w`:"·";
+    const del=document.createElement("span");
+    del.className="bookChapterDelete";
+    del.textContent="×";
+    del.title="remove this chapter";
+    row.append(num,name,words,del);
+    row.addEventListener("click",e=>{
+      if(e.target.closest(".bookChapterDelete")){e.stopPropagation();bookDeleteChapter(c.id);return;}
+      openBookChapter(c.id);
+    });
+    list.append(row);
+  });
+}
+function updateBookStats(){
+  if(!book)return;
+  const c=bookActiveChapter();
+  if(!c)return;
+  const cw=bookWordCount(c),tw=bookTotalWords();
+  const stats=$("bookStats");
+  if(stats)stats.textContent=`${cw} ${cw===1?"word":"words"} this chapter · ${tw} in the book · ${book.chapters.length} ${book.chapters.length===1?"chapter":"chapters"}`;
+  const i=book.chapters.indexOf(c);
+  const pos=$("bookChapterPosition");
+  if(pos)pos.textContent=`${i+1} / ${book.chapters.length}`;
+  const prev=$("bookPrevChapter"),next=$("bookNextChapter");
+  if(prev)prev.disabled=i<=0;
+  if(next)next.disabled=i>=book.chapters.length-1;
+  const meta=$("bookChapterMeta");
+  if(meta){
+    const when=new Date(c.updatedAt||c.createdAt);
+    const whenTxt=Number.isNaN(when.getTime())?"":when.toLocaleDateString(undefined,{month:"long",day:"numeric",year:"numeric"});
+    meta.textContent=(cw?`${cw} ${cw===1?"word":"words"}`:"not written yet")+(whenTxt?` · ${whenTxt}`:"");
+  }
+}
+// a chapter's rich text, as ordered blocks: {tag, cls, html, words}
+function bookChapterBlocks(c){
+  const tpl=document.createElement("div");
+  tpl.innerHTML=c.html||"";
+  const blocks=[];
+  const add=(tag,el)=>{
+    if(!/^h[1-6]$/.test(tag)&&tag!=="p"&&tag!=="div")tag="p";
+    if(tag==="div")tag="p";
+    blocks.push({
+      tag,
+      cls:el.classList&&el.classList.contains("sceneBreak")?"sceneBreak":"",
+      html:el.innerHTML||"",
+      words:bookHtmlWords(el.innerHTML||el.textContent||"")
+    });
+  };
+  Array.from(tpl.childNodes).forEach(node=>{
+    if(node.nodeType===3){
+      if(node.textContent.trim()){
+        const p=document.createElement("p");
+        p.textContent=node.textContent;
+        add("p",p);
+      }
+    }else if(node.nodeType===1){
+      if(node.tagName==="BR")return;
+      add((node.tagName||"P").toLowerCase(),node);
+    }
+  });
+  return blocks;
+}
+// legal hyphenation points inside one word, per the book rules. Indonesian
+// syllabification (PUEBI/EYD): vowel pairs split (bu-ah), a single consonant
+// joins the next syllable (ba-pak), two consonants split between (man-di,
+// cap-lok), and the digraphs kh/ng/ny/sy never come apart — so "misalnya"
+// breaks mi-sal-nya, never mis-alnya. English digraphs and vowel pairs are
+// kept whole so borrowed words break sensibly too
+function bookHyphenPoints(word){
+  const s=(word||"").toLowerCase();
+  const V="aiueo";
+  const dig=["ng","ny","kh","sy","ch","sh","th","ph","wh","gh","ck"];
+  const keep=["ai","au","oi","ee","oo","ea","ou","ie","oa","ue","ui"];
+  const at=i=>i>=0&&i<s.length?s[i]:" ";
+  const isV=c=>V.includes(c);
+  const onset=i=>{
+    if(i>=s.length||isV(at(i)))return false;
+    if(isV(at(i+1)))return true;
+    return dig.includes(at(i)+at(i+1))&&isV(at(i+2));
+  };
+  const pts=[];
+  for(let p=1;p<s.length-1;p++){
+    const pair=at(p-1)+at(p);
+    if(dig.includes(pair)||keep.includes(pair))continue;
+    if(isV(at(p-1))&&isV(at(p))){pts.push(p);continue}
+    if(isV(at(p-1))&&onset(p)){pts.push(p);continue}
+    if(!isV(at(p-1))&&(isV(at(p-2))||dig.includes(at(p-2)+at(p-1)))&&onset(p)){pts.push(p);continue}
+  }
+  return pts;
+}
+// flow a chapter's blocks through a real, hidden page box — the browser
+// itself measures where each page ends, so nothing is ever cut, skipped,
+// or reshuffled between pages. every page is the book's one nominal page,
+// 505 × 650 with the reader's own type, measured off-screen: the editor
+// preview and the fullscreen book break identically, true 1:1
+function flowChapterPages(c){
+  if(!c)return [];
+  const probe=document.createElement("div");
+  probe.className="rdFace right";
+  probe.style.cssText="position:fixed;left:-9999px;top:0;width:505px;height:650px;visibility:hidden;pointer-events:none";
+  const head=document.createElement("div");
+  const run=document.createElement("div");
+  const body=document.createElement("div");
+  body.className="rdBody";
+  const ci=book?book.chapters.indexOf(c):0;
+  head.innerHTML=`<div class="rdKicker">chapter ${bookOrdinal(ci+1)}${c.category?" · "+c.category:""}</div><div class="rdTitle">${c.title||"untitled"}</div>`;
+  run.className="rdRunning";
+  // the running head carries the chapter's category (its title as a
+  // fallback) — the book's name lives on the cover, not above the text
+  run.textContent=(c.category||c.title||"").toLowerCase();
+  head.style.display="none";
+  run.style.display="none";
+  probe.append(head,run,body);
+  document.body.append(probe);
+  const blocks=bookChapterBlocks(c);
+  if(!blocks.length){probe.remove();return [];}
+  // a page only ever holds WHOLE lines: snap the budget down to whole lines
+  const style=getComputedStyle(body);
+  const lineH=parseFloat(style.lineHeight)||parseFloat(style.fontSize)*1.85||24;
+  let pageBudget=lineH;
+  // the available body height depends on the header THIS page shows (opening
+  // title vs running head vs none) — so it is re-measured on every page
+  const measureBudget=()=>{
+    body.style.flex="";
+    body.style.height="";
+    const avail=body.clientHeight;
+    body.style.flex="none";
+    body.style.height="auto";
+    body.style.overflow="hidden";
+    pageBudget=Math.max(lineH,Math.floor(avail/lineH)*lineH);
+  };
+  const makeEl=b=>{
+    const el=document.createElement(b.tag);
+    if(b.cls)el.className=b.cls;
+    el.innerHTML=b.html;
+    return el;
+  };
+  const pages=[];
+  let cur=[],firstPage=true,dropPending=false;
+  const startPage=()=>{
+    body.textContent="";
+    // openings show the chapter title; continuation pages merge category and
+    // folio into the running head — no page carries a foot any more, so the
+    // probe never measures one
+    head.style.display=firstPage?"":"none";
+    run.style.display=firstPage?"none":"";
+    // mirror the renderer: the opening page's first plain paragraph wears
+    // the drop cap — its float narrows the first lines, so it must be
+    // measured too
+    dropPending=firstPage;
+    measureBudget();
+  };
+  // scrollHeight is immune to transforms: the reader's opening animation
+  // scales the stage, and a rect measured mid-tween would under-size the
+  // content and let a cut line slip onto the page
+  const fits=()=>body.scrollHeight<=pageBudget;
+  const cut=()=>{
+    pages.push({first:firstPage,blocks:cur});
+    cur=[];
+    firstPage=false;
+    startPage();
+  };
+  startPage();
+  // the drop cap narrows a paragraph's first lines, so every measurement —
+  // candidates included — must wear the same cap the final piece will
+  // (carved pieces are plain paragraphs too — they just carry a class)
+  const plainP=p=>p.tag==="p"&&(!p.cls||p.cls==="carveHead");
+  const dress=(el,p)=>{
+    if(dropPending&&plainP(p))el.classList.add("rdDrop");
+  };
+  const consume=p=>{
+    if(dropPending&&plainP(p))dropPending=false;
+  };
+  // carve the largest prefix of a paragraph that fits the space left on the
+  // page — binary search over its text, so a huge block is cut at the page's
+  // last line instead of stopping at a blind half and leaving the rest blank
+  const carve=p=>{
+    if(!p||p.tag!=="p"||p.cls)return null;
+    const d=document.createElement("div");
+    d.innerHTML=p.html||"";
+    const text=(d.textContent||"").trim();
+    if(text.length<2)return null;
+    const piece=(from,to)=>({tag:"p",cls:"",html:bookEscapeHtml(text.slice(from,to)),words:1});
+    const tryFit=n=>{
+      const el=makeEl(piece(0,n));
+      dress(el,piece(0,n));
+      body.append(el);
+      const ok=fits();
+      el.remove();
+      return ok;
+    };
+    if(!tryFit(1))return null; // not even a character fits — the page is full
+    let lo=1,hi=text.length,best=1;
+    while(lo<=hi){
+      const mid=(lo+hi)>>1;
+      if(tryFit(mid)){best=mid;lo=mid+1;}
+      else hi=mid-1;
+    }
+    // never cut between the halves of a surrogate pair (emoji etc.)
+    while(best<text.length&&best>1){
+      const code=text.charCodeAt(best-1);
+      if(code<0xD800||code>0xDBFF)break;
+      best--;
+    }
+    if(best>=text.length)return null;
+    // a cut inside a word carries a hyphen over the break — but only on a
+    // legal syllable boundary ("mi-sal-nya", never "mis-alnya"); anywhere
+    // else in the word is rounded to the nearest legal point, or the cut
+    // moves to the word edge and no hyphen is needed
+    const wordChar=ch=>/[A-Za-z0-9]/.test(ch||"");
+    const snap=n=>{
+      if(!(wordChar(text.charAt(n-1))&&wordChar(text.charAt(n))))return{n,hyphen:false};
+      let ws=n-1,we=n;
+      while(ws>0&&wordChar(text.charAt(ws-1)))ws--;
+      while(we<text.length&&wordChar(text.charAt(we)))we++;
+      const pts=bookHyphenPoints(text.slice(ws,we)).map(o=>o+ws).filter(o=>o<=n&&o>ws&&o<we-1);
+      if(pts.length)return{n:pts[pts.length-1],hyphen:true};
+      return{n:ws,hyphen:false};
+    };
+    const hyphenated=(n,hyph)=>({tag:"p",cls:"carveHead",html:bookEscapeHtml(text.slice(0,n))+(hyph?"-":""),words:1});
+    const headFits=(n,hyph)=>{
+      const h=hyphenated(n,hyph);
+      const el=makeEl(h);
+      dress(el,h);
+      body.append(el);
+      const ok=fits();
+      el.remove();
+      return ok;
+    };
+    // the hyphen itself takes width, so back off until the head truly fits
+    let placed=snap(best);
+    best=placed.n;
+    let hyphen=placed.hyphen;
+    while(best>1&&!headFits(best,hyphen)){
+      const cand=snap(best-1);
+      best=cand.n;
+      hyphen=cand.hyphen;
+    }
+    if(best<1)return null;
+    // typographic minimums, the way books break paragraphs:
+    // — at least two lines must stay on this page; anything less is not
+    //   worth the cut, so the whole paragraph is combined and pushed to the
+    //   next page, and the page that ends early closes flush to the margin
+    // — the next page must open with at least three lines; if the tail came
+    //   out shorter the split point is pulled back a line at a time until
+    //   it isn't. a block that alone overflows a full page has nothing to
+    //   push in front of it, so it splits regardless
+    const tailLinesOf=n=>{
+      const tEl=makeEl(piece(n,text.length));
+      const stash=[...body.children];
+      body.textContent="";
+      body.append(tEl);
+      const lines=Math.round(tEl.getBoundingClientRect().height/lineH);
+      tEl.remove();
+      body.append(...stash);
+      return lines;
+    };
+    if(cur.length){
+      const headEl=makeEl(hyphenated(best,hyphen));
+      dress(headEl,hyphenated(best,hyphen));
+      body.append(headEl);
+      const headLines=Math.round(headEl.getBoundingClientRect().height/lineH);
+      headEl.remove();
+      if(headLines<2){
+        const last=cur[cur.length-1];
+        if(last)last.cls=(last.cls?last.cls+" ":"")+"pageEnd";
+        return null;
+      }
+      let tailLines=tailLinesOf(best);
+      let guard=6;
+      while(tailLines<3&&best>1&&guard-->0){
+        const perLine=Math.max(12,Math.round(best/Math.max(1,headLines)));
+        const cand=snap(Math.max(1,best-perLine));
+        if(cand.n>=best){best=best-1;}
+        else{best=cand.n;hyphen=cand.hyphen;}
+        if(best<1)break;
+        tailLines=tailLinesOf(best);
+      }
+    }
+    // head fills this page, tail carries the REST of the text onward —
+    // slice(best), not a second prefix, or the paragraph would restart
+    return [hyphenated(best,hyphen),piece(best,text.length)];
+  };
+  for(const b of blocks){
+    const el=makeEl(b);
+    dress(el,b);
+    body.append(el);
+    if(fits()){cur.push(b);consume(b);continue;}
+    el.remove();
+    // no cut here: hand the block to the carve loop so it first fills
+    // whatever room this page still has, and only then rolls to the next
+    let pieces=[b];
+    while(pieces.length){
+      const p=pieces.shift();
+      const e2=makeEl(p);
+      dress(e2,p);
+      body.append(e2);
+      if(fits()){cur.push(p);consume(p);continue;}
+      e2.remove();
+      const carved=carve(p);
+      if(carved){pieces=carved.concat(pieces);continue;}
+      if(cur.length){
+        cut();
+        pieces.unshift(p);
+        continue;
+      }
+      body.append(e2);
+      cur.push(p);
+      consume(p);
+    }
+  }
+  if(cur.length)pages.push({first:firstPage,blocks:cur});
+  probe.remove();
+  return pages;
+}
+function scheduleBookPreview(){
+  clearTimeout(bookPreviewTimer);
+  bookPreviewTimer=setTimeout(renderBookPreview,350);
+}
+function renderBookPreview(){
+  const stage=$("bookPreviewPage");
+  if(!stage||!book)return;
+  const c=bookActiveChapter();
+  if(!c)return;
+  stage.textContent="";
+  stage.scrollTop=0;
+  // true 1:1: the preview stacks the reader's own pages — same nominal
+  // 505×650 sheet, same type, same page breaks, and folios counted through
+  // the whole book so a number here is the number the open book shows
+  const flows=book.chapters.map(ch=>flowChapterPages(ch));
+  const ci=book.chapters.indexOf(c);
+  let folio=1;
+  for(let i=0;i<ci;i++)folio+=flows[i].length||1;
+  const pages=flows[ci];
+  const wrap=face=>{
+    const w=document.createElement("div");
+    w.className="bkPage";
+    w.append(face);
+    return w;
+  };
+  if(!pages.length){
+    const face=document.createElement("div");
+    face.className="rdFace left";
+    const empty=document.createElement("div");
+    empty.className="rdEmpty";
+    empty.textContent="the page is still blank — write, and watch the book take shape";
+    face.append(empty);
+    stage.append(wrap(face));
+  }else{
+    // the chapter's pages stack down the column; a very long chapter stops
+    // at a pile cap — the fullscreen book holds the rest
+    const MAX=24;
+    pages.slice(0,MAX).forEach((pg,i)=>stage.append(wrap(readerPageNode({chapterIndex:ci,first:pg.first,blocks:pg.blocks,folio:folio+i},"left"))));
+    if(pages.length>MAX){
+      const more=document.createElement("div");
+      more.className="bkMore";
+      more.textContent=`+ ${pages.length-MAX} more pages in the book`;
+      stage.append(more);
+    }
+  }
+  const count=$("bookPreviewCount");
+  if(count)count.textContent=pages.length?`${pages.length} ${pages.length===1?"page":"pages"}`:"no pages yet";
+}
+function renderBookStudio(){
+  const studio=$("bookStudio");
+  if(!studio||currentMode!=="focus")return;
+  bookEnsure();
+  if(!book.chapters.find(c=>c.id===book.activeId))book.activeId=book.chapters[0].id;
+  const bt=$("bookTitle");
+  if(bt&&document.activeElement!==bt){
+    bt.textContent=book.title;
+    bt.classList.toggle("isBlank",!book.title);
+  }
+  renderBookChapters();
+  const c=bookActiveChapter();
+  if(!c)return;
+  const num=$("bookChapterNumber");
+  if(num)num.textContent=`chapter ${bookOrdinal(book.chapters.indexOf(c)+1)}`;
+  const cat=$("bookCategory");
+  if(cat&&document.activeElement!==cat){
+    cat.textContent=c.category;
+    cat.classList.toggle("isBlank",!c.category);
+  }
+  const ct=$("bookChapterTitle");
+  if(ct&&document.activeElement!==ct){
+    ct.textContent=c.title;
+    ct.classList.toggle("isBlank",!c.title);
+  }
+  const ed=$("bookEditor");
+  if(ed&&document.activeElement!==ed){
+    ed.innerHTML=c.html;
+    ed.classList.toggle("isBlank",!(ed.textContent||"").trim());
+  }
+  updateBookStats();
+  renderBookPreview();
+  updateBookToolbar();
+}
+// gather past answers: every answered question from history that has no
+// chapter yet becomes one, answer as its opening words
+function gatherBookAnswers(){
+  if(!book)bookEnsure();
+  const inBook=new Set(book.chapters.map(c=>c.title.toLowerCase()));
+  let added=0;
+  getHistory().forEach(entry=>{
+    if(!entry||typeof entry.question!=="string")return;
+    const answer=typeof entry.answer==="string"?entry.answer.trim():"";
+    if(!answer||inBook.has(entry.question.toLowerCase()))return;
+    book.chapters.push(bookNewChapterObj(entry.question,typeof entry.category==="string"?entry.category:"",`<p>${bookEscapeHtml(answer)}</p>`));
+    inBook.add(entry.question.toLowerCase());
+    added++;
+  });
+  if(added){
+    persistBook();
+    renderBookChapters();
+    updateBookStats();
+    bookStatus(`gathered ${added} chapter${added===1?"":"s"}`);
+    clearTimeout(gatherBookAnswers._t);
+    gatherBookAnswers._t=setTimeout(()=>bookStatus("saved"),2200);
+  }else{
+    bookStatus("nothing new to gather");
+    clearTimeout(gatherBookAnswers._t);
+    gatherBookAnswers._t=setTimeout(()=>bookStatus("saved"),1600);
+  }
+}
+function bookChapterStep(dir){
+  if(!book)return;
+  const i=book.chapters.findIndex(c=>c.id===book.activeId);
+  const n=i+dir;
+  if(i<0||n<0||n>=book.chapters.length)return;
+  openBookChapter(book.chapters[n].id);
+}
+// ---- rich text: toolbar, selection popup --------------------------------
+function bookEditorChanged(){
+  const ed=$("bookEditor");
+  const c=bookActiveChapter();
+  if(!ed||!c)return;
+  c.html=ed.innerHTML;
+  c.updatedAt=Date.now();
+  ed.classList.toggle("isBlank",!ed.textContent.trim());
+  persistBook();
+  scheduleBookPreview();
+  updateBookStats();
+}
+function bookApplyFormat(btn){
+  const cmd=btn.dataset.cmd,block=btn.dataset.block;
+  const ed=$("bookEditor");
+  if(!ed)return;
+  ed.focus();
+  try{
+    if(cmd==="sceneBreak")document.execCommand("insertHTML",false,'<p class="sceneBreak">⁂</p>');
+    else if(cmd)document.execCommand(cmd,false,null);
+    else if(block)document.execCommand("formatBlock",false,"<"+block+">");
+  }catch{}
+  bookEditorChanged();
+  updateBookToolbar();
+}
+function updateBookToolbar(){
+  const ed=$("bookEditor");
+  const sel=getSelection();
+  const inEd=ed&&sel&&sel.rangeCount&&ed.contains(sel.anchorNode)||ed===document.activeElement;
+  const state=k=>{try{return document.queryCommandState(k)}catch{return false}};
+  let block="p";
+  try{block=(document.queryCommandValue("formatBlock")||"p").toLowerCase().replace(/[<>]/g,"")}catch{}
+  if(block==="div")block="p";
+  const align=state("justifyCenter")?"center":state("justifyRight")?"right":"left";
+  document.querySelectorAll("#bookToolbar .tbBtn, #bookFormatPop .tbBtn").forEach(b=>{
+    const cmd=b.dataset.cmd,blk=b.dataset.block;
+    let active=false;
+    if(cmd==="bold"||cmd==="italic"||cmd==="underline")active=inEd&&state(cmd);
+    else if(cmd==="justifyLeft")active=inEd&&align==="left";
+    else if(cmd==="justifyCenter")active=inEd&&align==="center";
+    else if(cmd==="justifyRight")active=inEd&&align==="right";
+    else if(blk)active=inEd&&blk===block;
+    b.classList.toggle("active",active);
+  });
+}
+let bookPopTimer=null;
+function updateBookPop(){
+  const pop=$("bookFormatPop");
+  const ed=$("bookEditor");
+  if(!pop||!ed)return;
+  const sel=getSelection();
+  const has=sel&&sel.rangeCount&&!sel.isCollapsed&&String(sel).trim()&&ed.contains(sel.anchorNode);
+  if(!has){
+    pop.classList.remove("open");
+    pop.setAttribute("aria-hidden","true");
+    return;
+  }
+  const r=sel.getRangeAt(0).getBoundingClientRect();
+  pop.classList.add("open");
+  pop.setAttribute("aria-hidden","false");
+  const pw=pop.offsetWidth||320,ph=pop.offsetHeight||38;
+  let x=r.left+r.width/2-pw/2;
+  x=Math.max(10,Math.min(x,innerWidth-pw-10));
+  let y=r.top-ph-10;
+  if(y<66)y=Math.max(66,Math.min(r.bottom+10,innerHeight-ph-10));
+  pop.style.left=Math.round(x)+"px";
+  pop.style.top=Math.round(y)+"px";
+}
+// ---- the reader: the whole book, fullscreen, page-flip ------------------
+let readerPages=null,readerSpread=0,readerIndex=0,readerWasSingle=false;
+function readerSpreads(){return Math.max(1,Math.ceil((readerPages||[]).length/2))}
+// phones read one page at a time — the same nominal sheet, alone and
+// scaled to fit, turning a page per tap instead of a spread per flip
+function readerSingle(){return window.matchMedia("(max-width:700px)").matches}
+// the book is always laid out on its nominal 1010×650 spread; a smaller
+// window scales the whole thing down instead of re-flowing the pages, so
+// the preview's 505×650 sheet stays a true 1:1 of the open book
+function readerSyncScale(){
+  const bk=$("readerBook");
+  if(!bk)return;
+  const pageW=readerSingle()?505:1010;
+  const s=Math.min(1,(innerWidth-(readerSingle()?32:56))/pageW,(innerHeight-170)/650);
+  bk.style.setProperty("--rdScale",String(Math.max(.3,s)));
+}
+function readerOpen(){
+  const rd=$("bookReader");
+  if(!rd)return;
+  rd.classList.add("open");
+  rd.setAttribute("aria-hidden","false");
+  readerWasSingle=readerSingle();
+  readerSyncScale();
+  readerBuild();
+  readerSpread=0;
+  readerIndex=0;
+  renderReader();
+}
+function readerClose(){
+  const rd=$("bookReader");
+  if(!rd)return;
+  rd.classList.remove("open");
+  rd.setAttribute("aria-hidden","true");
+}
+function readerIsOpen(){const rd=$("bookReader");return !!rd&&rd.classList.contains("open")}
+// ---- reading size ----------------------------------------------------------
+// the text size lives in one CSS variable the pagination probe measures
+// through, so a step up or down re-breaks every page to the new measure
+// at once — what overflows simply moves on to the next page
+const BOOK_FONT_KEY="oneQuestionBookFont";
+const BOOK_FONT_MIN=.7,BOOK_FONT_MAX=1.6,BOOK_FONT_STEP=.1;
+let bookFontScale=1;
+function bookApplyFont(){
+  document.documentElement.style.setProperty("--bookFontScale",String(bookFontScale));
+  const label=$("bookFontLabel");
+  if(label)label.textContent=Math.round(bookFontScale*100)+"%";
+  document.querySelectorAll(".bookFontBtn").forEach(b=>{
+    const dir=parseFloat(b.dataset.dir||"0");
+    const next=Math.round((bookFontScale+dir*BOOK_FONT_STEP)*100)/100;
+    b.disabled=next<BOOK_FONT_MIN||next>BOOK_FONT_MAX;
+  });
+}
+function bookSetFont(dir){
+  const next=Math.round((bookFontScale+dir*BOOK_FONT_STEP)*100)/100;
+  bookFontScale=Math.max(BOOK_FONT_MIN,Math.min(BOOK_FONT_MAX,next));
+  try{localStorage.setItem(BOOK_FONT_KEY,String(bookFontScale))}catch{}
+  bookApplyFont();
+  renderBookPreview();
+  if(readerIsOpen()){
+    readerBuild();
+    readerSpread=Math.min(readerSpread,readerSpreads()-1);
+    renderReader();
+  }
+}
+function readerBuild(){
+  // page 0 is the blank endpaper so the cover lands on the right; after the
+  // cover every page is a real one — chapters flow continuously, no blank
+  // spacers beside openings, nothing wasted
+  const pages=[{blank:true},{cover:true}];
+  if(book){
+    book.chapters.forEach(c=>{
+      const ci=book.chapters.indexOf(c);
+      const cp=flowChapterPages(c);
+      if(!cp.length){
+        pages.push({chapterIndex:ci,first:true,blocks:[]});
+        return;
+      }
+      cp.forEach(pg=>pages.push({chapterIndex:ci,first:pg.first,blocks:pg.blocks}));
+    });
+  }
+  while(pages.length%2===1)pages.push({blank:true});
+  // folios count only real pages — endpaper, cover and spacers are the
+  // book's front matter and never numbered, so the first written page is 1
+  let folio=0;
+  pages.forEach(p=>{
+    if(!p||p.blank||p.cover)return;
+    folio+=1;
+    p.folio=folio;
+  });
+  readerPages=pages;
+}
+// ---- export: the book as a pdf, through the browser's print pipeline -----
+// the same pages the reader shows — nominal 505×650, same type, same folios —
+// laid one per sheet; "save as pdf" in the print dialog writes the file with
+// selectable vector text, no libraries, fully offline
+function bookPrintPages(){
+  const pages=[{cover:true}];
+  if(book){
+    book.chapters.forEach(c=>{
+      const ci=book.chapters.indexOf(c);
+      const cp=flowChapterPages(c);
+      if(!cp.length){
+        pages.push({chapterIndex:ci,first:true,blocks:[]});
+        return;
+      }
+      cp.forEach(pg=>pages.push({chapterIndex:ci,first:pg.first,blocks:pg.blocks}));
+    });
+  }
+  let folio=0;
+  pages.forEach(p=>{
+    if(!p.cover){folio+=1;p.folio=folio;}
+  });
+  return pages;
+}
+function bookExportPdf(){
+  document.getElementById("bookPrintRoot")?.remove();
+  const root=document.createElement("div");
+  root.id="bookPrintRoot";
+  bookPrintPages().forEach(p=>{
+    const sheet=document.createElement("div");
+    sheet.className="pgPrintPage";
+    sheet.append(readerPageNode(p,"right"));
+    root.append(sheet);
+  });
+  document.body.append(root);
+  const prevTitle=document.title;
+  document.title=((book&&book.title)?book.title:"an untitled book").toLowerCase()+" — one question";
+  const clean=()=>{
+    root.remove();
+    document.title=prevTitle;
+    window.removeEventListener("afterprint",clean);
+  };
+  window.addEventListener("afterprint",clean);
+  try{
+    window.print();
+  }catch(e){
+    console.warn("One Question: print failed",e);
+    clean();
+  }
+}
+function readerPageNode(p,side){
+  const face=document.createElement("div");
+  face.className="rdFace "+side;
+  face._page=p; // the fixup finds a page's node from its body overflow
+  if(!p||p.blank)return face;
+  if(p.cover){
+    face.classList.add("cover");
+    const mark=document.createElement("div");
+    mark.className="rdCoverMark";
+    mark.textContent="❧";
+    const t=document.createElement("div");
+    t.className="rdCoverTitle"+(book&&book.title?"":" untitled");
+    t.textContent=book&&book.title?book.title:"an untitled book";
+    const s=document.createElement("div");
+    s.className="rdCoverSub";
+    s.textContent="written in one question";
+    face.append(mark,t,s);
+    return face;
+  }
+  const c=book&&book.chapters[p.chapterIndex];
+  if(!c)return face;
+  if(p.first){
+    const kick=document.createElement("div");
+    kick.className="rdKicker";
+    kick.textContent=`chapter ${bookOrdinal(p.chapterIndex+1)}${c.category?" · "+c.category:""}`;
+    const title=document.createElement("div");
+    title.className="rdTitle"+(c.title?"":" untitled");
+    title.textContent=c.title||"untitled";
+    face.append(kick,title);
+    if(!p.blocks||!p.blocks.length){
+      const hint=document.createElement("div");
+      hint.className="rdEmpty";
+      hint.textContent="this chapter waits to be written";
+      face.append(hint);
+      return face;
+    }
+  }else{
+    // continuation pages carry the folio up into the running head —
+    // "{category} • {page}" — and lose the number at the foot
+    const running=document.createElement("div");
+    running.className="rdRunning";
+    const rc=book&&book.chapters[p.chapterIndex];
+    const label=((rc&&(rc.category||rc.title))||"").toLowerCase();
+    running.textContent=label?`${label} • ${p.folio||""}`:String(p.folio||"");
+    face.append(running);
+  }
+  const body=document.createElement("div");
+  body.className="rdBody";
+  let dropUsed=!p.first;
+  p.blocks.forEach(b=>{
+    const el=document.createElement(b.tag);
+    if(b.cls)el.className=b.cls;
+    el.innerHTML=b.html;
+    if(!dropUsed&&b.tag==="p"&&(!b.cls||b.cls==="carveHead")){
+      el.classList.add("rdDrop");
+      dropUsed=true;
+    }
+    body.append(el);
+  });
+  face.append(body);
+  return face;
+}
+function renderReader(leftAnchor,rightAnchor){
+  const bk=$("readerBook");
+  if(!bk||!readerPages)return;
+  // one page at a time on a phone: the current page alone, centered
+  if(readerSingle()){
+    bk.textContent="";
+    bk.classList.add("single");
+    readerIndex=Math.max(0,Math.min(readerIndex,readerPages.length-1));
+    const f=readerPageNode(readerPages[readerIndex],"right");
+    f.style.zIndex="13";
+    bk.append(f);
+    const prev0=$("bookReaderPrev"),next0=$("bookReaderNext");
+    if(prev0)prev0.disabled=readerIndex<=0;
+    if(next0)next0.disabled=readerIndex>=readerPages.length-1;
+    // phones always show the close control — one page at a time, the cover
+    // is itself a page and there is no "opening spread" to keep clean
+    const close0=$("bookReaderClose");
+    if(close0)close0.classList.remove("onCover");
+    return;
+  }
+  bk.classList.remove("single");
+  // during a turn, the half being uncovered rests on the destination spread
+  // while the other half keeps the origin — that is what the leaf reveals
+  const LS=Math.max(0,Math.min(leftAnchor==null?readerSpread:leftAnchor,readerSpreads()-1));
+  const RS=Math.max(0,Math.min(rightAnchor==null?readerSpread:rightAnchor,readerSpreads()-1));
+  bk.textContent="";
+  const baseL=document.createElement("div");baseL.className="rdBase left";
+  const baseR=document.createElement("div");baseR.className="rdBase right";
+  bk.append(baseL,baseR);
+  const spine=document.createElement("div");spine.className="rdSpine";
+  bk.append(spine);
+  const stackL=document.createElement("div");stackL.className="rdStack left";
+  const stackR=document.createElement("div");stackR.className="rdStack right";
+  // the resting piles: the anchor spread is always the top sheet of both
+  // stacks — deeper pages only add thickness underneath (higher z = closer)
+  for(let s=LS;s>=Math.max(0,LS-3);s--){
+    const f=readerPageNode(readerPages[2*s],"left");
+    f.style.zIndex=String(13-(LS-s));
+    stackL.append(f);
+  }
+  for(let s=Math.min(readerSpreads()-1,RS+3);s>=RS;s--){
+    const f=readerPageNode(readerPages[2*s+1],"right");
+    f.style.zIndex=String(13-(s-RS));
+    stackR.append(f);
+  }
+  bk.append(stackR,stackL);
+  const prev=$("bookReaderPrev"),next=$("bookReaderNext");
+  if(prev)prev.disabled=readerSpread<=0;
+  if(next)next.disabled=readerSpread>=readerSpreads()-1;
+  // the opening spread is the book's cover — the close control stays out of
+  // the picture until the reader has turned inside
+  const close=$("bookReaderClose");
+  if(close)close.classList.toggle("onCover",readerSpread<=0);
+}
+// the turning sheet: front = the right page it leaves, back = the left page it lands on
+function readerMakeLeaf(s){
+  const leaf=document.createElement("div");
+  leaf.className="rdLeaf";
+  leaf.style.zIndex="100";
+  leaf.append(
+    readerPageNode(readerPages[2*s+1],"right"),
+    readerPageNode(readerPages[2*s+2]||{blank:true},"left")
+  );
+  return leaf;
+}
+function readerFlip(dir){
+  if(!readerPages)return;
+  // a phone turns one page per tap — no sheet, just the next page
+  if(readerSingle()){
+    const next=readerIndex+dir;
+    if(next<0||next>readerPages.length-1)return;
+    readerIndex=next;
+    renderReader();
+    return;
+  }
+  if(dir<0&&readerSpread<=0)return;
+  if(dir>0&&readerSpread>=readerSpreads()-1)return;
+  const bk=$("readerBook");
+  if(!bk)return;
+  const s=dir>0?readerSpread:readerSpread-1;
+  const leaf=readerMakeLeaf(s);
+  if(dir<0)leaf.classList.add("flipped");
+  // the half being uncovered must already hold the page it will reveal —
+  // swap the resting stacks BEFORE the sheet starts to move (render first:
+  // it rebuilds the book, then the leaf rides on top)
+  if(dir>0)renderReader(readerSpread,readerSpread+1);
+  else renderReader(readerSpread-1,readerSpread);
+  bk.append(leaf);
+  requestAnimationFrame(()=>{
+    leaf.classList.add("turning");
+    if(dir<0)leaf.classList.add("back");
+    readerSpread+=dir;
+    setTimeout(()=>{leaf.remove();renderReader();},560);
+  });
+}
+function initReaderControls(){
+  const bk=$("readerBook");
+  if(!bk)return;
+  window.addEventListener("resize",()=>{
+    readerSyncScale();
+    // crossing the phone breakpoint swaps spread ↔ single page — carry the
+    // reading position across so the same page stays on screen
+    if(readerIsOpen()){
+      const single=readerSingle();
+      if(single!==readerWasSingle){
+        if(single)readerIndex=2*Math.min(readerSpread,readerSpreads()-1);
+        else readerSpread=Math.min(Math.floor(readerIndex/2),readerSpreads()-1);
+        readerWasSingle=single;
+        renderReader();
+      }
+    }
+  });
+  $("bookReaderPrev")?.addEventListener("click",()=>readerFlip(-1));
+  $("bookReaderNext")?.addEventListener("click",()=>readerFlip(1));
+  // click a half of the book to turn it
+  bk.addEventListener("click",e=>{
+    if(e.target.closest("button"))return;
+    const rect=bk.getBoundingClientRect();
+    if(e.clientX>rect.left+rect.width/2)readerFlip(1);
+    else readerFlip(-1);
+  });
+}
+function initBookStudio(){
+  const ed=$("bookEditor");
+  if(!ed)return;
+  // reading size: load the saved step and arm the A− / A+ controls
+  try{
+    const v=parseFloat(localStorage.getItem(BOOK_FONT_KEY));
+    if(v>=BOOK_FONT_MIN&&v<=BOOK_FONT_MAX)bookFontScale=v;
+  }catch{}
+  bookApplyFont();
+  // the shelf fold is remembered between visits
+  try{
+    if(localStorage.getItem("oneQuestionBookShelf")==="slim"){
+      document.body.classList.add("bookShelfSlim");
+      const btn=$("bookShelfCollapse");
+      if(btn)btn.title="show chapters";
+    }
+  }catch{}
+  document.querySelectorAll(".bookFontBtn").forEach(b=>{
+    b.addEventListener("click",()=>bookSetFont(parseFloat(b.dataset.dir||"1")));
+  });
+  try{document.execCommand("defaultParagraphSeparator",false,"p")}catch{}
+  ed.addEventListener("input",bookEditorChanged);
+  // keep pasted text plain words — formatting comes from the toolbar
+  ed.addEventListener("paste",e=>{
+    e.preventDefault();
+    const t=(e.clipboardData||window.clipboardData).getData("text/plain");
+    document.execCommand("insertText",false,t);
+  });
+  // the chapter title: one line, enter hops into the page
+  const ct=$("bookChapterTitle");
+  const wireInline=(el,apply)=>{
+    el.addEventListener("input",()=>{
+      const c=bookActiveChapter();
+      if(!c)return;
+      apply(c);
+      c.updatedAt=Date.now();
+      el.classList.toggle("isBlank",!el.textContent.trim());
+      persistBook();
+      renderBookChapters();
+      updateBookStats();
+      scheduleBookPreview();
+    });
+    el.addEventListener("keydown",e=>{
+      if(e.key==="Enter"){e.preventDefault();ed.focus();}
+    });
+    el.addEventListener("paste",e=>{
+      e.preventDefault();
+      const t=(e.clipboardData||window.clipboardData).getData("text/plain").replace(/\s+/g," ").trim();
+      document.execCommand("insertText",false,t);
+    });
+  };
+  wireInline(ct,c=>{c.title=ct.textContent.replace(/\n/g," ").trim()});
+  const cat=$("bookCategory");
+  wireInline(cat,c=>{c.category=cat.textContent.replace(/\n/g," ").trim()});
+  // toolbar + popup share the same buttons; mousedown keeps the selection
+  document.querySelectorAll("#bookToolbar .tbBtn, #bookFormatPop .tbBtn").forEach(b=>{
+    b.addEventListener("mousedown",e=>e.preventDefault());
+    b.addEventListener("click",()=>bookApplyFormat(b));
+  });
+  document.addEventListener("selectionchange",()=>{
+    if(currentMode!=="focus")return;
+    clearTimeout(bookPopTimer);
+    bookPopTimer=setTimeout(()=>{updateBookPop();updateBookToolbar();},160);
+  });
+  const title=$("bookTitle");
+  title.addEventListener("input",()=>{
+    book.title=title.textContent.replace(/\n/g," ").trim();
+    title.classList.toggle("isBlank",!book.title);
+    persistBook();
+  });
+  title.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();title.blur();}});
+  title.addEventListener("paste",e=>{
+    e.preventDefault();
+    const t=(e.clipboardData||window.clipboardData).getData("text/plain").replace(/\s+/g," ").trim();
+    document.execCommand("insertText",false,t);
+  });
+  // the header's open-book button replaces the old gather-answers one — on
+  // phones the preview column is hidden, so this is the reader's entry point
+  $("bookReadHeader")?.addEventListener("click",readerOpen);
+  $("bookExportPdf")?.addEventListener("click",bookExportPdf);
+  // the chapters shelf folds to a slim rail on wide desks; the fold is
+  // remembered like a good sidebar remembers
+  $("bookShelfCollapse")?.addEventListener("click",()=>{
+    const slim=document.body.classList.toggle("bookShelfSlim");
+    try{localStorage.setItem("oneQuestionBookShelf",slim?"slim":"wide")}catch{}
+    const btn=$("bookShelfCollapse");
+    if(btn)btn.title=slim?"show chapters":"hide chapters";
+  });
+  $("bookNewChapter")?.addEventListener("click",addBookChapter);
+  $("bookPrevChapter")?.addEventListener("click",()=>bookChapterStep(-1));
+  $("bookNextChapter")?.addEventListener("click",()=>bookChapterStep(1));
+  $("bookRead")?.addEventListener("click",readerOpen);
+  $("bookReaderClose")?.addEventListener("click",readerClose);
+  initReaderControls();
+  $("bookShelfToggle")?.addEventListener("click",()=>{
+    const shelf=document.querySelector(".bookShelf");
+    shelf?.classList.toggle("open");
+  });
+  // alt + arrows turn chapters; plain arrows turn the reader
+  document.addEventListener("keydown",e=>{
+    if(currentMode!=="focus"||!e.altKey||readerIsOpen())return;
+    if(e.key==="ArrowLeft"){e.preventDefault();bookChapterStep(-1);}
+    else if(e.key==="ArrowRight"){e.preventDefault();bookChapterStep(1);}
+  });
+  document.addEventListener("keydown",e=>{
+    if(!readerIsOpen())return;
+    if(e.key==="ArrowRight"){e.preventDefault();e.stopPropagation();readerFlip(1);}
+    else if(e.key==="ArrowLeft"){e.preventDefault();e.stopPropagation();readerFlip(-1);}
+  },true);
 }
 function enterStickyMode(){
   clearTimeout(cycleTimer);closeCategoryMenu();
@@ -3034,6 +4168,12 @@ $("tidyAnchorBtns")?.addEventListener("click",e=>{
 });
 $("syncServer")?.addEventListener("change",e=>{
   settings.syncServer=e.target.value.trim();
+  saveSettings();
+  pushSyncToServer();
+});
+$("syncNowBtn")?.addEventListener("click",()=>{syncNow();});
+$("syncToken")?.addEventListener("change",e=>{
+  settings.syncToken=e.target.value.trim();
   saveSettings();
   pushSyncToServer();
 });
@@ -3196,6 +4336,9 @@ document.addEventListener("keydown",e=>{
   if($("todoFullscreen").classList.contains("open")){closeToday();return;}
   if($("calendarPanel").classList.contains("open")){closeCalendar();return;}
   if($("settingsPanel").classList.contains("open")){closeSettings();return;}
+  if(readerIsOpen()){readerClose();return;}
+  const pop=$("bookFormatPop");
+  if(pop&&pop.classList.contains("open")){pop.classList.remove("open");pop.setAttribute("aria-hidden","true");return;}
   if(schedulerSelection){closeSchedulerEditor();renderScheduler();return;}
   if($("historyPanel").classList.contains("open")){closeHistory();return;}
   closeCategoryMenu();
@@ -3224,12 +4367,30 @@ document.addEventListener("keydown",e=>{
 applyAppearance();
 applyModeSwitchExpand();
 applyModeOrder();
+// hardware-acceleration-off friendliness: Chrome composites on the CPU
+// (SwiftShader) when GPU acceleration is disabled, and the decorative blurs
+// and endless motion then dominate the frame budget. Detect it once and let
+// CSS strip the heavy effects via body.softRender.
+(function detectSoftRender(){
+  try{
+    const c=document.createElement("canvas");
+    const gl=c.getContext("webgl")||c.getContext("experimental-webgl");
+    if(!gl)return;
+    const dbg=gl.getExtension("WEBGL_debug_renderer_info");
+    const renderer=dbg?String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)||""):"";
+    if(/swiftshader|software|llvmpipe|basic raster/i.test(renderer)){
+      document.body.classList.add("softRender");
+      setDataStatus("rendering: cpu — lite effects on");
+    }
+  }catch{}
+})();
 dateEl.textContent=new Intl.DateTimeFormat(undefined,{weekday:"long",month:"long",day:"numeric"}).format(new Date());
 restoreTimerState();
 if(timerRunning)timerInterval=setInterval(tickTimer,1000);
 renderTodos();
 renderCalendar();
 initSchedulerMode();
+initBookStudio();
 updateModeUI();
 updateCycleToggle();
 initHydrationReminder();

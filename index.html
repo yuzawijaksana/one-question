@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>One Question</title>
-  <link rel="stylesheet" href="style.css?v=2.21.0">
+  <link rel="stylesheet" href="style.css?v=2.47.0">
 </head>
 
 <body>
@@ -40,8 +40,8 @@
       <button id="modeToggle" class="focusModeToggle" type="button" aria-label="switch mode" aria-pressed="false"
         title="switch mode"><span class="modeIcon modeQuestion" aria-hidden="true">?</span><span
           class="modeIcon modeFocus" aria-hidden="true">#</span><span class="modeIcon modeScheduler"
-          aria-hidden="true">%</span><span class="modeIcon modeSticky"
-          aria-hidden="true">@</span></button>
+            aria-hidden="true">%</span><span class="modeIcon modeSticky"
+            aria-hidden="true">@</span></button>
     </div>
 
     <section id="sticky" class="stickyMode" aria-hidden="true">
@@ -55,7 +55,127 @@
 
     <button id="stickyPin" class="stickyPin" type="button" title="remember wall" aria-label="Open remember wall"></button>
 
-    <div id="focusKicker" class="focusKicker" aria-hidden="true">focus</div>
+    <section id="bookStudio" class="bookStudio" aria-hidden="true">
+      <header class="bookHeader">
+        <div class="bookTitleWrap">
+          <span class="bookTitleMark" aria-hidden="true">❧</span>
+          <span id="bookTitle" class="bookTitle isBlank" contenteditable="true" role="textbox" aria-label="Book title"
+            spellcheck="false" data-placeholder="name your book…"></span>
+        </div>
+        <div class="bookHeaderActions">
+          <span id="bookSaveStatus" class="bookSaveStatus">saved</span>
+          <button id="bookShelfToggle" class="bookGhostButton shelfOnly" type="button" title="chapters">chapters</button>
+          <button id="bookReadHeader" class="bookGhostButton" type="button" title="read the book fullscreen">open book
+            ⤢</button>
+          <button id="bookExportPdf" class="bookGhostButton" type="button" title="save the book as a pdf">export pdf
+            ⤣</button>
+        </div>
+      </header>
+      <div class="bookBody">
+        <aside class="bookShelf" aria-label="Chapters">
+          <div class="bookShelfHead">
+            <span class="bookShelfTitle">chapters</span>
+            <button id="bookShelfCollapse" class="bookShelfCollapse" type="button" title="hide chapters"
+              aria-label="toggle the chapters panel">‹</button>
+          </div>
+          <div id="bookChapters" class="bookChapters" role="list"></div>
+          <button id="bookNewChapter" class="bookNewChapter" type="button">+ <span
+              class="bnLabel">new chapter</span></button>
+        </aside>
+        <div class="bookDesk">
+          <div class="bookToolbar" id="bookToolbar" role="toolbar" aria-label="Text formatting">
+            <button type="button" class="tbBtn" data-cmd="bold" title="bold"><b>B</b></button>
+            <button type="button" class="tbBtn" data-cmd="italic" title="italic"><i>I</i></button>
+            <button type="button" class="tbBtn" data-cmd="underline" title="underline"><u>U</u></button>
+            <span class="tbSep" aria-hidden="true"></span>
+            <button type="button" class="tbBtn" data-block="p" title="body text">¶</button>
+            <button type="button" class="tbBtn" data-block="h1" title="heading 1">H1</button>
+            <button type="button" class="tbBtn" data-block="h2" title="heading 2">H2</button>
+            <button type="button" class="tbBtn" data-block="h3" title="heading 3">H3</button>
+            <span class="tbSep" aria-hidden="true"></span>
+            <button type="button" class="tbBtn" data-cmd="justifyLeft" title="align left">
+              <svg viewBox="0 0 14 10" width="14" height="10" aria-hidden="true"><rect x="1" y="1" width="12" height="1.6" rx=".8"/><rect x="1" y="4.2" width="8" height="1.6" rx=".8"/><rect x="1" y="7.4" width="10" height="1.6" rx=".8"/></svg>
+            </button>
+            <button type="button" class="tbBtn" data-cmd="justifyCenter" title="align center">
+              <svg viewBox="0 0 14 10" width="14" height="10" aria-hidden="true"><rect x="1" y="1" width="12" height="1.6" rx=".8"/><rect x="3" y="4.2" width="8" height="1.6" rx=".8"/><rect x="2" y="7.4" width="10" height="1.6" rx=".8"/></svg>
+            </button>
+            <button type="button" class="tbBtn" data-cmd="justifyRight" title="align right">
+              <svg viewBox="0 0 14 10" width="14" height="10" aria-hidden="true"><rect x="1" y="1" width="12" height="1.6" rx=".8"/><rect x="5" y="4.2" width="8" height="1.6" rx=".8"/><rect x="3" y="7.4" width="10" height="1.6" rx=".8"/></svg>
+            </button>
+            <span class="tbSep" aria-hidden="true"></span>
+            <button type="button" class="tbBtn" data-cmd="sceneBreak" title="scene break">⁂</button>
+          </div>
+          <div class="bookPageWrap">
+            <div id="bookPage" class="bookPage">
+              <div class="bookPageKicker"><span id="bookChapterNumber">chapter one</span><span class="bookKickerSep"
+                  aria-hidden="true">·</span><span id="bookCategory" class="bookCategory isBlank" contenteditable="true"
+                  role="textbox" aria-label="Chapter category" spellcheck="false"
+                  data-placeholder="category…"></span></div>
+              <h2 id="bookChapterTitle" class="bookChapterTitle isBlank" contenteditable="true" role="textbox"
+                aria-label="Chapter title" spellcheck="true" data-placeholder="chapter title…"></h2>
+              <div id="bookEditor" class="bookEditor isBlank" contenteditable="true" role="textbox"
+                aria-label="Chapter text" spellcheck="true"
+                data-placeholder="write — the book keeps every word"></div>
+              <div id="bookChapterMeta" class="bookChapterMeta"></div>
+            </div>
+          </div>
+        </div>
+        <aside class="bookPreviewCol" aria-label="Book preview">
+          <div class="bookPreviewHead">
+            <span>preview</span>
+            <div class="bookReaderFont bookFontMini" role="group" aria-label="text size">
+              <button class="bookFontBtn" type="button" data-dir="-1" aria-label="smaller text" title="smaller text">A−</button>
+              <button class="bookFontBtn" type="button" data-dir="1" aria-label="bigger text" title="bigger text">A+</button>
+            </div>
+            <button id="bookRead" class="bookPreviewOpen" type="button" title="read the book fullscreen">open book ⤢</button>
+          </div>
+          <div id="bookPreviewPage" class="bookPreviewPage"></div>
+          <div class="bookPreviewNav">
+            <span id="bookPreviewCount"></span>
+          </div>
+        </aside>
+      </div>
+      <footer class="bookStatusBar">
+        <div id="bookStats" class="bookStats"></div>
+        <div class="bookChapterNav">
+          <button id="bookPrevChapter" type="button">‹ previous</button>
+          <span id="bookChapterPosition"></span>
+          <button id="bookNextChapter" type="button">next ›</button>
+        </div>
+      </footer>
+      <div id="bookFormatPop" class="bookFormatPop" aria-hidden="true">
+        <button type="button" class="tbBtn" data-cmd="bold" title="bold"><b>B</b></button>
+        <button type="button" class="tbBtn" data-cmd="italic" title="italic"><i>I</i></button>
+        <button type="button" class="tbBtn" data-cmd="underline" title="underline"><u>U</u></button>
+        <span class="tbSep" aria-hidden="true"></span>
+        <button type="button" class="tbBtn" data-block="h1" title="heading 1">H1</button>
+        <button type="button" class="tbBtn" data-block="h2" title="heading 2">H2</button>
+        <button type="button" class="tbBtn" data-block="h3" title="heading 3">H3</button>
+        <span class="tbSep" aria-hidden="true"></span>
+        <button type="button" class="tbBtn" data-cmd="justifyCenter" title="align center">
+          <svg viewBox="0 0 14 10" width="14" height="10" aria-hidden="true"><rect x="1" y="1" width="12" height="1.6" rx=".8"/><rect x="3" y="4.2" width="8" height="1.6" rx=".8"/><rect x="2" y="7.4" width="10" height="1.6" rx=".8"/></svg>
+        </button>
+        <button type="button" class="tbBtn" data-cmd="sceneBreak" title="scene break">⁂</button>
+      </div>
+      <div id="bookReader" class="bookReader" aria-hidden="true">
+        <button id="bookReaderClose" class="bookReaderClose" type="button" aria-label="close the book">× close the book</button>
+        <div class="bookReaderFont" role="group" aria-label="text size">
+          <button class="bookFontBtn" type="button" data-dir="-1" aria-label="smaller text" title="smaller text">A−</button>
+          <span id="bookFontLabel" class="bookFontLabel">100%</span>
+          <button class="bookFontBtn" type="button" data-dir="1" aria-label="bigger text" title="bigger text">A+</button>
+        </div>
+        <div class="bookReaderStage">
+          <button id="bookReaderPrev" class="bookReaderArrow" type="button" aria-label="previous page"
+            title="previous page">‹</button>
+          <div id="readerBook" class="readerBook" aria-label="the book, fullscreen"></div>
+          <button id="bookReaderNext" class="bookReaderArrow" type="button" aria-label="next page"
+            title="next page">›</button>
+        </div>
+        <div class="bookReaderHint">click a page or use the arrows to turn · escape to return</div>
+      </div>
+    </section>
+
+    <div id="focusKicker" class="focusKicker" aria-hidden="true">the book</div>
 
     <section class="focus" id="focus" aria-live="polite">
       <div id="focusTodoPreview" class="focusTodoPreview" aria-hidden="true"></div>
@@ -445,6 +565,11 @@
               — look for IPv4 Address).</div>
             <input id="syncServer" class="syncServerInput" type="text" autocomplete="off" spellcheck="false"
               placeholder="http://127.0.0.1:8765" aria-label="Sync server address">
+            <div class="settingTitle" style="margin-top:10px">sync token</div>
+            <div class="settingHint">Optional. If the server requires a key, paste it here — sent as a Bearer token.</div>
+            <input id="syncToken" class="syncServerInput" type="text" autocomplete="off" spellcheck="false"
+              placeholder="(leave empty if none)" aria-label="Sync server token">
+            <button id="syncNowBtn" class="syncNowBtn" type="button">sync now</button>
           </div>
         </section>
 
@@ -551,7 +676,7 @@
     </section>
     <div id="cycleHint">questions change quietly · move toward an edge</div>
   </main>
-  <script src="app.js?v=2.21.5"></script>
+  <script src="app.js?v=2.47.0"></script>
 </body>
 
 </html>
