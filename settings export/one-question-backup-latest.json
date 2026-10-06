@@ -1,7 +1,7 @@
 {
   "format": "one-question-zen-backup",
   "version": "2.21.3",
-  "exportedAt": "2026-10-06T02:56:22Z",
+  "exportedAt": "2026-10-06T10:06:29Z",
   "data": {
     "questions": [
       [
@@ -221,7 +221,7 @@
       "animation": true,
       "timerAnimation": true,
       "lowercase": false,
-      "schedulerListVisible": false,
+      "schedulerListVisible": true,
       "appearance": {
         "backgroundColor": "#10100f",
         "textColor": "#ebe8e0",
@@ -241,12 +241,21 @@
         "parallaxBackground": 18,
         "parallaxScale": 108,
         "textSize": 100,
-        "fontWeight": 400
+        "fontWeight": 400,
+        "lightMode": false,
+        "lightModeRestore": null
       },
-      "syncToken": "fdfbecb3b31a290f935f556e6c6f858e",
-      "syncServer": "http://103.47.225.99:8080/"
+      "syncToken": "",
+      "syncServer": ""
     },
     "history": [
+      {
+        "question": "What are you about to spend time on, and is it worth it?",
+        "category": "attention",
+        "answer": "Doing my skripsi",
+        "date": "2026-10-06T03:26:47.634Z",
+        "answeredAt": "2026-10-06T03:26:47.634Z"
+      },
       {
         "question": "What's been taking up more of your mental space than it deserves?",
         "category": "reflection",
@@ -270,93 +279,45 @@
       }
     ],
     "recent": [
-      18,
-      33,
-      27,
-      40,
-      23,
-      15,
-      34,
-      39,
       28,
-      1,
-      43,
-      14
+      6,
+      3,
+      36,
+      23,
+      31,
+      12,
+      33,
+      13,
+      14,
+      19,
+      32
     ],
     "todos": [],
     "note": "my secret note",
     "schedule": [
       {
-        "start": 270,
-        "end": 300,
-        "label": "subuh",
+        "start": 240,
+        "end": 361,
+        "label": "bangun subuh",
         "color": "#7d8c7c"
       },
       {
-        "start": 720,
-        "end": 780,
-        "label": "dzuhur/lunch",
-        "color": "#7d8c7c"
-      },
-      {
-        "start": 555,
-        "end": 720,
-        "label": "focus",
-        "color": "#7c829c"
-      },
-      {
-        "start": 780,
-        "end": 900,
-        "label": "focus",
-        "color": "#7c829c"
-      },
-      {
-        "start": 900,
-        "end": 960,
-        "label": "ashar",
-        "color": "#7d8c7c"
-      },
-      {
-        "start": 1080,
-        "end": 1110,
-        "label": "magrhib",
-        "color": "#7d8c7c"
-      },
-      {
-        "start": 1140,
-        "end": 1170,
-        "label": "isya",
-        "color": "#7d8c7c"
-      },
-      {
-        "start": 1200,
-        "end": 1320,
-        "label": "focus / gaming",
+        "start": 365,
+        "end": 480,
+        "label": "tidur",
         "color": "#8c7d8c"
       },
       {
-        "start": 300,
-        "end": 405,
-        "label": "book reading",
+        "start": 536,
+        "end": 1440,
+        "label": "bangun",
         "color": "#7c829c"
       },
       {
-        "start": 540,
-        "end": 555,
-        "label": "rehat",
-        "color": "#7c9c95"
-      },
-      {
-        "start": 405,
-        "end": 420,
-        "label": "rehat",
-        "color": "#9c7c86"
-      },
-      {
-        "start": 1320,
-        "end": 1350,
-        "label": "screen detox",
-        "color": "#7d8c7c"
+        "start": 4,
+        "end": 233,
+        "label": "tidur",
+        "color": "#9c8d7c"
       }
     ],
     "stickies": [
@@ -366,8 +327,8 @@
         "created": 1790086231973,
         "done": false,
         "cat": "book",
-        "x": 11,
-        "y": 30.8
+        "x": 12.2,
+        "y": 24.1
       },
       {
         "id": "de79007c-cde8-4cd5-bf02-3bf5748fc121",
@@ -375,8 +336,8 @@
         "created": 1790086198918,
         "done": false,
         "cat": "book",
-        "x": 22.6,
-        "y": 35.1
+        "x": 30.8,
+        "y": 29
       },
       {
         "id": "ff46289a-c71d-407d-ba27-c32abe602215",
@@ -384,8 +345,8 @@
         "created": 1790086092926,
         "done": false,
         "cat": "film",
-        "x": 35.9,
-        "y": 30.1,
+        "x": 45.2,
+        "y": 24.8,
         "z": "13"
       },
       {
@@ -394,8 +355,8 @@
         "created": 1790004800440,
         "done": false,
         "cat": "book",
-        "x": 46.4,
-        "y": 34.7,
+        "x": 60.7,
+        "y": 28.5,
         "z": "33"
       },
       {
@@ -404,8 +365,8 @@
         "created": 1790004780554,
         "done": false,
         "cat": "book",
-        "x": 56.2,
-        "y": 31.4,
+        "x": 75.1,
+        "y": 25.2,
         "z": "39"
       },
       {
@@ -414,9 +375,9 @@
         "created": 1790004768030,
         "done": false,
         "cat": "book",
-        "x": 66.4,
-        "y": 35.1,
-        "z": "45"
+        "x": 83.9,
+        "y": 29,
+        "z": "16"
       },
       {
         "id": "84948df2-974b-451d-8318-32d5bba9980c",
@@ -424,9 +385,9 @@
         "created": 1790004750032,
         "done": false,
         "cat": "book",
-        "x": 16.4,
-        "y": 44,
-        "z": "13"
+        "x": 17.5,
+        "y": 40.4,
+        "z": "15"
       },
       {
         "id": "c10f0ff7-3ff0-49a8-ac80-446fe23a32ab",
@@ -434,8 +395,8 @@
         "created": 1789816515228,
         "done": false,
         "cat": "friend",
-        "x": 29,
-        "y": 48.1,
+        "x": 34.9,
+        "y": 46.4,
         "z": "12"
       },
       {
@@ -444,9 +405,9 @@
         "created": 1789816364531,
         "done": false,
         "cat": "friend",
-        "x": 37.9,
-        "y": 42.8,
-        "z": "12"
+        "x": 46.4,
+        "y": 42.4,
+        "z": "17"
       },
       {
         "id": "3b8d4056-03fb-4517-8ac9-072dd635b98c",
@@ -454,8 +415,8 @@
         "created": 1789816362131,
         "done": false,
         "cat": "friend",
-        "x": 49.2,
-        "y": 46,
+        "x": 62.2,
+        "y": 45,
         "z": "15"
       },
       {
@@ -464,8 +425,8 @@
         "created": 1789816337074,
         "done": false,
         "cat": "skill",
-        "x": 58.2,
-        "y": 44,
+        "x": 77.5,
+        "y": 39.9,
         "z": "20"
       },
       {
@@ -474,8 +435,8 @@
         "created": 1789816315707,
         "done": false,
         "cat": "skill",
-        "x": 67.2,
-        "y": 47.5,
+        "x": 90,
+        "y": 47,
         "z": "18"
       },
       {
@@ -484,8 +445,8 @@
         "created": 1789815892883,
         "done": false,
         "cat": "friend",
-        "x": 13.3,
-        "y": 56.9,
+        "x": 16.1,
+        "y": 58.4,
         "z": "16"
       },
       {
@@ -494,8 +455,8 @@
         "created": 1789815885007,
         "done": false,
         "cat": "friend",
-        "x": 22.1,
-        "y": 58.9,
+        "x": 30.1,
+        "y": 65.1,
         "z": "19"
       },
       {
@@ -504,8 +465,8 @@
         "created": 1789814800974,
         "done": false,
         "cat": "friend",
-        "x": 32.3,
-        "y": 56.3,
+        "x": 42.1,
+        "y": 59.6,
         "z": "16"
       },
       {
@@ -514,8 +475,8 @@
         "created": 1789814786389,
         "done": false,
         "cat": "friend",
-        "x": 42.3,
-        "y": 59.6,
+        "x": 56.1,
+        "y": 62.1,
         "z": "19"
       },
       {
@@ -524,8 +485,8 @@
         "created": 1789804934229,
         "done": false,
         "cat": "assignment",
-        "x": 53.1,
-        "y": 56.2,
+        "x": 69.7,
+        "y": 59.6,
         "z": "28"
       },
       {
@@ -534,8 +495,8 @@
         "created": 1789804390454,
         "done": false,
         "cat": "skill",
-        "x": 63.8,
-        "y": 60.5,
+        "x": 83.9,
+        "y": 62.1,
         "z": "17"
       }
     ],
@@ -546,13 +507,56 @@
           "id": "ch-recovered-mup3wavg",
           "title": "starting point(not really)",
           "category": "everyday journal",
-          "html": "<p>I know that everyday feels wierd, kalau coba buat masuk ke mode fokus kadang bikin otak pusing ditambah yang kerasa itu perasaan nyambung ke otak, feels like they're battle-ing each other in some ways. and theres times when it feels like their pushing you away from doing things.</p><p>You also sometimes feels that you wanted to do things that you felt that you don't want to do it but you feel like you need it, its sometimes wierd that minds works like that. its kinda like your brain forces you to do something that you don't but you kept on doing it.</p><p>Like, for example right now aku malah ngomong kaya gini tiba tiba pengen pake bahasa inggris</p>",
+          "html": "<p>I know that everyday feels wierd, kalau coba buat masuk ke mode fokus kadang bikin otak pusing ditambah yang kerasa itu perasaan nyambung ke otak, feels like they're battle-ing each other in some ways. and theres times when it feels like their pushing you away from doing things.</p><p>You also sometimes feels that you wanted to do things that you felt that you don't want to do it but you feel like you need it, its sometimes wierd that minds works like that. its kinda like your brain forces you to do something that you don't but you kept on doing it.</p><p>Like, for example right now aku malah ngomong kaya gini tiba tiba pengen pake bahasa inggris maybe its wierd to find it right but kalau udah terbiasa sama ga terlalu dipeduliin sih artinya jalanin aja. dulu aku pernah merasakan kalau hal tersebut ada istilah urutannya yang bagus bekerja di kepala, yaitu namanya&nbsp;</p>",
           "createdAt": 1790833280524,
-          "updatedAt": 1790833280524
+          "updatedAt": 1791171123296
+        },
+        {
+          "id": "cmuur3gmmtcxs",
+          "title": "doing what i must",
+          "category": "progressing",
+          "html": "Rasanya sebenernya anehnya kalau kita ngerjain sesuatu tapi hampir 75% nya dikerjain sama AI, sebenernya aman aman aja ya kalau kita pakenya itu sesuai kebutuhan, tapi terkadang ada masanya dimana kita merasakan bawah kita dibandingkan dengan AI. tapi dari rasa tersebut muncul suatu argumen dimana jika kita merasakan hal tersebut artinya kita lebih mulai peka terhadap apa yang kita kurang dan apa yang sebenernya kita pelajari.&nbsp;",
+          "createdAt": 1791174576622,
+          "updatedAt": 1791174718159
+        },
+        {
+          "id": "cmuw2egzm5an1",
+          "title": "power napping",
+          "category": "cheat life",
+          "html": "I do think that doing power nap is a good thing since sometimes you need it.&nbsp;",
+          "createdAt": 1791254032258,
+          "updatedAt": 1791254154372
+        },
+        {
+          "id": "cmuw7xntnaj4q",
+          "title": "1. Cek Referensi GDLC",
+          "category": "thesis",
+          "html": "Sesuai dari buku \"Game Development Life Cycle Guidelines\" kenapa buku itu dibuat adalah :<p><p>1. karena video game itu bisa menjadi sebuah kemajuan untuk game industri dan sumber profitable/pendapatan industri dikarenakan semua video game semuanya ada di semua perangkat seperti smartphone, komputer, console, dan lain lain. oleh karena itu ada sebuah perusahaan yang&nbsp; mendistribusi perangkat pengembangan perangkat lunak (SDK) mereka secara terbuka kepada publik untuk memproduksi komponen atau produk (OEM) yang nantinya digunakan atau dijual kembali.&nbsp;</p><p>nanti cari [1] dari buku ini tuh apa</p><p>2. Gim gak bisa dibikin cuma pakai logika pemrograman. Software biasa (misal aplikasi kasir): fungsinya jalan = selesai. Gim yang fungsinya jalan tapi gak enak dimainkan = gagal. Jadi engineering doang gak cukup. Gim itu gak murni hasil rekayasa software, juga gak murni karya seni — tapi lebih mirip hasil keterampilan (kayak kerajinan tangan), yang dibikin dari gabungan banyak bidang yang jalin-menjalin: seni, musik, programming, acting, sama pengaturannya semua.<br>nanti cari [3][5]</p><p>Makanya pengembangan game itu perlu alur pembuatan untuk membantu referensi.</p><p><br></p><p>Dari referensi GDLC dijelaskan sistem SDLC, yaitu :<br>1. <b>Analisis </b>= mengumpulkan dan menggambarkan kebutuhan pengguna.</p><p>2. <b>Design </b>= dari analisis kebutuhan di fase ini ditranslasikan dengan model dan representasi perangkat lunak yang ada secara mendetail&nbsp;</p><p>3. <b>Code generation/Implementation</b> = model representasinya di translasi lagi ke source code seperti C++,Java dan lain lain agar menjadi aplikasi yang bisa dijalankan.</p><p>4.&nbsp; <b>Testing</b>&nbsp;= pengujian dilakukan untuk memastikan seluruh elemen berjalan sesuai fungsinya dan memenuhi spesifikasi yang telah ditentukan.</p><p><br></p><p><br></p><p><br></p></p>",
+          "createdAt": 1791263325659,
+          "updatedAt": 1791266277324
         }
       ],
-      "activeId": "ch-recovered-mup3wavg"
+      "activeId": "cmuw7xntnaj4q"
     },
-    "quotes": null
+    "quotes": [
+      {
+        "id": "793d7d20-9493-43f6-9f7f-64f71142260e",
+        "text": "If I have to fall, let me be. Because the person i become will catch me",
+        "author": "taigaa00",
+        "created": 1790913493112
+      },
+      {
+        "id": "fb3c9c70-0f9d-4b6c-8bcf-bdf504d7ea3e",
+        "text": "biarkan ketulusan menunjukan arah kita",
+        "author": "zani",
+        "created": 1790913846757
+      },
+      {
+        "id": "a03ff7d2-c092-48ad-afb1-28cfd4c802cf",
+        "text": "be yourself and never surender",
+        "author": "quokka",
+        "created": 1790914068416
+      }
+    ]
   }
 }
