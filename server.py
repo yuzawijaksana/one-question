@@ -12,7 +12,11 @@ STATE_FILE = ROOT / os.environ.get("ONE_QUESTION_STATE_FILE", "one-question-stat
 # Optional shared secret: when set, requests must send "Authorization: Bearer <key>"
 API_KEY = os.environ.get("ONE_QUESTION_API_KEY", "")
 EXPORT_DIR = ROOT / "settings export"
-EXPORT_FILE = EXPORT_DIR / "one-question-backup-latest.json"
+# each server instance exports to its own file (env override) so a second
+# instance sharing this directory never overwrites the other's backup
+EXPORT_FILE = ROOT / os.environ.get(
+    "ONE_QUESTION_EXPORT_FILE", "settings export/one-question-backup-latest.json"
+)
 STATE_KEYS = {
     "oneQuestionQuestionBank",
     "oneQuestionFocusQuestions",
@@ -56,6 +60,26 @@ def load_state():
         return {"version": 1, "keys": {}}
 
 
+def schedule_is_downgrade(new, old):
+    """Guard: a blank or junk schedule never wipes a real, richer one.
+    Junk signature seen in the wild: an empty list, or a handful of generic
+    blocks (bangun/tidur/keyboard-mash) clobbering a 8+ block routine."""
+    GENERIC_LABELS = {"", "tidur", "bangun", "bangun subuh", "hdheisn"}
+    if not isinstance(new, list) or not new:
+        return True
+    if not isinstance(old, list) or len(old) < 8:
+        return False  # nothing meaningful to protect yet
+    labels = []
+    for x in new:
+        if not isinstance(x, dict):
+            continue
+        labels.append(str(x.get("label", "")).strip().lower())
+    distinct = {l for l in labels if l and l not in GENERIC_LABELS}
+    if len(new) <= 5 and len(distinct) <= 1:
+        return True  # tiny generic schedule clobbering a rich one
+    return False
+
+
 def book_is_empty(value):
     """A book with no title and no chapter content is a fresh placeholder —
     a client-side placeholder must never overwrite real writing."""
@@ -89,6 +113,9 @@ def export_snapshot():
     """Write the current state as an importable backup into 'settings export'."""
     try:
         keys = STATE.get("keys", {})
+        if not keys:
+            # nothing synced yet — never write an empty backup over a real one
+            return
         data = {}
         for name, key in EXPORT_MAP.items():
             entry = keys.get(key)
@@ -176,6 +203,16 @@ class Handler(SimpleHTTPRequestHandler):
                     # guard: a blank placeholder book never overwrites stored writing
                     if key == "oneQuestionBook" and book_is_empty(value):
                         continue
+                    # guard: a blank/junk schedule never overwrites a real routine
+                    if key == "oneQuestionSchedule":
+                        cur = STATE["keys"].get(key)
+                        current_value = cur.get("value") if isinstance(cur, dict) else None
+                        if schedule_is_downgrade(value, current_value):
+                            print(f"[guard] skipped schedule downgrade "
+                                  f"({len(value) if isinstance(value, list) else 'non-list'} blocks "
+                                  f"vs {len(current_value) if isinstance(current_value, list) else '?'} stored)",
+                                  flush=True)
+                            continue
                     updated_at = int(entry.get("updatedAt", 0))
                     if updated_at <= 0:
                         updated_at = int(time.time() * 1000)
