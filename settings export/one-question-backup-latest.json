@@ -1,7 +1,7 @@
 {
   "format": "one-question-zen-backup",
   "version": "2.21.3",
-  "exportedAt": "2026-10-17T02:26:23Z",
+  "exportedAt": "2026-10-17T04:25:04Z",
   "data": {
     "questions": [
       [
@@ -279,21 +279,21 @@
       }
     ],
     "recent": [
-      13,
-      18,
-      0,
-      24,
-      1,
-      28,
-      4,
+      2,
+      36,
+      21,
       3,
+      34,
+      39,
+      22,
+      33,
+      13,
+      24,
       30,
-      27,
-      29,
-      21
+      31
     ],
     "todos": [],
-    "note": "my secret note",
+    "note": "Bimbingan - 7 Sept 2026 s/d 9 Jan 2027\n\nTA\n1. Keunikan Gamenya (Judul)\n  + Data Pendukung(ini digunakan untuk memvalidasi argumen terhadap keunikan sebuah game\n\n",
     "schedule": [
       {
         "start": 240,
