@@ -1,7 +1,7 @@
 {
   "format": "one-question-zen-backup",
   "version": "2.21.3",
-  "exportedAt": "2026-10-19T09:20:56Z",
+  "exportedAt": "2026-10-19T10:09:04Z",
   "data": {
     "questions": [
       [
@@ -279,7 +279,6 @@
       }
     ],
     "recent": [
-      30,
       26,
       36,
       20,
@@ -290,7 +289,8 @@
       5,
       11,
       10,
-      40
+      40,
+      13
     ],
     "todos": [],
     "note": "Bimbingan - 7 Sept 2026 s/d 9 Jan 2027\n\nTA\n1. Keunikan Gamenya (Judul)\n  + Data Pendukung(ini digunakan untuk memvalidasi argumen terhadap keunikan sebuah game\n\n",
