@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>One Question</title>
-  <link rel="stylesheet" href="style.css?v=2.52.0">
+  <link rel="stylesheet" href="style.css?v=2.54.0">
 </head>
 
 <body>
@@ -41,7 +41,8 @@
           title="switch mode"><span class="modeIcon modeQuestion" aria-hidden="true">?</span><span
             class="modeIcon modeFocus" aria-hidden="true">#</span><span class="modeIcon modeScheduler"
               aria-hidden="true">%</span><span class="modeIcon modeSticky"
-                aria-hidden="true">@</span><span class="modeIcon modeQuotes" aria-hidden="true">❝</span></button>
+                aria-hidden="true">@</span><span class="modeIcon modeQuotes" aria-hidden="true">❝</span><span
+            class="modeIcon modeDeadlines" aria-hidden="true">▦</span></button>
     </div>
 
     <section id="sticky" class="stickyMode" aria-hidden="true">
@@ -87,6 +88,44 @@
       <div class="quotesHint"><span class="hintPointer">scroll or ↑ ↓ to read · ← → switch
           modes</span><span class="hintTouch">swipe up or down to read · swipe left or right to
           switch modes</span></div>
+    </section>
+
+    <section id="deadlines" class="deadlinesMode" aria-hidden="true">
+      <div class="deadlineTop">
+        <span class="deadlineKicker">deadline wall</span>
+        <span id="deadlineNext" class="deadlineNext" aria-live="polite"></span>
+        <span class="deadlineTools" role="toolbar" aria-label="Deadline wall tools">
+          <button id="deadlineToday" type="button" title="jump to today">today</button>
+          <button id="deadlineFilter" type="button" title="show / hide finished deadlines">open</button>
+          <button id="deadlineAdd" type="button" title="add a deadline">+ add</button>
+        </span>
+      </div>
+      <div class="deadlineLayout">
+        <aside id="deadlineOutline" class="deadlineOutline" aria-label="Deadline tree"></aside>
+        <div id="deadlineWall" class="deadlineWall" aria-label="Deadline calendar"></div>
+      </div>
+      <div id="deadlineCard" class="deadlineCard" aria-hidden="true"></div>
+      <div id="deadlineEditor" class="deadlineEditor" aria-hidden="true">
+        <div class="deadlineEditorPanel">
+          <div class="deadlineEditorTitle" id="deadlineEditorTitle">deadline</div>
+          <label class="deadlineField"><span>title</span>
+            <input id="deadlineTitleInput" type="text" maxlength="80" autocomplete="off" placeholder="what is due?">
+          </label>
+          <label class="deadlineField"><span>date</span>
+            <input id="deadlineDateInput" type="date">
+          </label>
+          <label class="deadlineField"><span>time <em>(optional)</em></span>
+            <input id="deadlineTimeInput" type="time">
+          </label>
+          <div class="deadlineEditorActions">
+            <button id="deadlineEditorDelete" type="button" class="danger">delete</button>
+            <button id="deadlineEditorCancel" type="button">cancel</button>
+            <button id="deadlineEditorSave" type="button">save</button>
+          </div>
+        </div>
+      </div>
+      <div class="deadlineHint"><span class="hintPointer">tap a day or a chip to add or open · ← → switch
+          modes</span><span class="hintTouch">tap a day or a chip · swipe left or right to switch modes</span></div>
     </section>
 
     <button id="stickyPin" class="stickyPin" type="button" title="remember wall" aria-label="Open remember wall"></button>
@@ -363,6 +402,18 @@
           </svg>
         </span>
       </button>
+    </div>
+
+    <div id="deadlineReminder" class="deadlineReminder" aria-live="polite" aria-hidden="true">
+      <div class="deadlineReminderBody">
+        <span class="deadlineReminderLabel">deadline</span>
+        <span id="deadlineReminderTitle" class="deadlineReminderTitle"></span>
+        <span id="deadlineReminderWhen" class="deadlineReminderWhen"></span>
+      </div>
+      <div class="deadlineReminderActions">
+        <button id="deadlineReminderOpen" type="button">open</button>
+        <button id="deadlineReminderDismiss" type="button">dismiss</button>
+      </div>
     </div>
 
     <button id="themeToggle" class="settingsFab themeToggleFab" aria-label="Toggle light mode" title="light / dark mode">☀</button>
@@ -672,6 +723,26 @@
           </div>
         </section>
 
+        <section class="settingSection" data-settings-category="reminders">
+          <div class="settingTitle">deadline reminders</div>
+          <div class="settingHint">A reminder card and a soft chime appear while the app is open when a deadline is
+            close.</div>
+          <div class="settingToggleRow">
+            <div>
+              <div class="settingTitle">remind me</div>
+              <div class="settingHint">Turn the deadline reminder card on or off.</div>
+            </div>
+            <label class="switch"><input id="deadlineRemind" type="checkbox" checked><span></span></label>
+          </div>
+          <div class="appearanceControl">
+            <div class="appearanceControlHead"><span>days before the deadline</span><output
+                id="deadlineRemindDaysValue">2</output></div>
+            <input id="deadlineRemindDays" type="range" min="0" max="14" step="1" value="2"
+              aria-label="Deadline reminder days before">
+            <div class="settingHint">How many days ahead of a deadline the reminder starts.</div>
+          </div>
+        </section>
+
         <section class="settingSection settingToggleRow">
           <div>
             <div class="settingTitle">soft animation</div>
@@ -720,7 +791,9 @@
     </section>
     <div id="cycleHint">questions change quietly · move toward an edge</div>
   </main>
-  <script src="app.js?v=2.52.0"></script>
+  <nav id="modeRail" aria-label="screens"></nav>
+  <nav id="modeDock" aria-label="screens"></nav>
+  <script src="app.js?v=2.54.0"></script>
 </body>
 
 </html>

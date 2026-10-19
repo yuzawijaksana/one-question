@@ -30,6 +30,7 @@ STATE_KEYS = {
     "oneQuestionHydration",
     "oneQuestionBook",
     "oneQuestionQuotes",
+    "oneQuestionDeadlines",
 }
 
 # maps backup field names to state keys for the settings export snapshot
@@ -45,6 +46,7 @@ EXPORT_MAP = {
     "stickies": "oneQuestionStickies",
     "book": "oneQuestionBook",
     "quotes": "oneQuestionQuotes",
+    "deadlines": "oneQuestionDeadlines",
 }
 
 

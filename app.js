@@ -58,7 +58,7 @@ const extensionStorage=(typeof browser!=="undefined"&&browser.storage&&browser.s
 const STORAGE_KEYS=[
   "oneQuestionQuestionBank","oneQuestionFocusQuestions","oneQuestionSettings",
   "oneQuestionHistory","oneQuestionRecent","oneQuestionTodos","oneQuestionNote",
-  "oneQuestionBook","oneQuestionQuotes"
+  "oneQuestionBook","oneQuestionQuotes","oneQuestionDeadlines"
 ];
 
 function cacheSet(key,value){
@@ -167,7 +167,7 @@ function setDataStatus(text){
 }
 
 // ---- automatic sync: every save pushes to the One Question server ----
-const SYNC_KEYS=[...new Set([...STORAGE_KEYS,"oneQuestionSchedule","oneQuestionStickies","oneQuestionTimer","oneQuestionHydration"])];
+const SYNC_KEYS=[...new Set([...STORAGE_KEYS,"oneQuestionSchedule","oneQuestionStickies","oneQuestionTimer","oneQuestionHydration","oneQuestionDeadlines"])];
 let syncPushTimer=null,syncBusy=false;
 function syncBase(){
   if(settings&&settings.syncServer)return String(settings.syncServer).replace(/\/+$/,"");
@@ -573,7 +573,7 @@ const DEFAULT_APPEARANCE={
   textSize:100,
   fontWeight:400
 };
-const DEFAULT_SETTINGS={categories:["all"],cycleSeconds:6.5,modeSwitchExpand:"always",modeOrder:["question","focus","scheduler","sticky","quotes"],hiddenModes:[],startupMode:"question",startupResume:false,stickyCategories:["general"],stickyPush:110,stickyTilt:1.8,stickyScale:12,stickySpread:100,tidyAnchor:"center-center",hydrationMinutes:DEFAULT_HYDRATION_MINUTES,hydrationSize:DEFAULT_HYDRATION_SIZE,hydrationWave:true,hydrationHoverEnabled:false,hydrationHoverScale:DEFAULT_HYDRATION_HOVER_SCALE,screenScale:DEFAULT_SCREEN_SCALE,animation:true,timerAnimation:true,lowercase:false,schedulerListVisible:true,appearance:{...DEFAULT_APPEARANCE}};
+const DEFAULT_SETTINGS={categories:["all"],cycleSeconds:6.5,modeSwitchExpand:"always",modeOrder:["question","focus","scheduler","sticky","quotes","deadlines"],hiddenModes:[],startupMode:"question",startupResume:false,stickyCategories:["general"],stickyPush:110,stickyTilt:1.8,stickyScale:12,stickySpread:100,tidyAnchor:"center-center",hydrationMinutes:DEFAULT_HYDRATION_MINUTES,hydrationSize:DEFAULT_HYDRATION_SIZE,hydrationWave:true,hydrationHoverEnabled:false,hydrationHoverScale:DEFAULT_HYDRATION_HOVER_SCALE,screenScale:DEFAULT_SCREEN_SCALE,animation:true,timerAnimation:true,lowercase:false,schedulerListVisible:true,deadlineRemind:true,deadlineRemindDays:2,appearance:{...DEFAULT_APPEARANCE}};
 let settings=loadSettings();
 
 function loadSettings(){
@@ -583,8 +583,8 @@ function loadSettings(){
     return {...DEFAULT_SETTINGS,...saved,categories,appearance:{...DEFAULT_APPEARANCE,...(saved.appearance||{})}};
   }catch{return {...DEFAULT_SETTINGS,appearance:{...DEFAULT_APPEARANCE}}}
 }
-const MODE_ORDER_CLASSES={question:"modeQuestion",focus:"modeFocus",scheduler:"modeScheduler",sticky:"modeSticky",quotes:"modeQuotes"};
-const MODE_ORDER_LABELS={question:"question",focus:"book",scheduler:"scheduler",sticky:"remember wall",quotes:"quiet feed"};
+const MODE_ORDER_CLASSES={question:"modeQuestion",focus:"modeFocus",scheduler:"modeScheduler",sticky:"modeSticky",quotes:"modeQuotes",deadlines:"modeDeadlines"};
+const MODE_ORDER_LABELS={question:"question",focus:"book",scheduler:"scheduler",sticky:"remember wall",quotes:"quiet feed",deadlines:"deadline wall"};
 function normalizedModeOrder(){
   const valid=Object.keys(MODE_ORDER_CLASSES);
   const saved=Array.isArray(settings.modeOrder)?settings.modeOrder.filter(k=>valid.includes(k)):[];
@@ -619,6 +619,7 @@ function applyStartupMode(){
   else if(mode==="scheduler")enterSchedulerMode();
   else if(mode==="sticky")enterStickyMode();
   else if(mode==="quotes")enterQuotesMode();
+  else if(mode==="deadlines")enterDeadlinesMode();
 }
 function toggleModeHidden(key){
   const all=normalizedModeOrder();
@@ -635,14 +636,239 @@ function toggleModeHidden(key){
 }
 function applyModeOrder(){
   const toggle=$("modeToggle");
-  if(!toggle)return;
-  const hidden=hiddenModeSet();
-  normalizedModeOrder().forEach(key=>{
-    const icon=toggle.querySelector(`.modeIcon.${MODE_ORDER_CLASSES[key]}`);
-    if(!icon)return;
-    icon.classList.toggle("isHidden",hidden.has(key));
-    toggle.appendChild(icon);
+  if(toggle){
+    const hidden=hiddenModeSet();
+    normalizedModeOrder().forEach(key=>{
+      const icon=toggle.querySelector(`.modeIcon.${MODE_ORDER_CLASSES[key]}`);
+      if(!icon)return;
+      icon.classList.toggle("isHidden",hidden.has(key));
+      toggle.appendChild(icon);
+    });
+  }
+  renderModeRail();
+}
+// ---- the left rail (desktop) and bottom dock (phone) --------------------
+// the pill only fits a few glyphs; six labeled screens deserve a directory.
+// the rail lives outside main#app so the layout shift never pushes it.
+const MODE_ORDER_GLYPHS={question:"?",focus:"#",scheduler:"%",sticky:"@",quotes:"❝",deadlines:"▦"};
+function enterModeByKey(key){
+  if(key==="question")enterQuestionMode();
+  else if(key==="focus")enterFocusMode();
+  else if(key==="scheduler")enterSchedulerMode();
+  else if(key==="sticky")enterStickyMode();
+  else if(key==="quotes")enterQuotesMode();
+  else if(key==="deadlines")enterDeadlinesMode();
+}
+function railSetPeek(on){
+  const rail=$("modeRail");
+  if(!rail)return;
+  rail.classList.toggle("peek",on);
+  document.body.classList.toggle("railPeek",on);
+}
+function railBodyCanPeek(){
+  const rail=$("modeRail");
+  return !!rail&&rail.classList.contains("min")&&!rail.classList.contains("noHover");
+}
+function renderModeRail(){
+  const rail=$("modeRail"),dock=$("modeDock");
+  const modes=activeModes();
+  const buildEntry=(key,compact)=>{
+    const btn=document.createElement("button");
+    btn.type="button";
+    btn.className=compact?"dockEntry":"railEntry";
+    btn.dataset.mode=key;
+    btn.setAttribute("aria-label",MODE_ORDER_LABELS[key]||key);
+    const glyph=document.createElement("span");
+    glyph.className=compact?"dockGlyph":"railGlyph";
+    glyph.textContent=MODE_ORDER_GLYPHS[key]||"·";
+    btn.append(glyph);
+    if(!compact){
+      const name=document.createElement("span");
+      name.className="railName";name.textContent=MODE_ORDER_LABELS[key]||key;
+      const status=document.createElement("span");
+      status.className="railStatus";
+      btn.append(name,status);
+    }
+    btn.addEventListener("click",()=>enterModeByKey(key));
+    return btn;
+  };
+  if(rail){
+    rail.textContent="";
+    // the header: the one-question mark leads on the left. in a folded
+    // rail the logo stands in for the toggle — hover or tap it to unfold
+    const head=document.createElement("div");
+    head.className="railHead";
+    const logo=document.createElement("div");
+    logo.className="railLogo";
+    const mark=document.createElement("span");
+    mark.className="railLogoMark";mark.textContent="?";
+    const word=document.createElement("span");
+    word.className="railLogoText";word.textContent="one question";
+    logo.append(mark,word);
+    logo.addEventListener("mouseenter",()=>{if(rail.classList.contains("min"))railSetPeek(true)});
+    logo.addEventListener("click",()=>{if(rail.classList.contains("min"))railSetPeek(true)});
+    // a compact icon twin of the toggle lives fixed at the header's right —
+    // same cycle, for muscle memory; the labeled row below spells it out
+    const iconBtn=document.createElement("button");
+    iconBtn.type="button";iconBtn.className="railModeIconBtn";
+    iconBtn.onclick=cycleRailMode;
+    head.append(logo,iconBtn);
+    rail.append(head);
+    // the toggle row says which mode it holds, right under the header
+    const modeBtn=document.createElement("button");
+    modeBtn.type="button";modeBtn.className="railModeBtn";
+    const icon=document.createElement("span");
+    icon.className="railModeIcon";
+    const label=document.createElement("span");
+    label.className="railModeLabel";
+    const hint=document.createElement("span");
+    hint.className="railModeHint";
+    modeBtn.append(icon,label,hint);
+    modeBtn.onclick=cycleRailMode;
+    rail.append(modeBtn);
+    modes.forEach(key=>rail.append(buildEntry(key,false)));
+    // the look controls dock at the rail's bottom: light mode above settings
+    const themeBtn=document.createElement("button");
+    themeBtn.type="button";
+    themeBtn.className="railEntry railTheme";
+    themeBtn.dataset.mode="theme";
+    themeBtn.setAttribute("aria-label","light mode");
+    const themeGlyph=document.createElement("span");
+    themeGlyph.className="railGlyph";themeGlyph.textContent=settings.appearance.lightMode?"☾":"☀";
+    const themeName=document.createElement("span");
+    themeName.className="railName";themeName.textContent="light mode";
+    const themeStatus=document.createElement("span");
+    themeStatus.className="railStatus";
+    themeBtn.append(themeGlyph,themeName,themeStatus);
+    themeBtn.onclick=()=>setLightMode(!settings.appearance.lightMode);
+    rail.append(themeBtn);
+    // settings follows; the corner fabs retire on desktop
+    const settingsBtn=document.createElement("button");
+    settingsBtn.type="button";
+    settingsBtn.className="railEntry railSettings";
+    settingsBtn.dataset.mode="settings";
+    settingsBtn.setAttribute("aria-label","settings");
+    const gear=document.createElement("span");
+    gear.className="railGlyph";gear.textContent="⚙";
+    const name=document.createElement("span");
+    name.className="railName";name.textContent="settings";
+    const status=document.createElement("span");
+    status.className="railStatus";
+    settingsBtn.append(gear,name,status);
+    settingsBtn.onclick=()=>{ $("settingsPanel").classList.contains("open")?closeSettings():openSettings(); };
+    rail.append(settingsBtn);
+    if(!rail.dataset.bound){
+      rail.dataset.bound="1";
+      // one peek state drives everything: the rail's .peek class shows the
+      // names and the toggle, body.railPeek widens --railW so the content
+      // flexes with it. compact opts out of the rail-body hover — only the
+      // logo can unfold it there.
+      rail.addEventListener("mouseenter",()=>{if(railBodyCanPeek())railSetPeek(true)});
+      rail.addEventListener("mouseleave",()=>railSetPeek(false));
+      rail.addEventListener("focusin",()=>{if(railBodyCanPeek())railSetPeek(true)});
+      rail.addEventListener("focusout",e=>{if(!rail.contains(e.relatedTarget))railSetPeek(false)});
+    }
+    applyRailMode();
+    markActiveModeRail();
+  }
+  if(dock){
+    dock.textContent="";
+    modes.forEach(key=>dock.append(buildEntry(key,true)));
+    markActiveModeRail();
+  }
+}
+// three ways to hold the rail: pinned open, folded with hover-expand, or
+// compact (icons only, no expansion). the toggle cycles through them.
+const RAIL_MODES=["pinned","hover","compact"];
+function railMode(){
+  try{
+    const saved=localStorage.getItem("oneQuestionRailMode");
+    if(RAIL_MODES.includes(saved))return saved;
+    // the old two-state flag folds into the new cycle
+    return localStorage.getItem("oneQuestionRailMin")==="1"?"hover":"pinned";
+  }catch{return "pinned"}
+}
+const RAIL_MODE_ICONS={
+  pinned:'<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2.5" width="12" height="11" rx="2.5"/><line x1="6.5" y1="2.5" x2="6.5" y2="13.5"/></svg>',
+  hover:'<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2.5" width="12" height="11" rx="2.5"/><line x1="6.5" y1="2.5" x2="6.5" y2="13.5"/><path d="M9.2 8h3M11.2 6.2 13 8l-1.8 1.8"/></svg>',
+  compact:'<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="4.2" height="11" rx="1.6"/><path d="M10.6 2.5h1.6M12.9 5.6h-.2M10.6 8h1.6M12.9 10.6h-.2M10.6 13.5h1.6"/></svg>'
+};
+const RAIL_MODE_HINTS={
+  pinned:"always open",
+  hover:"unfolds on hover",
+  compact:"icons only"
+};
+function applyRailMode(){
+  const mode=railMode();
+  const rail=$("modeRail");
+  if(rail){
+    rail.classList.toggle("min",mode!=="pinned");
+    rail.classList.toggle("noHover",mode==="compact");
+  }
+  document.body.classList.toggle("railMin",mode!=="pinned");
+  if(mode==="pinned"){
+    document.body.classList.remove("railPeek");
+    if(rail)rail.classList.remove("peek");
+  }
+  const btn=rail&&rail.querySelector(".railModeBtn");
+  if(btn){
+    btn.querySelector(".railModeIcon").innerHTML=RAIL_MODE_ICONS[mode];
+    btn.querySelector(".railModeLabel").textContent=mode;
+    btn.querySelector(".railModeHint").textContent=RAIL_MODE_HINTS[mode];
+    const title=`${mode} — ${RAIL_MODE_HINTS[mode]}`;
+    btn.title=title;
+    btn.setAttribute("aria-label",`rail mode: ${title}`);
+  }
+  const iconBtn=rail&&rail.querySelector(".railModeIconBtn");
+  if(iconBtn){
+    iconBtn.innerHTML=RAIL_MODE_ICONS[mode];
+    iconBtn.title=`rail mode: ${mode} — ${RAIL_MODE_HINTS[mode]}`;
+    iconBtn.setAttribute("aria-label",iconBtn.title);
+  }
+}
+function cycleRailMode(){
+  try{localStorage.setItem("oneQuestionRailMode",RAIL_MODES[(RAIL_MODES.indexOf(railMode())+1)%RAIL_MODES.length])}catch{}
+  applyRailMode();
+}
+function markActiveModeRail(){
+  document.querySelectorAll("#modeRail .railEntry, #modeDock .dockEntry").forEach(btn=>{
+    const active=btn.dataset.mode===currentMode;
+    btn.classList.toggle("active",active);
+    if(active)btn.setAttribute("aria-current","true");
+    else btn.removeAttribute("aria-current");
   });
+  const settingsEntry=document.querySelector("#modeRail .railSettings");
+  if(settingsEntry)settingsEntry.classList.toggle("active",$("settingsPanel").classList.contains("open"));
+  const themeEntry=document.querySelector("#modeRail .railTheme");
+  if(themeEntry){
+    themeEntry.classList.toggle("active",!!settings.appearance.lightMode);
+    const g=themeEntry.querySelector(".railGlyph");
+    if(g)g.textContent=settings.appearance.lightMode?"☾":"☀";
+  }
+}
+// a small live line under each name — the state of that screen at a glance.
+// writes only when the text actually changed, so the 1s heartbeat stays cheap.
+function updateModeRailStatuses(){
+  const set=(key,text)=>{
+    const rail=$("modeRail");
+    if(!rail)return;
+    const entry=rail.querySelector(`.railEntry[data-mode="${key}"] .railStatus`);
+    if(entry&&entry.textContent!==text)entry.textContent=text;
+  };
+  const schedNow=$("schedulerCurrent")?.textContent||"";
+  set("scheduler",schedNow?`now: ${schedNow}`:"");
+  const next=deadlineNextNode();
+  let dlStatus="";
+  if(next){
+    const left=deadlineDaysLeft(next);
+    dlStatus=left===null?"":left<0?`${-left}d overdue`:left===0?"today":left===1?"tomorrow":`${left}d`;
+  }else dlStatus="clear";
+  set("deadlines",dlStatus);
+  const openStickies=stickies.filter(s=>!s.done).length;
+  set("sticky",openStickies?`${openStickies} open`:"");
+  set("quotes",quotes.length?String(quotes.length):"");
+  set("focus",timerRunning&&timerSeconds>0?formatHMS(timerSeconds):"");
+  set("question","");
 }
 function renderModeOrderSetting(){
   const list=$("modeOrderList");
@@ -792,21 +1018,26 @@ function updateModeUI(){
     btn.setAttribute("title",currentMode==="focus"?"question mode":currentMode==="scheduler"?"question mode":"focus mode");
   }
   document.body.classList.toggle("todayMode",currentMode==="today");
+  markActiveModeRail();
   document.body.classList.toggle("focusModeVisual",currentMode==="focus");
   document.body.classList.toggle("schedulerVisual",currentMode==="scheduler");
   document.body.classList.toggle("stickyVisual",currentMode==="sticky");
   document.body.classList.toggle("quotesVisual",currentMode==="quotes");
+  document.body.classList.toggle("deadlinesVisual",currentMode==="deadlines");
   const sched=$("scheduler");
   if(sched)sched.setAttribute("aria-hidden",String(currentMode!=="scheduler"));
   const stickyEl=$("sticky");
   if(stickyEl)stickyEl.setAttribute("aria-hidden",String(currentMode!=="sticky"));
   const quotesEl=$("quotes");
   if(quotesEl)quotesEl.setAttribute("aria-hidden",String(currentMode!=="quotes"));
+  const deadlinesEl=$("deadlines");
+  if(deadlinesEl)deadlinesEl.setAttribute("aria-hidden",String(currentMode!=="deadlines"));
   const bookEl=$("bookStudio");
   if(bookEl)bookEl.setAttribute("aria-hidden",String(currentMode!=="focus"));
   if(currentMode==="scheduler")renderScheduler();
   if(currentMode==="sticky")renderStickies();
   if(currentMode==="quotes")renderQuotesFeed();
+  if(currentMode==="deadlines")renderDeadlines();
   if(currentMode==="focus")renderBookStudio();
   updateFocusModePreview();
   updateTimerUI();
@@ -820,6 +1051,7 @@ function toggleModeMenu(e){
     if(icon.classList.contains("modeScheduler")){enterSchedulerMode();return;}
     if(icon.classList.contains("modeSticky")){enterStickyMode();return;}
     if(icon.classList.contains("modeQuotes")){enterQuotesMode();return;}
+    if(icon.classList.contains("modeDeadlines")){enterDeadlinesMode();return;}
   }
   cycleMode(1);
 }
@@ -1498,6 +1730,12 @@ function applyAppearance(){
     themeToggle.textContent=a.lightMode?"☾":"☀";
     themeToggle.setAttribute("aria-label",a.lightMode?"Switch to dark mode":"Switch to light mode");
   }
+  const railTheme=document.querySelector("#modeRail .railTheme");
+  if(railTheme){
+    railTheme.classList.toggle("active",!!a.lightMode);
+    const g=railTheme.querySelector(".railGlyph");
+    if(g)g.textContent=a.lightMode?"☾":"☀";
+  }
   document.body.style.zoom=(Math.max(85,Math.min(130,Number(a.textSize)||100))/100);
   const labels={
     backgroundOpacity:`${formatPercent(a.backgroundOpacity)}`,overlayOpacity:`${formatPercent(a.overlayOpacity)}`,backgroundBlur:`${a.blur}px`,
@@ -1586,7 +1824,8 @@ function buildBackup(){
       schedule:schedulerBlocks.slice(),
       stickies:stickies.map(s=>({...s})),
       quotes:quotes.map(q=>({...q})),
-      book:book?JSON.parse(JSON.stringify(book)):null
+      book:book?JSON.parse(JSON.stringify(book)):null,
+      deadlines:JSON.parse(JSON.stringify(deadlines))
     }
   };
 }
@@ -1652,6 +1891,12 @@ async function importBackup(file){
       saveQuotes();
       if(currentMode==="quotes")renderQuotesFeed();
     }
+    if(Array.isArray(d.deadlines)){
+      deadlines.length=0;
+      d.deadlines.forEach(n=>{const clean=normalizeDeadlineNode(n);if(clean)deadlines.push(clean)});
+      saveDeadlines();
+      if(currentMode==="deadlines")renderDeadlines();
+    }
     const importedBook=normalizeBook(d.book);
     if(importedBook){
       book=importedBook;
@@ -1701,6 +1946,10 @@ function renderSettings(){
   $("hydrationHoverEnabled").checked=settings.hydrationHoverEnabled===true;
   $("hydrationHoverScale").value=Math.min(2.5,Math.max(1.1,Number(settings.hydrationHoverScale)||DEFAULT_HYDRATION_HOVER_SCALE));
   $("hydrationHoverScaleValue").textContent=`${Math.round(Number($("hydrationHoverScale").value)*100)}%`;
+  $("deadlineRemind").checked=settings.deadlineRemind!==false;
+  const remindDays=Math.min(14,Math.max(0,Number.isFinite(Number(settings.deadlineRemindDays))?Number(settings.deadlineRemindDays):2));
+  $("deadlineRemindDays").value=remindDays;
+  $("deadlineRemindDaysValue").textContent=String(remindDays);
   $("screenScale").value=Math.min(1.2,Math.max(.8,Number(settings.screenScale)||DEFAULT_SCREEN_SCALE));
   $("screenScaleValue").textContent=`${Math.round(Number($("screenScale").value)*100)}%`;
   $("animationEnabled").checked=!!settings.animation;
@@ -1742,8 +1991,8 @@ function renderSettings(){
   applyAppearance();
   renderQuestionEditor();
 }
-function openSettings(){renderSettings();$("settingsPanel").classList.add("open");}
-function closeSettings(){$("settingsPanel").classList.remove("open")}
+function openSettings(){renderSettings();$("settingsPanel").classList.add("open");markActiveModeRail();}
+function closeSettings(){$("settingsPanel").classList.remove("open");markActiveModeRail();}
 function setSettingsTab(tab){
   const validTabs=["questions","appearance","reminders","data"];
   const activeTab=validTabs.includes(tab)?tab:"questions";
@@ -2525,8 +2774,10 @@ function initSchedulerMode(){
       lastStickyDay=todayKey();
       if(currentMode==="sticky")renderStickies();
       renderStickyPin();
+      if(currentMode==="deadlines")renderDeadlines();
     }
     updateSchedulerNow();updateSchedulerCenter();renderMiniClock();
+    updateModeRailStatuses();
     if(currentMode==="scheduler"){
       const m=new Date().getMinutes();
       if(m!==lastListMinute){lastListMinute=m;renderScheduleList();}
@@ -2540,6 +2791,573 @@ function enterSchedulerMode(){
   updateModeUI();updateFocusUI();
   setCycleStatus("day circle",false);
   answerEl.blur();
+}
+// ---- deadline wall mode -------------------------------------------------
+// a wall of month grids plus a nested outline: a deadline can hold
+// sub-deadlines ("in one deadline there is other deadline"), any depth.
+// dates are the app-wide YYYY-MM-DD day keys; a parent without a date is
+// a pure group that frames its children.
+const DEADLINES_KEY="oneQuestionDeadlines";
+const DAY_MS=86400000;
+function normalizeDeadlineNode(raw){
+  if(!raw||typeof raw!=="object")return null;
+  const title=typeof raw.title==="string"?raw.title.trim().slice(0,80):"";
+  if(!title)return null;
+  const children=Array.isArray(raw.children)?raw.children.map(normalizeDeadlineNode).filter(Boolean):[];
+  return {
+    id:String(raw.id||uuid()),title,
+    date:typeof raw.date==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(raw.date)?raw.date:"",
+    time:typeof raw.time==="string"&&/^\d{2}:\d{2}$/.test(raw.time)?raw.time:"",
+    done:!!raw.done,collapsed:!!raw.collapsed,children
+  };
+}
+function loadDeadlines(){
+  try{
+    const saved=JSON.parse(localStorage.getItem(DEADLINES_KEY)||"[]");
+    return Array.isArray(saved)?saved.map(normalizeDeadlineNode).filter(Boolean):[];
+  }catch{return[]}
+}
+const deadlines=loadDeadlines();
+function saveDeadlines(){cacheSet(DEADLINES_KEY,deadlines)}
+function deadlineWalk(nodes,fn,depth=0,parent=null){
+  for(const node of nodes){
+    fn(node,depth,parent);
+    if(node.children.length)deadlineWalk(node.children,fn,depth+1,node);
+  }
+}
+function deadlineFind(id){let hit=null;deadlineWalk(deadlines,n=>{if(n.id===id)hit=n});return hit}
+function deadlineParentOf(id){let hit=null;deadlineWalk(deadlines,(n,d,p)=>{if(n.id===id&&p)hit=p});return hit}
+function deadlineRemove(id){
+  const scrub=list=>{for(let i=list.length-1;i>=0;i--){if(list[i].id===id){list.splice(i,1);return true}if(scrub(list[i].children))return true}return false};
+  scrub(deadlines);
+}
+// whole days from today to the due date (noon vs noon, dst-safe); negative = overdue
+function deadlineDaysLeft(node){
+  if(!node.date)return null;
+  const due=new Date(`${node.date}T12:00:00`),today=new Date(`${todayKey()}T12:00:00`);
+  return Math.round((due-today)/DAY_MS);
+}
+const DEADLINE_URGENCY_RANK={later:1,week:2,soon:3,today:4,overdue:5};
+function deadlineUrgency(node){
+  if(node.done)return "done";
+  if(!node.date){
+    // a dateless group wears its most urgent open descendant
+    let worst=null;
+    deadlineWalk(node.children,c=>{
+      if(c.done)return;
+      const u=deadlineUrgency(c);
+      if(u&&(!worst||DEADLINE_URGENCY_RANK[u]>DEADLINE_URGENCY_RANK[worst]))worst=u;
+    });
+    return worst;
+  }
+  const d=deadlineDaysLeft(node);
+  if(d<0)return "overdue";
+  if(d===0)return "today";
+  if(d<=3)return "soon";
+  if(d<=7)return "week";
+  return "later";
+}
+function deadlineCountdown(node){
+  if(!node.date)return "";
+  const d=deadlineDaysLeft(node);
+  if(node.done)return formatTodoDate(node.date);
+  if(d<0)return `${formatTodoDate(node.date)} · ${-d} day${d===-1?"":"s"} overdue`;
+  if(d===0)return node.time?`today · ${node.time}`:"today";
+  if(d===1)return "tomorrow";
+  return `in ${d} days`;
+}
+function deadlineNextKey(node){return node.date+(node.time||"99:99")}
+function deadlineNextNode(){
+  let best=null;
+  deadlineWalk(deadlines,n=>{
+    if(n.done||!n.date)return;
+    if(!best||deadlineNextKey(n)<deadlineNextKey(best))best=n;
+  });
+  return best;
+}
+function deadlineSortedSiblings(list){
+  return [...list].sort((a,b)=>{
+    const ad=a.done?1:0,bd=b.done?1:0;
+    if(ad!==bd)return ad-bd;
+    if(!a.date)return b.date?1:a.title.localeCompare(b.title);
+    if(!b.date)return -1;
+    return deadlineNextKey(a).localeCompare(deadlineNextKey(b));
+  });
+}
+function deadlineSubtreeAllDone(node){return node.done&&node.children.every(deadlineSubtreeAllDone)}
+// the "open" filter hides a node only once its whole subtree is finished —
+// a done parent still frames its unfinished children
+let deadlineHideDone=false;
+function deadlineVisible(node){return !deadlineHideDone||!deadlineSubtreeAllDone(node)}
+function renderDeadlines(){
+  if(!$("deadlines"))return;
+  renderDeadlineOutline();
+  renderDeadlineWall();
+  if(deadlineCardId)renderDeadlineCard();
+}
+function updateDeadlineNextLine(){
+  const el=$("deadlineNext");
+  if(!el)return;
+  const next=deadlineNextNode();
+  el.textContent=next?`next: ${next.title} · ${deadlineCountdown(next)}`:"";
+  const urg=next?deadlineUrgency(next):null;
+  el.classList.toggle("soon",urg==="overdue"||urg==="today"||urg==="soon");
+}
+// ---- the outline: the nested tree ----
+function renderDeadlineOutline(){
+  const wrap=$("deadlineOutline");
+  if(!wrap)return;
+  wrap.textContent="";
+  if(!deadlines.length){
+    const empty=document.createElement("div");
+    empty.className="deadlineEmpty";
+    empty.textContent="no deadlines yet — + add one, then nest sub-deadlines inside it";
+    wrap.append(empty);
+    return;
+  }
+  deadlineSortedSiblings(deadlines).forEach(node=>{
+    const row=deadlineOutlineRow(node,0);
+    if(row)wrap.append(row);
+  });
+}
+// a row plus its children as a fragment — or null when filtered out
+function deadlineOutlineRow(node,depth){
+  if(!deadlineVisible(node))return null;
+  const frag=document.createDocumentFragment();
+  const row=document.createElement("div");
+  const urg=deadlineUrgency(node);
+  row.className="deadlineRow"+(node.done?" done":"")+(urg?` urg-${urg}`:"");
+  row.style.setProperty("--depth",depth);
+  const kids=node.children.length;
+  const caret=document.createElement("button");
+  caret.type="button";caret.className="deadlineCaret"+(kids?"":" leaf");
+  caret.textContent=kids?(node.collapsed?"▸":"▾"):"·";
+  caret.tabIndex=-1;
+  if(kids)caret.onclick=e=>{e.stopPropagation();node.collapsed=!node.collapsed;saveDeadlines();renderDeadlines();};
+  else caret.disabled=true;
+  const dot=document.createElement("span");dot.className="deadlineDot";
+  const title=document.createElement("span");title.className="deadlineRowTitle";title.textContent=node.title;
+  const when=document.createElement("span");when.className="deadlineRowWhen";when.textContent=node.date?deadlineCountdown(node):"";
+  const check=document.createElement("button");
+  check.type="button";check.className="deadlineCheck";check.textContent=node.done?"✓":"○";
+  check.setAttribute("aria-label",node.done?"mark as open":"mark as done");
+  check.onclick=e=>{e.stopPropagation();node.done=!node.done;saveDeadlines();renderDeadlines();};
+  row.append(caret,dot,title,when,check);
+  row.onclick=()=>openDeadlineCard(node.id);
+  // keyboard reach: the row behaves like a button for tab + enter / space
+  row.tabIndex=0;
+  row.setAttribute("role","button");
+  row.addEventListener("keydown",e=>{
+    if(e.key==="Enter"||e.key===" "){e.preventDefault();openDeadlineCard(node.id);}
+  });
+  frag.append(row);
+  if(kids&&!node.collapsed)deadlineSortedSiblings(node.children).forEach(kid=>{const r=deadlineOutlineRow(kid,depth+1);if(r)frag.append(r)});
+  return frag;
+}
+// ---- the wall: month grids with chips on their days ----
+function renderDeadlineWall(){
+  const wrap=$("deadlineWall");
+  if(!wrap)return;
+  const keepScroll=wrap.scrollTop;
+  wrap.textContent="";
+  const now=new Date();
+  const today=todayKey();
+  // date → [{node,depth}] for every visible deadline that has a date
+  const byDay=new Map();
+  deadlineWalk(deadlines,(node,depth)=>{
+    if(!node.date||!deadlineVisible(node))return;
+    if(!byDay.has(node.date))byDay.set(node.date,[]);
+    byDay.get(node.date).push({node,depth});
+  });
+  // current month → last month holding a deadline (capped 18 months out)
+  const lastDate=[...byDay.keys()].sort().pop();
+  let last=new Date(now.getFullYear(),now.getMonth(),1);
+  if(lastDate){
+    const [y,m]=lastDate.split("-").map(Number);
+    const end=new Date(y,m-1,1);
+    const cap=new Date(now.getFullYear(),now.getMonth()+18,1);
+    if(end>last)last=end>cap?cap:end;
+  }
+  const nowYm=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+  const cursor=new Date(now.getFullYear(),now.getMonth(),1);
+  let guard=0,lastYear=null;
+  while(cursor<=last&&guard++<40){
+    // the year leads its run of months as a subheading — the month heads
+    // below it only carry the month name
+    const y=cursor.getFullYear();
+    if(y!==lastYear){
+      lastYear=y;
+      wrap.append(deadlineYearHeading(y));
+    }
+    wrap.append(deadlineMonthBlock(cursor,byDay,today,nowYm));
+    cursor.setMonth(cursor.getMonth()+1);
+  }
+  if(byDay.size){
+    const endMark=document.createElement("div");
+    endMark.className="deadlineEndMark";
+    endMark.textContent="· nothing further ahead ·";
+    wrap.append(endMark);
+  }
+  // restore instantly — the wall's smooth scrolling would animate against
+  // the mid-render height collapse and land at the top instead
+  wrap.style.scrollBehavior="auto";
+  wrap.scrollTop=keepScroll;
+  wrap.style.scrollBehavior="";
+  updateDeadlineNextLine();
+}
+function deadlineYearHeading(year){
+  const head=document.createElement("div");
+  head.className="deadlineYearHeading";
+  head.textContent=String(year);
+  return head;
+}
+// months the user folded shut on the wall — a view preference, kept per
+// device (not synced) like the outline's collapse state
+function deadlineCollapsedMonths(){
+  try{return JSON.parse(localStorage.getItem("oneQuestionDeadlineCollapsedMonths")||"{}")}catch{return{}}
+}
+function deadlineToggleMonth(ym){
+  const map=deadlineCollapsedMonths();
+  if(map[ym])delete map[ym];else map[ym]=1;
+  try{localStorage.setItem("oneQuestionDeadlineCollapsedMonths",JSON.stringify(map))}catch{}
+}
+function deadlineMonthBlock(month,byDay,today,nowYm){
+  const y=month.getFullYear(),m=month.getMonth();
+  const ym=`${y}-${String(m+1).padStart(2,"0")}`;
+  const block=document.createElement("div");
+  block.className="deadlineMonth";
+  block.dataset.ym=ym;
+  if(ym===nowYm)block.classList.add("current");
+  let count=0;
+  byDay.forEach((list,key)=>{if(key.startsWith(`${ym}-`))count+=list.length});
+  const head=document.createElement(count?"button":"div");
+  if(count)head.type="button";
+  head.className="deadlineMonthHead";
+  const label=document.createElement("span");
+  label.textContent=month.toLocaleDateString(undefined,{month:"long"});
+  if(!count){
+    // a clear month stays on the wall as a slim bar, keeping the calendar's run visible
+    block.classList.add("empty");
+    const note=document.createElement("span");
+    note.className="deadlineMonthNote";note.textContent="clear";
+    head.append(label,note);
+    block.append(head);
+    return block;
+  }
+  // a month with deadlines folds shut: tap its head to minimize / expand
+  const collapsedMap=deadlineCollapsedMonths();
+  const collapsed=!!collapsedMap[ym];
+  if(collapsed)block.classList.add("collapsed");
+  const caret=document.createElement("span");
+  caret.className="deadlineMonthCaret";caret.textContent=collapsed?"▸":"▾";
+  caret.setAttribute("aria-hidden","true");
+  const countEl=document.createElement("span");
+  countEl.className="deadlineMonthCount";
+  countEl.textContent=`${count} deadline${count===1?"":"s"}`;
+  head.append(caret,label,countEl);
+  head.setAttribute("aria-expanded",String(!collapsed));
+  head.onclick=()=>{
+    const nowCollapsed=!block.classList.contains("collapsed");
+    block.classList.toggle("collapsed",nowCollapsed);
+    caret.textContent=nowCollapsed?"▸":"▾";
+    head.setAttribute("aria-expanded",String(!nowCollapsed));
+    deadlineToggleMonth(ym);
+  };
+  // agenda view: one row per day that holds deadlines — titles wrap free
+  // instead of fighting for a grid cell
+  const days=[...byDay.entries()].filter(([key])=>key.startsWith(`${ym}-`)).sort((a,b)=>a[0].localeCompare(b[0]));
+  const agenda=document.createElement("div");
+  agenda.className="deadlineAgenda";
+  for(const [key,list] of days){
+    const d=new Date(`${key}T12:00:00`);
+    const day=document.createElement("div");
+    day.className="deadlineDay"+(key===today?" today":"");
+    const num=document.createElement("div");
+    num.className="deadlineDayNum";
+    const dd=document.createElement("span");
+    dd.className="d";dd.textContent=String(d.getDate()).padStart(2,"0");
+    const ww=document.createElement("span");
+    ww.className="w";ww.textContent=d.toLocaleDateString(undefined,{weekday:"short"}).toLowerCase();
+    num.append(dd,ww);
+    const items=document.createElement("div");
+    items.className="deadlineDayItems";
+    list.sort((a,b)=>(a.node.time||"99:99").localeCompare(b.node.time||"99:99"));
+    list.forEach(entry=>items.append(deadlineAgendaEntry(entry)));
+    day.append(num,items);
+    agenda.append(day);
+  }
+  block.append(head,agenda);
+  return block;
+}
+function deadlineAgendaEntry({node,depth}){
+  const btn=document.createElement("button");
+  btn.type="button";
+  const urg=deadlineUrgency(node);
+  btn.className="deadlineEntry"+(depth>0?" sub":" parent")+(urg?` urg-${urg}`:"")+(node.done?" done":"");
+  btn.style.setProperty("--depth",Math.min(depth,4));
+  const dot=document.createElement("span");dot.className="deadlineEntryDot";
+  const title=document.createElement("span");
+  title.className="deadlineEntryTitle";title.textContent=node.title;
+  btn.append(dot,title);
+  if(node.time){
+    const t=document.createElement("span");
+    t.className="deadlineEntryTime";t.textContent=node.time;
+    btn.append(t);
+  }
+  if(node.children.length){
+    const n=document.createElement("span");
+    n.className="deadlineEntryCount";n.textContent=`${node.children.length} inside`;
+    btn.append(n);
+  }
+  btn.title=`${node.title}${node.date?` · ${deadlineCountdown(node)}`:""}`;
+  btn.onclick=e=>{e.stopPropagation();openDeadlineCard(node.id)};
+  return btn;
+}
+// ---- the detail card: one deadline, its children, its actions ----
+let deadlineCardId=null;
+function openDeadlineCard(id){
+  if(!deadlineFind(id))return;
+  deadlineCardId=id;
+  renderDeadlineCard();
+}
+function closeDeadlineCard(){
+  deadlineCardId=null;
+  const card=$("deadlineCard");
+  if(card){card.classList.remove("open");card.setAttribute("aria-hidden","true")}
+}
+function renderDeadlineCard(){
+  const card=$("deadlineCard");
+  if(!card)return;
+  const node=deadlineCardId?deadlineFind(deadlineCardId):null;
+  if(!node){closeDeadlineCard();return}
+  card.textContent="";
+  card.className="deadlineCard open"+(node.done?" done":"");
+  const urg=deadlineUrgency(node);
+  if(urg)card.classList.add(`urg-${urg}`);
+  const panel=document.createElement("div");panel.className="deadlineCardPanel";
+  const close=document.createElement("button");
+  close.type="button";close.className="deadlineCardClose";close.textContent="×";
+  close.setAttribute("aria-label","close");close.onclick=closeDeadlineCard;
+  const title=document.createElement("div");
+  title.className="deadlineCardTitle";title.textContent=node.title;
+  const when=document.createElement("div");
+  when.className="deadlineCardWhen";
+  when.textContent=node.date?`${formatTodoDate(node.date,true)}${node.time?` · ${node.time}`:""} · ${deadlineCountdown(node)}`:"no date — it holds the sub-deadlines below";
+  panel.append(close,title,when);
+  const parent=deadlineParentOf(node.id);
+  if(parent){
+    const crumb=document.createElement("button");
+    crumb.type="button";crumb.className="deadlineCrumb";
+    crumb.textContent=`under: ${parent.title}`;
+    crumb.onclick=()=>openDeadlineCard(parent.id);
+    panel.append(crumb);
+  }
+  const actions=document.createElement("div");actions.className="deadlineCardActions";
+  const doneBtn=document.createElement("button");
+  doneBtn.type="button";doneBtn.textContent=node.done?"reopen":"✓ done";
+  doneBtn.onclick=()=>{node.done=!node.done;saveDeadlines();renderDeadlines();};
+  const editBtn=document.createElement("button");
+  editBtn.type="button";editBtn.textContent="edit";
+  editBtn.onclick=()=>openDeadlineEditor({nodeId:node.id});
+  const addBtn=document.createElement("button");
+  addBtn.type="button";addBtn.textContent="+ sub-deadline";
+  addBtn.onclick=()=>openDeadlineEditor({parentId:node.id});
+  const delBtn=document.createElement("button");
+  delBtn.type="button";delBtn.className="danger";delBtn.textContent="delete";
+  delBtn.onclick=()=>{deadlineRemove(node.id);saveDeadlines();closeDeadlineCard();renderDeadlines();};
+  actions.append(doneBtn,editBtn,addBtn,delBtn);
+  panel.append(actions);
+  if(node.children.length){
+    const list=document.createElement("div");list.className="deadlineCardList";
+    deadlineSortedSiblings(node.children).forEach(kid=>list.append(deadlineChildRow(kid)));
+    panel.append(list);
+  }
+  card.append(panel);
+}
+function deadlineChildRow(node){
+  const row=document.createElement("div");
+  const urg=deadlineUrgency(node);
+  row.className="deadlineChild"+(node.done?" done":"")+(urg?` urg-${urg}`:"");
+  const check=document.createElement("button");
+  check.type="button";check.className="deadlineCheck";check.textContent=node.done?"✓":"○";
+  check.onclick=e=>{e.stopPropagation();node.done=!node.done;saveDeadlines();renderDeadlines();};
+  const body=document.createElement("div");body.className="deadlineChildBody";
+  const t=document.createElement("span");t.className="deadlineChildTitle";t.textContent=node.title;
+  const w=document.createElement("span");w.className="deadlineChildWhen";
+  w.textContent=node.date?(node.done?formatTodoDate(node.date):deadlineCountdown(node)):"—";
+  body.append(t,w);
+  if(node.children.length){
+    const n=document.createElement("span");
+    n.className="deadlineChildCount";n.textContent=`${node.children.length} inside`;
+    body.append(n);
+  }
+  const edit=document.createElement("button");
+  edit.type="button";edit.className="deadlineChildBtn";edit.textContent="✎";
+  edit.setAttribute("aria-label","edit");edit.tabIndex=-1;
+  edit.onclick=e=>{e.stopPropagation();openDeadlineEditor({nodeId:node.id})};
+  const del=document.createElement("button");
+  del.type="button";del.className="deadlineChildBtn";del.textContent="×";
+  del.setAttribute("aria-label","delete");del.tabIndex=-1;
+  del.onclick=e=>{e.stopPropagation();deadlineRemove(node.id);saveDeadlines();renderDeadlines();};
+  row.append(check,body,edit,del);
+  row.onclick=()=>openDeadlineCard(node.id);
+  row.tabIndex=0;
+  row.setAttribute("role","button");
+  row.addEventListener("keydown",e=>{
+    if(e.key==="Enter"||e.key===" "){e.preventDefault();openDeadlineCard(node.id);}
+  });
+  return row;
+}
+// ---- the editor ----
+let deadlineEditorCtx=null;
+function openDeadlineEditor(ctx={}){
+  const overlay=$("deadlineEditor");
+  if(!overlay)return;
+  deadlineEditorCtx=ctx;
+  const editing=ctx.nodeId?deadlineFind(ctx.nodeId):null;
+  $("deadlineEditorTitle").textContent=editing?"edit deadline":ctx.parentId?"new sub-deadline":"new deadline";
+  $("deadlineTitleInput").value=editing?editing.title:"";
+  $("deadlineDateInput").value=editing?editing.date:(ctx.date||"");
+  $("deadlineTimeInput").value=editing?editing.time:"";
+  $("deadlineEditorDelete").style.display=editing?"":"none";
+  overlay.classList.add("open");
+  overlay.setAttribute("aria-hidden","false");
+  $("deadlineTitleInput").focus();
+}
+function closeDeadlineEditor(){
+  deadlineEditorCtx=null;
+  const overlay=$("deadlineEditor");
+  if(overlay){overlay.classList.remove("open");overlay.setAttribute("aria-hidden","true")}
+}
+function commitDeadlineEditor(){
+  if(!deadlineEditorCtx)return;
+  const titleInput=$("deadlineTitleInput");
+  const title=titleInput.value.trim();
+  if(!title){titleInput.focus();return}
+  const dateInput=$("deadlineDateInput"),timeInput=$("deadlineTimeInput");
+  const date=/^\d{4}-\d{2}-\d{2}$/.test(dateInput.value||"")?dateInput.value:"";
+  const time=/^\d{2}:\d{2}$/.test(timeInput.value||"")?timeInput.value:"";
+  const editing=deadlineEditorCtx.nodeId?deadlineFind(deadlineEditorCtx.nodeId):null;
+  if(editing){
+    editing.title=title.slice(0,80);editing.date=date;editing.time=time;
+  }else{
+    const fresh=normalizeDeadlineNode({title,date,time});
+    const parent=deadlineEditorCtx.parentId?deadlineFind(deadlineEditorCtx.parentId):null;
+    if(parent)parent.children.push(fresh);
+    else deadlines.push(fresh);
+  }
+  saveDeadlines();
+  closeDeadlineEditor();
+  renderDeadlines();
+}
+function deleteDeadlineFromEditor(){
+  if(!deadlineEditorCtx||!deadlineEditorCtx.nodeId)return;
+  const id=deadlineEditorCtx.nodeId;
+  deadlineRemove(id);
+  if(deadlineCardId===id)closeDeadlineCard();
+  saveDeadlines();
+  closeDeadlineEditor();
+  renderDeadlines();
+}
+// ---- reminders: a card on the shoulder + a soft chime ----
+let activeDeadlineReminderId=null;
+function deadlineDismissedMap(){
+  try{return JSON.parse(localStorage.getItem("oneQuestionDeadlineDismissed")||"{}")}catch{return{}}
+}
+// dismissed per deadline, per day — it politely returns tomorrow
+function dismissDeadlineReminder(){
+  if(activeDeadlineReminderId){
+    const map=deadlineDismissedMap();
+    map[`${activeDeadlineReminderId}:${todayKey()}`]=1;
+    try{localStorage.setItem("oneQuestionDeadlineDismissed",JSON.stringify(map))}catch{}
+  }
+  hideDeadlineReminderCard();
+}
+function hideDeadlineReminderCard(){
+  activeDeadlineReminderId=null;
+  const el=$("deadlineReminder");
+  if(el){el.classList.remove("show");el.setAttribute("aria-hidden","true")}
+}
+function tickDeadlineReminders(){
+  const el=$("deadlineReminder");
+  if(!el)return;
+  if(settings.deadlineRemind===false){if(activeDeadlineReminderId)hideDeadlineReminderCard();return}
+  const warnDays=Math.max(0,Number(settings.deadlineRemindDays)||0);
+  const dismissed=deadlineDismissedMap();
+  let best=null;
+  deadlineWalk(deadlines,n=>{
+    if(n.done||!n.date)return;
+    const left=deadlineDaysLeft(n);
+    if(left===null||left>warnDays)return;
+    if(dismissed[`${n.id}:${todayKey()}`])return;
+    if(!best||deadlineNextKey(n)<deadlineNextKey(best))best=n;
+  });
+  if(!best){if(activeDeadlineReminderId)hideDeadlineReminderCard();return}
+  if(activeDeadlineReminderId!==best.id){
+    activeDeadlineReminderId=best.id;
+    $("deadlineReminderTitle").textContent=best.title;
+    $("deadlineReminderWhen").textContent=deadlineCountdown(best);
+    el.classList.add("show");
+    el.setAttribute("aria-hidden","false");
+    playDeadlineChime();
+  }
+}
+// a gentler cousin of the scheduler alarm: two soft sine bells instead of
+// the piezo buzzer — a deadline should tap the shoulder, not jolt
+function playDeadlineChime(){
+  try{
+    if(!schedulerAlarmCtx)schedulerAlarmCtx=new (window.AudioContext||window.webkitAudioContext)();
+    if(schedulerAlarmCtx.state==="suspended")schedulerAlarmCtx.resume();
+    const ctx=schedulerAlarmCtx,t0=ctx.currentTime+0.05;
+    const bellAt=(start,freq)=>{
+      const osc=ctx.createOscillator(),gain=ctx.createGain();
+      osc.type="sine";osc.frequency.value=freq;
+      gain.gain.setValueAtTime(0.12,start);
+      gain.gain.exponentialRampToValueAtTime(0.0001,start+0.7);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(start);osc.stop(start+0.75);
+    };
+    bellAt(t0,880);
+    bellAt(t0+0.35,1174.66);
+  }catch{}
+}
+function enterDeadlinesMode(){
+  clearTimeout(cycleTimer);closeCategoryMenu();
+  currentMode="deadlines";cyclePaused=false;isAnswering=false;
+  document.body.classList.remove("focusModeVisual");
+  updateModeUI();updateFocusUI();
+  setCycleStatus("deadline wall",false);
+  answerEl.blur();
+}
+function initDeadlinesMode(){
+  $("deadlineAdd")?.addEventListener("click",()=>openDeadlineEditor({}));
+  $("deadlineToday")?.addEventListener("click",()=>{
+    $("deadlineWall")?.querySelector(".deadlineMonth.current")?.scrollIntoView({behavior:"smooth",block:"start"});
+  });
+  $("deadlineFilter")?.addEventListener("click",e=>{
+    deadlineHideDone=!deadlineHideDone;
+    const btn=e.currentTarget;
+    btn.textContent=deadlineHideDone?"all":"open";
+    btn.title=deadlineHideDone?"show finished deadlines too":"hide finished deadlines";
+    renderDeadlines();
+  });
+  $("deadlineEditorSave")?.addEventListener("click",commitDeadlineEditor);
+  $("deadlineEditorCancel")?.addEventListener("click",closeDeadlineEditor);
+  $("deadlineEditorDelete")?.addEventListener("click",deleteDeadlineFromEditor);
+  $("deadlineEditor")?.addEventListener("click",e=>{if(e.target===$("deadlineEditor"))closeDeadlineEditor()});
+  $("deadlineTitleInput")?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();commitDeadlineEditor()}});
+  $("deadlineReminderDismiss")?.addEventListener("click",dismissDeadlineReminder);
+  $("deadlineReminderOpen")?.addEventListener("click",()=>{
+    const node=activeDeadlineReminderId?deadlineFind(activeDeadlineReminderId):null;
+    hideDeadlineReminderCard();
+    enterDeadlinesMode();
+    if(node&&node.date){
+      openDeadlineCard(node.id);
+      $("deadlineWall")?.querySelector(`.deadlineMonth[data-ym="${node.date.slice(0,7)}"]`)?.scrollIntoView({behavior:"smooth",block:"start"});
+    }
+  });
+  setInterval(tickDeadlineReminders,15000);
+  tickDeadlineReminders();
 }
 // ---- remember wall (sticky notes) mode --------------------------------
 const STICKY_KEY="oneQuestionStickies";
@@ -4870,6 +5688,17 @@ $("startupResume")?.addEventListener("change",e=>{
   saveSettings();
   renderModeOrderSetting();
 });
+$("deadlineRemind")?.addEventListener("change",e=>{
+  settings.deadlineRemind=e.target.checked;
+  saveSettings();
+  tickDeadlineReminders();
+});
+$("deadlineRemindDays")?.addEventListener("input",e=>{
+  settings.deadlineRemindDays=Number(e.target.value);
+  $("deadlineRemindDaysValue").textContent=String(e.target.value);
+  saveSettings();
+  tickDeadlineReminders();
+});
 $("stickyPush").addEventListener("input",e=>{
   settings.stickyPush=Number(e.target.value);
   $("stickyPushValue").textContent=`${e.target.value}px`;
@@ -5075,6 +5904,8 @@ document.addEventListener("keydown",e=>{
   if(readerIsOpen()){readerClose();return;}
   const pop=$("bookFormatPop");
   if(pop&&pop.classList.contains("open")){pop.classList.remove("open");pop.setAttribute("aria-hidden","true");return;}
+  if($("deadlineEditor").classList.contains("open")){closeDeadlineEditor();return;}
+  if($("deadlineCard").classList.contains("open")){closeDeadlineCard();return;}
   if(schedulerSelection){closeSchedulerEditor();renderScheduler();return;}
   if($("historyPanel").classList.contains("open")){closeHistory();return;}
   closeCategoryMenu();
@@ -5092,6 +5923,7 @@ function cycleMode(dir){
   else if(next==="scheduler")enterSchedulerMode();
   else if(next==="sticky")enterStickyMode();
   else if(next==="quotes")enterQuotesMode();
+  else if(next==="deadlines")enterDeadlinesMode();
 }
 document.addEventListener("keydown",e=>{
   if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight")return;
@@ -5123,7 +5955,7 @@ document.addEventListener("keydown",e=>{
     if(busyOverlay())return;
     if(readerIsOpen())return;
     const t=e.target;
-    if(t&&t.closest&&t.closest("input,textarea,[contenteditable],.stickyNote,.stickyPad,.stickyCard,.stickyDeckStack,.stickyDeckActions,.schedulerClock,.schedulerEditor,.notePanel"))return;
+    if(t&&t.closest&&t.closest("input,textarea,[contenteditable],.stickyNote,.stickyPad,.stickyCard,.stickyDeckStack,.stickyDeckActions,.schedulerClock,.schedulerEditor,.deadlineEditor,.deadlineCard,.notePanel"))return;
     tracking=true;
     sx=e.touches[0].clientX;
     sy=e.touches[0].clientY;
@@ -5170,6 +6002,7 @@ initSchedulerMode();
 initBookStudio();
 initQuotesMode();
 initStickyDeck();
+initDeadlinesMode();
 updateModeUI();
 updateCycleToggle();
 initHydrationReminder();
@@ -5200,6 +6033,7 @@ hydrateBrowserStorage().then(()=>{
   questions=loadQuestionBank();
   focusQuestions=loadFocusQuestions();
   quotes=loadQuotes();
+  deadlines.length=0;loadDeadlines().forEach(n=>deadlines.push(n));
   settings=loadSettings();
   if(Object.keys(wallpaperEngineProperties).length) applyWallpaperEngineProperties(wallpaperEngineProperties);
   renderSettings();
