@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>One Question</title>
-  <link rel="stylesheet" href="style.css?v=2.48.0">
+  <link rel="stylesheet" href="style.css?v=2.52.0">
 </head>
 
 <body>
@@ -101,6 +101,7 @@
         <div class="bookHeaderActions">
           <span id="bookSaveStatus" class="bookSaveStatus">saved</span>
           <button id="bookShelfToggle" class="bookGhostButton shelfOnly" type="button" title="chapters">chapters</button>
+          <button id="bookPreviewToggle" class="bookGhostButton previewOnly" type="button" title="preview">preview</button>
           <button id="bookReadHeader" class="bookGhostButton" type="button" title="read the book fullscreen">open book
             ⤢</button>
           <button id="bookExportPdf" class="bookGhostButton" type="button" title="save the book as a pdf">export pdf
@@ -164,6 +165,8 @@
               <button class="bookFontBtn" type="button" data-dir="1" aria-label="bigger text" title="bigger text">A+</button>
             </div>
             <button id="bookRead" class="bookPreviewOpen" type="button" title="read the book fullscreen">open book ⤢</button>
+            <button id="bookPreviewCollapse" class="bookShelfCollapse bookPreviewCollapse" type="button" title="hide preview"
+              aria-label="toggle the preview panel">›</button>
           </div>
           <div id="bookPreviewPage" class="bookPreviewPage"></div>
           <div class="bookPreviewNav">
@@ -409,8 +412,10 @@
           <div class="appearanceControl modeOrderControl">
             <div class="appearanceControlHead"><span>mode switch order</span></div>
             <div id="modeOrderList" class="modeOrderList" aria-label="Mode switch order"></div>
-            <div class="settingHint">Use the arrows to reorder the modes. Tap ◉ to hide a mode — hidden
-              modes leave the switcher and the swipe cycle.</div>
+            <label class="settingCheck modeResumeCheck"><input id="startupResume" type="checkbox"><span>start where I
+                left off</span></label>
+            <div class="settingHint">Use the arrows to reorder the modes. Tap ◉ to hide a mode — hidden modes leave
+              the switcher and the swipe cycle. Tap ⌂ to pin the screen the app opens on.</div>
           </div>
 
           <div class="appearanceControl">
@@ -598,8 +603,10 @@
           <div class="settingSubsection">
             <div class="settingTitle">sync server</div>
             <div class="settingHint">Every change is pushed to this server automatically and written to the
-              "settings export" folder. On another device, put this PC's address here (find it with "ipconfig"
-              — look for IPv4 Address).</div>
+              "settings export" folder. When you open the app from a server's own address (the VPS),
+              it syncs with that server on its own — nothing to type. Only fill this in to sync with a
+              different server, e.g. this PC's address on your network (find it with "ipconfig" — look
+              for IPv4 Address).</div>
             <input id="syncServer" class="syncServerInput" type="text" autocomplete="off" spellcheck="false"
               placeholder="http://127.0.0.1:8765" aria-label="Sync server address">
             <div class="settingTitle" style="margin-top:10px">sync token</div>
@@ -713,7 +720,7 @@
     </section>
     <div id="cycleHint">questions change quietly · move toward an edge</div>
   </main>
-  <script src="app.js?v=2.48.0"></script>
+  <script src="app.js?v=2.52.0"></script>
 </body>
 
 </html>

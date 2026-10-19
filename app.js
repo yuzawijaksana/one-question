@@ -77,6 +77,67 @@ function readCached(key,fallback){
     return raw===null?fallback:JSON.parse(raw);
   }catch{return fallback}
 }
+// crypto.randomUUID only exists in secure contexts (https, localhost, the
+// extension); the VPS serves plain http, so ids are hand-rolled there.
+function uuid(){
+  if(typeof crypto!=="undefined"&&typeof crypto.randomUUID==="function")return crypto.randomUUID();
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g,c=>{const r=Math.random()*16|0;return (c==="x"?r:(r&0x3|0x8)).toString(16);});
+}
+// the settings' sliders are fine-grained but rarely touched, so each becomes
+// a [− value +] stepper: one tap instead of a drag hunt. the wrapper keeps
+// the slider's id, exposes its .value, and fires real "input" events — every
+// existing listener, renderSettings write and preset apply keeps working
+// without knowing the slider is gone. must run before those listeners attach.
+function stepperizeSliders(){
+  document.querySelectorAll('input[type="range"]').forEach(slider=>{
+    const min=Number(slider.min),max=Number(slider.max);
+    const step=Number(slider.step)||1;
+    const decimals=(String(slider.step).split(".")[1]||"").length;
+    // clamp to the step's own grid, trimming fp dust (0.3 / 0.05 steps)
+    const snap=v=>{
+      let n=Math.min(max,Math.max(min,Number.isFinite(v)?v:min));
+      n=Math.round((n-min)/step)*step+min;
+      return Number(n.toFixed(decimals));
+    };
+    let current=snap(Number(slider.value));
+    const wrap=document.createElement("div");
+    wrap.className="stepControl";
+    wrap.id=slider.id;
+    const label=slider.getAttribute("aria-label")||"value";
+    wrap.setAttribute("role","group");
+    wrap.setAttribute("aria-label",label);
+    const dec=document.createElement("button");
+    dec.type="button";dec.className="stepBtn";dec.textContent="−";
+    dec.setAttribute("aria-label",`${label} — decrease`);
+    const inc=document.createElement("button");
+    inc.type="button";inc.className="stepBtn";inc.textContent="+";
+    inc.setAttribute("aria-label",`${label} — increase`);
+    const val=document.createElement("span");
+    val.className="stepValue";val.textContent=current;
+    const paint=()=>{
+      val.textContent=current;
+      dec.disabled=current<=min;
+      inc.disabled=current>=max;
+    };
+    const bump=dir=>{
+      const next=snap(current+dir*step);
+      if(next===current)return;
+      current=next;
+      paint();
+      wrap.dispatchEvent(new Event("input"));
+    };
+    dec.addEventListener("click",()=>bump(-1));
+    inc.addEventListener("click",()=>bump(1));
+    Object.defineProperty(wrap,"value",{
+      get:()=>String(current),
+      set:v=>{current=snap(Number(v));paint();}
+    });
+    wrap.append(dec,val,inc);
+    slider.replaceWith(wrap);
+    paint();
+  });
+}
+stepperizeSliders();
 async function hydrateBrowserStorage(){
   if(!extensionStorage)return;
   try{
@@ -109,7 +170,13 @@ function setDataStatus(text){
 const SYNC_KEYS=[...new Set([...STORAGE_KEYS,"oneQuestionSchedule","oneQuestionStickies","oneQuestionTimer","oneQuestionHydration"])];
 let syncPushTimer=null,syncBusy=false;
 function syncBase(){
-  return ((settings&&settings.syncServer)||SYNC_BASE).replace(/\/+$/,"");
+  if(settings&&settings.syncServer)return String(settings.syncServer).replace(/\/+$/,"");
+  // no saved server: when the page itself is served by a sync server (the
+  // VPS), that origin is the target — a brand-new device picks its data up
+  // without typing anything in settings. wallpaper / extension / file pages
+  // have no http origin and keep the local-PC default.
+  if(/^https?:$/.test(location.protocol)&&location.host)return `${location.protocol}//${location.host}`;
+  return SYNC_BASE;
 }
 function syncHeaders(extra){
   const headers=Object.assign({"Content-Type":"application/json"},extra||{});
@@ -478,6 +545,10 @@ function initHydrationReminder(){
 
 let currentIndex=null,currentQuestion=null,cycleTimer=null,isAnswering=false,cyclePaused=false;
 let currentMode="question",returnMode="question";
+// captured before the boot's first updateModeUI() writes "question" over
+// it — this is the screen the last session on this device actually ended on
+let bootLastMode=null;
+try{bootLastMode=localStorage.getItem("oneQuestionLastMode")}catch{}
 let historyIndex=0,historyReturnMode="question";
 let viewedQuestions=[],viewedPosition=-1;
 
@@ -502,7 +573,7 @@ const DEFAULT_APPEARANCE={
   textSize:100,
   fontWeight:400
 };
-const DEFAULT_SETTINGS={categories:["all"],cycleSeconds:6.5,modeSwitchExpand:"hover",modeOrder:["question","focus","scheduler","sticky","quotes"],hiddenModes:[],stickyCategories:["general"],stickyPush:110,stickyTilt:1.8,stickyScale:12,stickySpread:100,tidyAnchor:"center-center",hydrationMinutes:DEFAULT_HYDRATION_MINUTES,hydrationSize:DEFAULT_HYDRATION_SIZE,hydrationWave:true,hydrationHoverEnabled:false,hydrationHoverScale:DEFAULT_HYDRATION_HOVER_SCALE,screenScale:DEFAULT_SCREEN_SCALE,animation:true,timerAnimation:true,lowercase:false,schedulerListVisible:true,appearance:{...DEFAULT_APPEARANCE}};
+const DEFAULT_SETTINGS={categories:["all"],cycleSeconds:6.5,modeSwitchExpand:"always",modeOrder:["question","focus","scheduler","sticky","quotes"],hiddenModes:[],startupMode:"question",startupResume:false,stickyCategories:["general"],stickyPush:110,stickyTilt:1.8,stickyScale:12,stickySpread:100,tidyAnchor:"center-center",hydrationMinutes:DEFAULT_HYDRATION_MINUTES,hydrationSize:DEFAULT_HYDRATION_SIZE,hydrationWave:true,hydrationHoverEnabled:false,hydrationHoverScale:DEFAULT_HYDRATION_HOVER_SCALE,screenScale:DEFAULT_SCREEN_SCALE,animation:true,timerAnimation:true,lowercase:false,schedulerListVisible:true,appearance:{...DEFAULT_APPEARANCE}};
 let settings=loadSettings();
 
 function loadSettings(){
@@ -529,6 +600,25 @@ function hiddenModeSet(){
 function activeModes(){
   const hidden=hiddenModeSet();
   return normalizedModeOrder().filter(k=>!hidden.has(k));
+}
+// which screen a fresh load opens on: the ⌂-pinned mode from settings —
+// synced, so every device agrees — or, when "start where I left off" is
+// on, whatever screen this device was on when its tab closed
+function startupMode(){
+  const hidden=hiddenModeSet();
+  const ok=m=>MODE_ORDER_LABELS[m]&&!hidden.has(m);
+  if(settings.startupResume)return ok(bootLastMode)?bootLastMode:"question";
+  return ok(settings.startupMode)?settings.startupMode:"question";
+}
+function applyStartupMode(){
+  // only a load still sitting untouched on the boot question screen is fair
+  // game — a finger that already switched screens or typed wins
+  if(currentMode!=="question"||isAnswering||answerEl.textContent.trim())return;
+  const mode=startupMode();
+  if(mode==="focus")enterFocusMode();
+  else if(mode==="scheduler")enterSchedulerMode();
+  else if(mode==="sticky")enterStickyMode();
+  else if(mode==="quotes")enterQuotesMode();
 }
 function toggleModeHidden(key){
   const all=normalizedModeOrder();
@@ -558,15 +648,35 @@ function renderModeOrderSetting(){
   const list=$("modeOrderList");
   if(!list)return;
   list.innerHTML="";
+  const resume=!!settings.startupResume;
   const order=normalizedModeOrder();
   const hidden=hiddenModeSet();
   order.forEach((key,index)=>{
+    const label=MODE_ORDER_LABELS[key]||key;
     const row=document.createElement("div");
     row.className="modeOrderRow";
     if(hidden.has(key))row.classList.add("isOff");
     const name=document.createElement("span");
     name.className="modeOrderName";
-    name.textContent=MODE_ORDER_LABELS[key]||key;
+    name.textContent=label;
+    // ⌂ pins this screen as the one the app opens on; the pin lives in
+    // synced settings so every device agrees, and tap-to-toggle unsets it
+    const home=document.createElement("button");
+    home.type="button";
+    home.className="modeOrderBtn modeHome";
+    const pinned=!resume&&settings.startupMode===key;
+    if(pinned)home.classList.add("isDefault");
+    home.textContent="⌂";
+    home.title=resume?`"start where I left off" owns the opening screen — turn it off to pin ${label}`:pinned?`${label} opens on launch — tap to unpin`:`start every launch on ${label}`;
+    home.setAttribute("aria-label",home.title);
+    // while resume owns the opening screen there is nothing to pin
+    home.disabled=resume;
+    home.onclick=()=>{
+      settings.startupMode=pinned?"question":key;
+      settings.startupResume=false;
+      saveSettings();
+      renderModeOrderSetting();
+    };
     const eye=document.createElement("button");
     eye.type="button";
     eye.className="modeOrderBtn modeEye";
@@ -590,9 +700,11 @@ function renderModeOrderSetting(){
     down.setAttribute("aria-label",`Move ${name.textContent} down`);
     down.disabled=index===order.length-1;
     down.onclick=()=>moveModeOrder(index,index+1);
-    row.append(name,eye,up,down);
+    row.append(name,home,eye,up,down);
     list.append(row);
   });
+  const resumeBox=$("startupResume");
+  if(resumeBox)resumeBox.checked=resume;
 }
 function moveModeOrder(from,to){
   const order=normalizedModeOrder();
@@ -668,6 +780,10 @@ function updateCycleToggle(){
   btn.setAttribute("title",active?"Pause question cycling":"Continue question cycling");
 }
 function updateModeUI(){
+  // "start where I left off" reads this — the five switchable screens are
+  // remembered per device as they happen; today/history are views, not
+  // modes, and pass through without overwriting it
+  try{if(MODE_ORDER_LABELS[currentMode])localStorage.setItem("oneQuestionLastMode",currentMode)}catch{}
   const btn=$("modeToggle");
   if(btn){
     btn.classList.toggle("active",currentMode==="focus");
@@ -1112,7 +1228,7 @@ function addTodoText(text,dateKey=todoViewDate||todayKey()){
   const clean=String(text||"").trim();
   if(!clean)return false;
   const a=getTodos();
-  a.unshift({id:crypto.randomUUID(),text:clean,completed:false,date:dateKey,createdAt:new Date().toISOString(),completedAt:null});
+  a.unshift({id:uuid(),text:clean,completed:false,date:dateKey,createdAt:new Date().toISOString(),completedAt:null});
   saveTodos(a);
   renderTodos(todoViewDate);
   renderCalendar();
@@ -1522,7 +1638,7 @@ async function importBackup(file){
     }
     if(Array.isArray(d.stickies)){
       stickies.length=0;
-      d.stickies.forEach(s=>{if(s&&typeof s.text==="string"&&s.text.trim())stickies.push({id:String(s.id||crypto.randomUUID()),text:s.text.trim(),created:Number(s.created)||Date.now(),done:!!s.done,cat:typeof s.cat==="string"?s.cat.trim().toLowerCase():undefined})});
+      d.stickies.forEach(s=>{if(s&&typeof s.text==="string"&&s.text.trim())stickies.push({id:String(s.id||uuid()),text:s.text.trim(),created:Number(s.created)||Date.now(),done:!!s.done,cat:typeof s.cat==="string"?s.cat.trim().toLowerCase():undefined})});
       saveStickies();
       renderStickyPin();
     }
@@ -1530,7 +1646,7 @@ async function importBackup(file){
       quotes.length=0;
       d.quotes.forEach(q=>{
         if(!q||typeof q.text!=="string"||!q.text.trim())return;
-        quotes.push({id:String(q.id||crypto.randomUUID()),text:q.text.trim(),author:typeof q.author==="string"?q.author.trim():"",created:Number(q.created)||Date.now()});
+        quotes.push({id:String(q.id||uuid()),text:q.text.trim(),author:typeof q.author==="string"?q.author.trim():"",created:Number(q.created)||Date.now()});
       });
       quoteIndex=0;
       saveQuotes();
@@ -2250,7 +2366,7 @@ function initSchedulerMode(){
     const toLX=ev=>{const {r,z}=frame();return (ev.clientX-r.left)/z;};
     const toLY=ev=>{const {r,z}=frame();return (ev.clientY-r.top)/z;};
     // give the draft its own identity so its tilt/size survive the commit
-    const draftId=crypto.randomUUID();
+    const draftId=uuid();
     const draftS={id:draftId,text:""};
     const draft=document.createElement("div");
     draft.className="stickyDraft";
@@ -2327,7 +2443,7 @@ function initSchedulerMode(){
     const spawnDraft=(gx,gy)=>{
       ghost.classList.remove("visible");shown=false;
       const list=stickyListEl;
-      const draftId=crypto.randomUUID();
+      const draftId=uuid();
       const draftS={id:draftId,text:""};
       const draft=document.createElement("div");
       draft.className="stickyDraft placing";
@@ -2430,7 +2546,7 @@ const STICKY_KEY="oneQuestionStickies";
 const stickies=(()=>{
   try{
     const saved=JSON.parse(localStorage.getItem(STICKY_KEY)||"[]");
-    return Array.isArray(saved)?saved.filter(s=>s&&typeof s.text==="string"&&s.text.trim()).map((s,i)=>({id:String(s.id||crypto.randomUUID()),text:s.text.trim(),created:Number(s.created)||Date.now(),done:!!s.done,cat:typeof s.cat==="string"?s.cat.trim().toLowerCase():undefined,x:s.x,y:s.y,z:s.z})):[];
+    return Array.isArray(saved)?saved.filter(s=>s&&typeof s.text==="string"&&s.text.trim()).map((s,i)=>({id:String(s.id||uuid()),text:s.text.trim(),created:Number(s.created)||Date.now(),done:!!s.done,cat:typeof s.cat==="string"?s.cat.trim().toLowerCase():undefined,x:s.x,y:s.y,z:s.z})):[];
   }catch{return[]}
 })();
 function saveStickies(){cacheSet(STICKY_KEY,stickies)}
@@ -3005,7 +3121,7 @@ let tidyWallRef=null;
 function addSticky(text,xPct,yPct,keepId){
   const clean=String(text||"").trim();
   if(!clean)return false;
-  const s={id:String(keepId||crypto.randomUUID()),text:clean,created:Date.now(),done:false,cat:stickyFilter!=="all"?stickyFilter:stickyCats()[0]};
+  const s={id:String(keepId||uuid()),text:clean,created:Date.now(),done:false,cat:stickyFilter!=="all"?stickyFilter:stickyCats()[0]};
   if(typeof xPct==="number")s.x=xPct;
   if(typeof yPct==="number")s.y=yPct;
   stickies.unshift(s);
@@ -4234,6 +4350,18 @@ function initBookStudio(){
       if(btn)btn.title="show chapters";
     }
   }catch{}
+  // so are the preview folds — the wide-desk rail and the small-desk drawer
+  try{
+    if(localStorage.getItem("oneQuestionBookPreviewSlim")==="slim"){
+      document.body.classList.add("bookPreviewSlim");
+      const btn=$("bookPreviewCollapse");
+      if(btn)btn.title="show preview";
+    }
+    if(localStorage.getItem("oneQuestionBookPreviewShow")==="show"){
+      document.body.classList.add("bookPreviewShow");
+      $("bookPreviewToggle")?.classList.add("isOn");
+    }
+  }catch{}
   document.querySelectorAll(".bookFontBtn").forEach(b=>{
     b.addEventListener("click",()=>bookSetFont(parseFloat(b.dataset.dir||"1")));
   });
@@ -4305,6 +4433,28 @@ function initBookStudio(){
     const btn=$("bookShelfCollapse");
     if(btn)btn.title=slim?"show chapters":"hide chapters";
   });
+  // the preview column folds its own way: a slim rail on wide desks, and on
+  // small desks (where it hides itself) the header button deals it back in
+  // as a drawer over the page — the editor never gives up its width
+  $("bookPreviewCollapse")?.addEventListener("click",()=>{
+    if(window.matchMedia("(max-width: 1150px)").matches){
+      document.body.classList.remove("bookPreviewShow");
+      try{localStorage.setItem("oneQuestionBookPreviewShow","hidden")}catch{}
+      $("bookPreviewToggle")?.classList.remove("isOn");
+      return;
+    }
+    const slim=document.body.classList.toggle("bookPreviewSlim");
+    try{localStorage.setItem("oneQuestionBookPreviewSlim",slim?"slim":"wide")}catch{}
+    const btn=$("bookPreviewCollapse");
+    if(btn)btn.title=slim?"show preview":"hide preview";
+    scheduleBookPreview();
+  });
+  $("bookPreviewToggle")?.addEventListener("click",()=>{
+    const show=document.body.classList.toggle("bookPreviewShow");
+    try{localStorage.setItem("oneQuestionBookPreviewShow",show?"show":"hidden")}catch{}
+    $("bookPreviewToggle")?.classList.toggle("isOn",show);
+    if(show)scheduleBookPreview();
+  });
   $("bookNewChapter")?.addEventListener("click",addBookChapter);
   $("bookPrevChapter")?.addEventListener("click",()=>bookChapterStep(-1));
   $("bookNextChapter")?.addEventListener("click",()=>bookChapterStep(1));
@@ -4336,7 +4486,7 @@ function loadQuotes(){
   try{
     const saved=JSON.parse(localStorage.getItem(QUOTES_KEY)||"null");
     if(Array.isArray(saved)){
-      return saved.filter(q=>q&&typeof q.text==="string"&&q.text.trim()).map(q=>({id:String(q.id||crypto.randomUUID()),text:q.text.trim(),author:typeof q.author==="string"?q.author.trim():"",created:Number(q.created)||Date.now()}));
+      return saved.filter(q=>q&&typeof q.text==="string"&&q.text.trim()).map(q=>({id:String(q.id||uuid()),text:q.text.trim(),author:typeof q.author==="string"?q.author.trim():"",created:Number(q.created)||Date.now()}));
     }
   }catch{}
   return [];
@@ -4559,7 +4709,7 @@ async function quoteAddFlow(){
   if(!trimmed)return;
   const author=await appDialog({message:"who said it?",inputLabel:"author — leave empty if unknown",okText:"save"});
   if(author==null)return;
-  quotes.push({id:crypto.randomUUID(),text:trimmed,author:author.trim(),created:Date.now()});
+  quotes.push({id:uuid(),text:trimmed,author:author.trim(),created:Date.now()});
   saveQuotes();
   quoteIndex=quotes.length-1;
   renderQuotesFeed();
@@ -4714,6 +4864,12 @@ $("category").onclick=toggleCategoryMenu;
 $("modeToggle").onclick=e=>toggleModeMenu(e);
 $("lowercaseEnabled").addEventListener("change",e=>{settings.lowercase=e.target.checked;saveSettings();});
 $("modeSwitchExpand").addEventListener("change",e=>{settings.modeSwitchExpand=e.target.checked?"always":"hover";saveSettings();});
+// resume beats the ⌂ pin; unchecking falls back to whatever was pinned
+$("startupResume")?.addEventListener("change",e=>{
+  settings.startupResume=e.target.checked;
+  saveSettings();
+  renderModeOrderSetting();
+});
 $("stickyPush").addEventListener("input",e=>{
   settings.stickyPush=Number(e.target.value);
   $("stickyPushValue").textContent=`${e.target.value}px`;
@@ -5033,10 +5189,13 @@ setTimeout(()=>{
 },400);
 startCycle();
 
-pullSyncFromServer();
-// initial migration: push everything this device has (history, todos, notes,
-// stickies…) so the server and the export file get the full picture
-pushSyncToServer();
+// pull first, then the initial migration push (everything this device has —
+// history, todos, notes, stickies…) so the server and the export file get the
+// full picture. serialised on purpose: on a brand-new device the pull must
+// adopt the server's data before anything local could be pushed over it.
+// the startup screen applies after the pull so a new device honors the
+// ⌂ pin that came with the synced settings.
+pullSyncFromServer().finally(()=>{pushSyncToServer();applyStartupMode();});
 hydrateBrowserStorage().then(()=>{
   questions=loadQuestionBank();
   focusQuestions=loadFocusQuestions();

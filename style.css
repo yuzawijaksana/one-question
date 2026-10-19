@@ -1465,6 +1465,48 @@ body.minimal .settingsFab {
   font-size: 13px
 }
 
+/* [− value +] steppers that replaced the settings' sliders */
+.stepControl {
+  display: flex;
+  align-items: center;
+  gap: 10px
+}
+
+.stepBtn {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color .2s, border-color .2s, background .2s
+}
+
+.stepBtn:hover:not(:disabled) {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--text) 30%, transparent);
+  background: color-mix(in srgb, var(--text) 7%, transparent)
+}
+
+.stepBtn:disabled {
+  opacity: .3;
+  cursor: default
+}
+
+.stepValue {
+  min-width: 4ch;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums
+}
+
 .hydrationSetting {
   display: flex;
   align-items: center;
@@ -5025,6 +5067,16 @@ body:not(.focusModeVisual):not(.schedulerVisual):not(.stickyVisual):not(.quotesV
   cursor: default
 }
 
+/* the ⌂ pin marks the screen a fresh load opens on */
+.modeHome.isDefault {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent)
+}
+
+.modeResumeCheck {
+  margin: 8px 2px 0
+}
+
 /* remember wall: category filter bar */
 .stickyCatBar {
   position: absolute;
@@ -6033,13 +6085,17 @@ body.focusModeVisual .focusKicker {
   display: none
 }
 
+.bookPreviewToggle {
+  display: none
+}
+
 /* the desk: shelf — page — preview. the shelf column rides a variable so it
    can fold to a slim rail without touching the other two columns */
 .bookBody {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: var(--bookShelfW, 218px) minmax(0, 1fr) 552px;
+  grid-template-columns: var(--bookShelfW, 218px) minmax(0, 1fr) var(--bookPreviewW, 552px);
   gap: 18px
 }
 
@@ -6101,9 +6157,32 @@ body.focusModeVisual .focusKicker {
   }
 
   body.bookShelfSlim .bookShelfTitle,
-  body.bookShelfSlim .bookChapters,
   body.bookShelfSlim .bnLabel {
     display: none
+  }
+
+  /* slim is a number rail, not an empty rail: the chapters stay reachable
+     as their ordinals — hover tells the full title */
+  body.bookShelfSlim .bookChapters {
+    width: 100%;
+    padding-right: 0
+  }
+
+  body.bookShelfSlim .bookChapterRow {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 0;
+    padding: 5px 0
+  }
+
+  body.bookShelfSlim .bookChapterName,
+  body.bookShelfSlim .bookChapterWords,
+  body.bookShelfSlim .bookChapterDelete {
+    display: none
+  }
+
+  body.bookShelfSlim .bookChapterRow.active::before {
+    left: -4px
   }
 
   body.bookShelfSlim .bookNewChapter {
@@ -6113,6 +6192,33 @@ body.focusModeVisual .focusKicker {
   }
 
   body.bookShelfSlim .bookShelfCollapse {
+    transform: rotate(180deg)
+  }
+
+  /* the preview column folds the same way the shelf does — a slim rail,
+     remembered, one chevron away from the full column again */
+  body.bookPreviewSlim .bookBody {
+    --bookPreviewW: 46px
+  }
+
+  body.bookPreviewSlim .bookPreviewCol {
+    padding: 12px 6px;
+    align-items: center
+  }
+
+  body.bookPreviewSlim .bookPreviewHead {
+    padding: 2px 0 10px
+  }
+
+  body.bookPreviewSlim .bookPreviewHead > span,
+  body.bookPreviewSlim .bookReaderFont,
+  body.bookPreviewSlim .bookPreviewOpen,
+  body.bookPreviewSlim .bookPreviewPage,
+  body.bookPreviewSlim .bookPreviewNav {
+    display: none
+  }
+
+  body.bookPreviewSlim .bookPreviewCollapse {
     transform: rotate(180deg)
   }
 }
@@ -6606,6 +6712,33 @@ body.focusModeVisual .focusKicker {
 
   .bookPreviewCol {
     display: none
+  }
+}
+
+/* small desks: the preview is dealt back in as a drawer over the page, the
+   same trick the phone shelf uses — the editor never gives up its width */
+@media (min-width: 841px) and (max-width: 1150px) {
+  .bookPreviewToggle {
+    display: block
+  }
+
+  .bookPreviewToggle.isOn {
+    color: var(--text);
+    border-color: color-mix(in srgb, var(--text) 30%, transparent);
+    background: color-mix(in srgb, var(--text) 7%, transparent)
+  }
+
+  body.bookPreviewShow .bookPreviewCol {
+    display: flex;
+    position: absolute;
+    top: 64px;
+    bottom: 56px;
+    right: 26px;
+    width: min(552px, calc(100% - 52px));
+    z-index: 6;
+    background: color-mix(in srgb, var(--bg) 96%, transparent);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, .5);
+    animation: schedulerIn .18s ease-out
   }
 }
 
