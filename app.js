@@ -232,7 +232,7 @@ async function pullSyncFromServer(){
     const entries=data&&data.keys||{};
     const times=readSyncTimes();
     let adopted=false,touched=false;
-    const isEmptyValue=v=>v==null||v===""||(Array.isArray(v)&&!v.length)||(typeof v==="object"&&v!==null&&!Object.keys(v).length);
+    const isEmptyValue=syncValueIsEmpty;
     for(const key of SYNC_KEYS){
       const entry=entries[key];
       if(!entry||entry.value==null)continue;
@@ -284,6 +284,180 @@ async function syncNow(){
   }
   setDataStatus(status);
   if(btn)btn.disabled=false;
+}
+
+// ---- compare & recover: when a sync went the wrong way, pick — per data
+// section — the server's copy or this device's, then push the result to the
+// server, the local state file, and this device. timestamps pick the default
+// for each row; every pick stays one tap away from being flipped. ----
+function syncValueIsEmpty(v){
+  return v==null||v===""||(Array.isArray(v)&&!v.length)||(typeof v==="object"&&v!==null&&!Object.keys(v).length);
+}
+const COMPARE_KEYS=[
+  ["oneQuestionSettings","settings"],
+  ["oneQuestionQuestionBank","questions"],
+  ["oneQuestionFocusQuestions","focus questions"],
+  ["oneQuestionRecent","recent picks"],
+  ["oneQuestionHistory","history"],
+  ["oneQuestionTodos","todos"],
+  ["oneQuestionSchedule","scheduler"],
+  ["oneQuestionStickies","remember wall"],
+  ["oneQuestionDeadlines","deadline wall"],
+  ["oneQuestionNote","quick note"],
+  ["oneQuestionBook","book"],
+  ["oneQuestionQuotes","quiet feed"],
+  ["oneQuestionHydration","hydration"]
+];
+function summarizeValue(key,value){
+  try{
+    if(syncValueIsEmpty(value))return "empty";
+    if(key==="oneQuestionSettings")return "appearance & behavior";
+    if(key==="oneQuestionHydration")return "reminder state";
+    if(key==="oneQuestionNote")return typeof value==="string"?`${value.trim().length} chars`:"data";
+    if(key==="oneQuestionBook"){
+      if(typeof value!=="object")return "data";
+      const title=String(value.title||"").trim();
+      const chapters=Array.isArray(value.chapters)?value.chapters.length:0;
+      return title?`“${title.slice(0,22)}” · ${chapters} chapters`:(chapters?`untitled · ${chapters} chapters`:"empty");
+    }
+    if(!Array.isArray(value))return "data";
+    if(key==="oneQuestionDeadlines"){
+      let total=0;deadlineWalk(value,()=>{total++});
+      return `${total} deadline${total===1?"":"s"}`;
+    }
+    const units={
+      oneQuestionQuestionBank:"questions",oneQuestionFocusQuestions:"prompts",
+      oneQuestionHistory:"answers",oneQuestionRecent:"picks",oneQuestionTodos:"todos",
+      oneQuestionSchedule:"blocks",oneQuestionStickies:"notes",oneQuestionQuotes:"quotes"
+    };
+    const unit=units[key]||"items";
+    return `${value.length} ${unit}`;
+  }catch{return "data"}
+}
+function fmtWhen(ts){
+  if(!ts)return "no timestamp";
+  const mins=Math.round((Date.now()-ts)/60000);
+  const rel=mins<1?"just now":mins<60?`${mins}m ago`:mins<60*24?`${Math.round(mins/60)}h ago`:`${Math.round(mins/(60*24))}d ago`;
+  const when=new Date(ts).toLocaleString([],{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
+  return `${rel} · ${when}`;
+}
+let compareEl=null,compareServerKeys=null;
+async function openCompareDialog(){
+  const target=syncBase();
+  if(!compareEl){
+    compareEl=document.createElement("div");
+    compareEl.className="appDialog compareDialog";
+    compareEl.innerHTML=`<div class="appDialogCard compareCard" role="dialog" aria-label="compare and recover data">
+      <div class="compareTitle">data compare & recover</div>
+      <div class="compareHost"></div>
+      <div class="compareHint">each section shows the server's copy next to this device's — the marked side is newer. flip any pick, then apply to write your choices to the server, the local state file, and this device.</div>
+      <div class="compareQuick">
+        <button type="button" class="compareQuickBtn compareAllServer">use server data everywhere</button>
+        <button type="button" class="compareQuickBtn compareAllDevice">use this device's data everywhere</button>
+      </div>
+      <div class="compareHead"><span></span><span class="headServer">server</span><span class="headDevice">this device</span></div>
+      <div class="compareRows"></div>
+      <div class="compareActions">
+        <button type="button" class="compareCancel">cancel</button>
+        <button type="button" class="compareApply">apply & sync</button>
+      </div>
+    </div>`;
+    document.body.append(compareEl);
+    compareEl.querySelector(".compareCancel").addEventListener("click",()=>compareEl.classList.remove("open"));
+    compareEl.querySelector(".compareAllServer").addEventListener("click",()=>{
+      compareEl.querySelectorAll(".compareRow").forEach(r=>setComparePick(r,"server"));
+    });
+    compareEl.querySelector(".compareAllDevice").addEventListener("click",()=>{
+      compareEl.querySelectorAll(".compareRow").forEach(r=>setComparePick(r,"device"));
+    });
+    compareEl.querySelector(".compareApply").addEventListener("click",applyCompareChoices);
+    compareEl.addEventListener("click",e=>{if(e.target===compareEl)compareEl.classList.remove("open")});
+  }
+  const rows=compareEl.querySelector(".compareRows");
+  const hostEl=compareEl.querySelector(".compareHost");
+  rows.innerHTML=`<div class="compareEmpty">reading ${target}…</div>`;
+  compareEl.classList.add("open");
+  let err=null;
+  compareServerKeys=null;
+  try{
+    const res=await fetch(`${target}/api/state`,{cache:"no-store",headers:syncHeaders()});
+    if(!res.ok)throw new Error(`server answered ${res.status}`);
+    const data=await res.json();
+    compareServerKeys=(data&&data.keys)||{};
+  }catch(e){
+    console.warn("One Question: compare fetch failed",e);
+    err=e;
+  }
+  if(err){
+    hostEl.textContent=`server unreachable · ${target}`;
+    hostEl.classList.add("isError");
+    rows.innerHTML=`<div class="compareEmpty">could not reach the sync server — check the address / token in settings, then reopen this dialog. this device's data is untouched.</div>`;
+    return;
+  }
+  hostEl.textContent=`server · ${target.replace(/^https?:\/\//,"")}`;
+  hostEl.classList.remove("isError");
+  const times=readSyncTimes();
+  rows.innerHTML="";
+  for(const [key,label] of COMPARE_KEYS){
+    const sEntry=compareServerKeys[key];
+    const sValue=sEntry&&sEntry.value!==undefined?sEntry.value:null;
+    const sTime=sEntry?(sEntry.updatedAt||0):0;
+    let dValue=null;
+    try{const raw=localStorage.getItem(key);if(raw!==null)dValue=JSON.parse(raw)}catch{}
+    const dTime=times[key]||0;
+    const sEmpty=syncValueIsEmpty(sValue),dEmpty=syncValueIsEmpty(dValue);
+    let pick;
+    if(sEmpty&&!dEmpty)pick="device";
+    else if(dEmpty&&!sEmpty)pick="server";
+    else pick=sTime>=dTime?"server":"device";
+    const newer=sTime>=dTime?"server":"device";
+    const row=document.createElement("div");
+    row.className="compareRow";
+    row.dataset.key=key;
+    row.dataset.pick=pick;
+    row.innerHTML=`<div class="compareRowLabel">${label}</div>
+      <button type="button" class="comparePick server${newer==="server"?" isNewer":""}"><span class="cmpDot" aria-hidden="true"></span><span class="cmpBody"><span class="cmpSum">${summarizeValue(key,sValue)}</span><span class="cmpWhen">${fmtWhen(sTime)}</span></span></button>
+      <button type="button" class="comparePick device${newer==="device"?" isNewer":""}"><span class="cmpDot" aria-hidden="true"></span><span class="cmpBody"><span class="cmpSum">${summarizeValue(key,dValue)}</span><span class="cmpWhen">${fmtWhen(dTime)}</span></span></button>`;
+    row.querySelectorAll(".comparePick").forEach(btn=>{
+      btn.addEventListener("click",()=>setComparePick(row,btn.classList.contains("server")?"server":"device"));
+    });
+    setComparePick(row,pick);
+    rows.append(row);
+  }
+}
+function setComparePick(row,side){
+  row.dataset.pick=side;
+  row.querySelector(".comparePick.server").classList.toggle("sel",side==="server");
+  row.querySelector(".comparePick.device").classList.toggle("sel",side==="device");
+}
+async function applyCompareChoices(){
+  if(!compareEl||!compareServerKeys)return;
+  const times=readSyncTimes();
+  let adopted=false;
+  for(const row of compareEl.querySelectorAll(".compareRow")){
+    const key=row.dataset.key;
+    if(row.dataset.pick==="server"){
+      const entry=compareServerKeys[key];
+      if(entry&&entry.value!=null){
+        try{
+          localStorage.setItem(key,JSON.stringify(entry.value));
+          times[key]=entry.updatedAt||Date.now();
+          adopted=true;
+        }catch{}
+        continue;
+      }
+    }
+    // this device's copy was chosen (or the server had nothing): stamp it
+    // now so the push lands even over a server copy with a fresher timestamp
+    if(localStorage.getItem(key)!==null)times[key]=Date.now();
+  }
+  try{localStorage.setItem("oneQuestionSyncTimes",JSON.stringify(times))}catch{}
+  compareEl.classList.remove("open");
+  setDataStatus(adopted?"applying picks…":"pushing this device's data…");
+  await pushSyncToServer();
+  if(syncBase()!==SYNC_BASE)await pushSyncToServer(SYNC_BASE);
+  sessionStorage.setItem("oneQuestionSyncReload","1");
+  location.reload();
 }
 
 function loadQuestionBank(){
@@ -5737,6 +5911,7 @@ $("syncServer")?.addEventListener("change",e=>{
   pushSyncToServer();
 });
 $("syncNowBtn")?.addEventListener("click",()=>{syncNow();});
+$("compareBtn")?.addEventListener("click",()=>{openCompareDialog();});
 $("syncToken")?.addEventListener("change",e=>{
   settings.syncToken=e.target.value.trim();
   saveSettings();

@@ -9654,3 +9654,246 @@ body:is(.focusModeVisual, .schedulerVisual, .stickyVisual, .quotesVisual, .deadl
     display: flex
   }
 }
+
+/* ---- compare & recover: per-section server-vs-device picker ---- */
+.compareCard {
+  width: min(640px, calc(100vw - 40px));
+  max-height: min(80vh, 760px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px
+}
+
+.compareTitle {
+  font-size: 14px;
+  letter-spacing: .08em;
+  color: var(--text)
+}
+
+.compareHost {
+  font-size: 11px;
+  color: var(--muted)
+}
+
+.compareHost.isError {
+  color: #c96b5d
+}
+
+.compareHint {
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--muted)
+}
+
+.compareQuick {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap
+}
+
+.compareQuickBtn {
+  flex: 1 1 40%;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: .05em;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: none;
+  color: var(--text);
+  transition: border-color .2s, background .2s
+}
+
+.compareQuickBtn.compareAllServer {
+  border-color: rgba(121, 181, 139, .45);
+  color: #9fd0af
+}
+
+.compareQuickBtn.compareAllServer:hover {
+  background: rgba(121, 181, 139, .12);
+  border-color: #79b58b
+}
+
+.compareQuickBtn.compareAllDevice {
+  border-color: rgba(201, 166, 106, .45);
+  color: #d9bd8a
+}
+
+.compareQuickBtn.compareAllDevice:hover {
+  background: rgba(201, 166, 106, .12);
+  border-color: #c9a66a
+}
+
+.compareHead,
+.compareRow {
+  display: grid;
+  grid-template-columns: minmax(86px, 1fr) 2fr 2fr;
+  gap: 8px;
+  align-items: stretch
+}
+
+.compareHead {
+  font-size: 10px;
+  letter-spacing: .08em;
+  color: var(--muted);
+  padding: 0 2px
+}
+
+.compareHead .headServer {
+  color: #9fd0af
+}
+
+.compareHead .headDevice {
+  color: #d9bd8a
+}
+
+.compareRows {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-right: 2px
+}
+
+.compareRowLabel {
+  font-size: 11px;
+  color: var(--text);
+  align-self: center
+}
+
+.comparePick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  font: inherit;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  min-width: 0
+}
+
+.cmpBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0
+}
+
+.cmpSum {
+  font-size: 11px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis
+}
+
+.cmpWhen {
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis
+}
+
+.cmpDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  border: 1px solid var(--line)
+}
+
+.comparePick.server.sel {
+  border-color: #79b58b;
+  background: rgba(121, 181, 139, .1)
+}
+
+.comparePick.server.sel .cmpDot {
+  background: #79b58b;
+  border-color: #79b58b
+}
+
+.comparePick.device.sel {
+  border-color: #c9a66a;
+  background: rgba(201, 166, 106, .1)
+}
+
+.comparePick.device.sel .cmpDot {
+  background: #c9a66a;
+  border-color: #c9a66a
+}
+
+.comparePick.isNewer::after {
+  content: "newer";
+  margin-left: auto;
+  font-size: 9px;
+  letter-spacing: .06em;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  padding: 1px 5px;
+  border-radius: 999px;
+  flex: 0 0 auto
+}
+
+.compareActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px
+}
+
+.compareCancel,
+.compareApply {
+  padding: 7px 16px;
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: .06em;
+  border-radius: 999px;
+  cursor: pointer;
+  background: none;
+  border: 1px solid var(--line);
+  color: var(--muted)
+}
+
+.compareCancel:hover {
+  color: var(--text);
+  border-color: var(--accent)
+}
+
+.compareApply {
+  border-color: rgba(121, 181, 139, .6);
+  color: #9fd0af
+}
+
+.compareApply:hover {
+  background: rgba(121, 181, 139, .12)
+}
+
+.compareEmpty {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  padding: 18px 0;
+  line-height: 1.5
+}
+
+@media (max-width:480px) {
+  .compareHead {
+    display: none
+  }
+
+  .compareRow {
+    grid-template-columns: 1fr 1fr
+  }
+
+  .compareRowLabel {
+    grid-column: 1 / -1;
+    padding-top: 2px
+  }
+}
+
