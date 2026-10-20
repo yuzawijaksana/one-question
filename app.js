@@ -459,6 +459,33 @@ async function applyCompareChoices(){
   sessionStorage.setItem("oneQuestionSyncReload","1");
   location.reload();
 }
+// force-push: sync is a two-way conversation, but sometimes you know this
+// device is the right one — stamp every section as edited right now so the
+// push overwrites the server's copies (even a server copy with a fresher
+// timestamp), then mirror the same data to the local state file
+async function pushThisDevice(){
+  const ok=await appDialog({
+    message:"push this device's data over the server's? every section on the server is replaced with this device's copy — anything newer there is lost.",
+    okText:"push",cancelText:"cancel",danger:true
+  });
+  if(!ok)return;
+  const times=readSyncTimes();
+  const now=Date.now();
+  let any=false;
+  for(const key of SYNC_KEYS){
+    if(localStorage.getItem(key)!==null){times[key]=now;any=true}
+  }
+  if(!any){setDataStatus("nothing to push — this device has no data");return}
+  try{localStorage.setItem("oneQuestionSyncTimes",JSON.stringify(times))}catch{}
+  setDataStatus("pushing this device's data…");
+  const sent=await pushSyncToServer();
+  let status=sent?"pushed this device's data to the server":"push failed — check server address / token";
+  if(sent&&syncBase()!==SYNC_BASE){
+    setDataStatus("refreshing local state file…");
+    status=(await pushSyncToServer(SYNC_BASE))?status+" · local state file refreshed":status+" · local refresh failed";
+  }
+  setDataStatus(status);
+}
 
 function loadQuestionBank(){
   try{
@@ -5912,6 +5939,7 @@ $("syncServer")?.addEventListener("change",e=>{
 });
 $("syncNowBtn")?.addEventListener("click",()=>{syncNow();});
 $("compareBtn")?.addEventListener("click",()=>{openCompareDialog();});
+$("pushBtn")?.addEventListener("click",()=>{pushThisDevice();});
 $("syncToken")?.addEventListener("change",e=>{
   settings.syncToken=e.target.value.trim();
   saveSettings();
