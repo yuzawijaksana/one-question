@@ -1465,6 +1465,48 @@ body.minimal .settingsFab {
   font-size: 13px
 }
 
+/* [− value +] steppers that replaced the settings' sliders */
+.stepControl {
+  display: flex;
+  align-items: center;
+  gap: 10px
+}
+
+.stepBtn {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color .2s, border-color .2s, background .2s
+}
+
+.stepBtn:hover:not(:disabled) {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--text) 30%, transparent);
+  background: color-mix(in srgb, var(--text) 7%, transparent)
+}
+
+.stepBtn:disabled {
+  opacity: .3;
+  cursor: default
+}
+
+.stepValue {
+  min-width: 4ch;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums
+}
+
 .hydrationSetting {
   display: flex;
   align-items: center;
@@ -2660,11 +2702,12 @@ body.lowercase [contenteditable] {
 }
 
 /* collapsed: only the active mode's icon stays visible */
-body:not(.focusModeVisual):not(.schedulerVisual):not(.stickyVisual):not(.quotesVisual) .focusModeToggle .modeIcon.modeQuestion,
+body:not(.focusModeVisual):not(.schedulerVisual):not(.stickyVisual):not(.quotesVisual):not(.deadlinesVisual) .focusModeToggle .modeIcon.modeQuestion,
 body.focusModeVisual .focusModeToggle .modeIcon.modeFocus,
 body.schedulerVisual .focusModeToggle .modeIcon.modeScheduler,
 body.stickyVisual .focusModeToggle .modeIcon.modeSticky,
-body.quotesVisual .focusModeToggle .modeIcon.modeQuotes {
+body.quotesVisual .focusModeToggle .modeIcon.modeQuotes,
+body.deadlinesVisual .focusModeToggle .modeIcon.modeDeadlines {
   width: 38px !important;
   min-width: 38px !important;
   opacity: 1;
@@ -5025,6 +5068,16 @@ body:not(.focusModeVisual):not(.schedulerVisual):not(.stickyVisual):not(.quotesV
   cursor: default
 }
 
+/* the ⌂ pin marks the screen a fresh load opens on */
+.modeHome.isDefault {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent)
+}
+
+.modeResumeCheck {
+  margin: 8px 2px 0
+}
+
 /* remember wall: category filter bar */
 .stickyCatBar {
   position: absolute;
@@ -6033,13 +6086,17 @@ body.focusModeVisual .focusKicker {
   display: none
 }
 
+.bookPreviewToggle {
+  display: none
+}
+
 /* the desk: shelf — page — preview. the shelf column rides a variable so it
    can fold to a slim rail without touching the other two columns */
 .bookBody {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: var(--bookShelfW, 218px) minmax(0, 1fr) 552px;
+  grid-template-columns: var(--bookShelfW, 218px) minmax(0, 1fr) var(--bookPreviewW, 552px);
   gap: 18px
 }
 
@@ -6101,9 +6158,32 @@ body.focusModeVisual .focusKicker {
   }
 
   body.bookShelfSlim .bookShelfTitle,
-  body.bookShelfSlim .bookChapters,
   body.bookShelfSlim .bnLabel {
     display: none
+  }
+
+  /* slim is a number rail, not an empty rail: the chapters stay reachable
+     as their ordinals — hover tells the full title */
+  body.bookShelfSlim .bookChapters {
+    width: 100%;
+    padding-right: 0
+  }
+
+  body.bookShelfSlim .bookChapterRow {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 0;
+    padding: 5px 0
+  }
+
+  body.bookShelfSlim .bookChapterName,
+  body.bookShelfSlim .bookChapterWords,
+  body.bookShelfSlim .bookChapterDelete {
+    display: none
+  }
+
+  body.bookShelfSlim .bookChapterRow.active::before {
+    left: -4px
   }
 
   body.bookShelfSlim .bookNewChapter {
@@ -6113,6 +6193,33 @@ body.focusModeVisual .focusKicker {
   }
 
   body.bookShelfSlim .bookShelfCollapse {
+    transform: rotate(180deg)
+  }
+
+  /* the preview column folds the same way the shelf does — a slim rail,
+     remembered, one chevron away from the full column again */
+  body.bookPreviewSlim .bookBody {
+    --bookPreviewW: 46px
+  }
+
+  body.bookPreviewSlim .bookPreviewCol {
+    padding: 12px 6px;
+    align-items: center
+  }
+
+  body.bookPreviewSlim .bookPreviewHead {
+    padding: 2px 0 10px
+  }
+
+  body.bookPreviewSlim .bookPreviewHead > span,
+  body.bookPreviewSlim .bookReaderFont,
+  body.bookPreviewSlim .bookPreviewOpen,
+  body.bookPreviewSlim .bookPreviewPage,
+  body.bookPreviewSlim .bookPreviewNav {
+    display: none
+  }
+
+  body.bookPreviewSlim .bookPreviewCollapse {
     transform: rotate(180deg)
   }
 }
@@ -6606,6 +6713,33 @@ body.focusModeVisual .focusKicker {
 
   .bookPreviewCol {
     display: none
+  }
+}
+
+/* small desks: the preview is dealt back in as a drawer over the page, the
+   same trick the phone shelf uses — the editor never gives up its width */
+@media (min-width: 841px) and (max-width: 1150px) {
+  .bookPreviewToggle {
+    display: block
+  }
+
+  .bookPreviewToggle.isOn {
+    color: var(--text);
+    border-color: color-mix(in srgb, var(--text) 30%, transparent);
+    background: color-mix(in srgb, var(--text) 7%, transparent)
+  }
+
+  body.bookPreviewShow .bookPreviewCol {
+    display: flex;
+    position: absolute;
+    top: 64px;
+    bottom: 56px;
+    right: 26px;
+    width: min(552px, calc(100% - 52px));
+    z-index: 6;
+    background: color-mix(in srgb, var(--bg) 96%, transparent);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, .5);
+    animation: schedulerIn .18s ease-out
   }
 }
 
@@ -8174,5 +8308,1349 @@ body.quotesVisual .stickyPin {
 
   #bookChapterPosition {
     padding: 0 6px
+  }
+}
+
+/* ---- deadline wall mode ---- */
+.deadlinesMode {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  flex-direction: column;
+  padding: 18px 22px 8px;
+  animation: schedulerIn .5s cubic-bezier(.2, .7, .2, 1);
+  --dl-overdue: #e5484d;
+  --dl-today: #f2964e;
+  --dl-soon: #d9b03c
+}
+
+body.deadlinesVisual .focus,
+body.deadlinesVisual .controlsZone,
+body.deadlinesVisual #cycleHint,
+body.deadlinesVisual .miniClock,
+body.deadlinesVisual .stickyPin,
+body.deadlinesVisual #date,
+body.deadlinesVisual .todoZone,
+body.deadlinesVisual .todoDock,
+body.deadlinesVisual #noteDock,
+body.deadlinesVisual .noteDock,
+body.deadlinesVisual .notePanel {
+  display: none !important
+}
+
+body.deadlinesVisual .deadlinesMode {
+  display: flex
+}
+
+.deadlineTop {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 16px
+}
+
+.deadlineKicker {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 300;
+  letter-spacing: .34em;
+  opacity: .7
+}
+
+.deadlineNext {
+  font-size: 15px;
+  color: var(--text);
+  font-weight: 350;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap
+}
+
+.deadlineNext.soon {
+  color: var(--dl-today);
+  font-weight: 450
+}
+
+.deadlineTools {
+  display: flex;
+  gap: 10px;
+  margin-left: auto
+}
+
+.deadlineTools button {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 16px;
+  cursor: pointer;
+  transition: color .2s, border-color .2s
+}
+
+.deadlineTools button:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--text) 30%, transparent)
+}
+
+.deadlineLayout {
+  flex: 1;
+  display: flex;
+  gap: 26px;
+  min-height: 0
+}
+
+/* the outline: the nested tree, like the scheduler's list column */
+.deadlineOutline {
+  width: 320px;
+  flex: none;
+  overflow-y: auto;
+  border-right: 1px solid var(--line);
+  padding-right: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px
+}
+
+.deadlineEmpty {
+  color: var(--muted);
+  font-size: 14px;
+  padding: 14px 8px;
+  line-height: 1.7
+}
+
+.deadlineRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  padding-left: calc(10px + var(--depth, 0) * 20px);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text)
+}
+
+.deadlineRow:hover {
+  background: color-mix(in srgb, var(--text) 6%, transparent)
+}
+
+.deadlineRow.done {
+  opacity: .45
+}
+
+.deadlineCaret {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 12px;
+  width: 16px;
+  flex: none;
+  cursor: pointer;
+  padding: 0
+}
+
+.deadlineCaret:disabled {
+  cursor: default;
+  opacity: .35
+}
+
+.deadlineDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--muted);
+  opacity: .5
+}
+
+.deadlineRow.urg-overdue .deadlineDot {
+  background: var(--dl-overdue);
+  opacity: 1
+}
+
+.deadlineRow.urg-today .deadlineDot {
+  background: var(--dl-today);
+  opacity: 1
+}
+
+.deadlineRow.urg-soon .deadlineDot {
+  background: var(--dl-soon);
+  opacity: 1
+}
+
+.deadlineRow.urg-week .deadlineDot {
+  background: var(--accent);
+  opacity: .8
+}
+
+.deadlineRowTitle {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap
+}
+
+.deadlineRowWhen {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap
+}
+
+.deadlineRow.urg-overdue .deadlineRowWhen,
+.deadlineChild.urg-overdue .deadlineChildWhen {
+  color: var(--dl-overdue)
+}
+
+.deadlineRow.urg-today .deadlineRowWhen,
+.deadlineChild.urg-today .deadlineChildWhen {
+  color: var(--dl-today)
+}
+
+.deadlineRow.urg-soon .deadlineRowWhen,
+.deadlineChild.urg-soon .deadlineChildWhen {
+  color: var(--dl-soon)
+}
+
+.deadlineCheck {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 2px;
+  flex: none
+}
+
+.deadlineCheck:hover {
+  color: var(--text)
+}
+
+/* the wall: month grids */
+.deadlineWall {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 4px 6px 20px;
+  scroll-behavior: smooth
+}
+
+/* the quiet closer under the last month — the wall ends on purpose,
+ * not by running out of page */
+.deadlineEndMark {
+  text-align: center;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: .2em;
+  opacity: .7;
+  padding: 16px 0 8px
+}
+
+.deadlineYearHeading {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 300;
+  letter-spacing: .34em;
+  padding: 26px 2px 2px;
+  opacity: .8
+}
+
+.deadlineMonth {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 10px 18px 14px;
+  flex: none
+}
+
+/* a folded month steps out of its box: just the big name and its count,
+ * a quiet line in the wall until it is opened again */
+.deadlineMonth.collapsed {
+  border-color: transparent;
+  background: none;
+  padding: 2px 4px
+}
+
+.deadlineMonth.collapsed:hover {
+  background: color-mix(in srgb, var(--text) 4%, transparent)
+}
+
+.deadlineMonth.collapsed .deadlineAgenda {
+  display: none
+}
+
+.deadlineMonth.current {
+  border-color: color-mix(in srgb, var(--text) 30%, transparent);
+  background: color-mix(in srgb, var(--text) 3%, transparent)
+}
+
+/* a clear month is a waymarker, not a section — small, quiet, boxless */
+.deadlineMonth.empty {
+  border-color: transparent;
+  padding: 2px 4px
+}
+
+.deadlineMonth.empty .deadlineMonthHead {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 300;
+  letter-spacing: .08em;
+  color: var(--muted)
+}
+
+.deadlineMonthHead {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 14px;
+  width: 100%;
+  font: inherit;
+  font-size: 30px;
+  font-weight: 500;
+  letter-spacing: .01em;
+  line-height: 1.15;
+  color: var(--text);
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left
+}
+
+button.deadlineMonthHead {
+  cursor: pointer
+}
+
+button.deadlineMonthHead:hover {
+  color: var(--text)
+}
+
+.deadlineMonthCaret {
+  font-size: 15px;
+  width: 20px;
+  flex: none;
+  align-self: center;
+  color: var(--muted);
+  transition: color .2s
+}
+
+button.deadlineMonthHead:hover .deadlineMonthCaret {
+  color: var(--text)
+}
+
+/* the count sits right beside the name — the line ends where its content
+ * ends, no dead stretch to the far edge */
+.deadlineMonthCount {
+  font-size: 13px;
+  letter-spacing: .05em;
+  color: var(--muted);
+  font-weight: 400
+}
+
+.deadlineMonthNote {
+  font-size: 11px;
+  letter-spacing: .1em;
+  opacity: .7
+}
+
+/* the agenda: one row per day that holds deadlines */
+.deadlineAgenda {
+  display: flex;
+  flex-direction: column;
+  gap: 16px
+}
+
+.deadlineDay {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start
+}
+
+.deadlineDayNum {
+  width: 54px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  padding-top: 8px
+}
+
+.deadlineDayNum .d {
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--text)
+}
+
+.deadlineDayNum .w {
+  font-size: 11px;
+  letter-spacing: .08em;
+  color: var(--muted)
+}
+
+.deadlineDay.today .deadlineDayNum .d {
+  color: var(--dl-today)
+}
+
+.deadlineDayItems {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-left: 1px solid var(--line);
+  padding-left: 18px
+}
+
+.deadlineEntry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: calc(100% - var(--depth, 0) * 20px);
+  margin-left: calc(var(--depth, 0) * 20px);
+  font: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+  border: none;
+  border-radius: 10px;
+  padding: 9px 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: background .2s
+}
+
+.deadlineEntry:hover {
+  background: color-mix(in srgb, var(--text) 11%, transparent)
+}
+
+.deadlineEntryDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--muted);
+  opacity: .5
+}
+
+.deadlineEntryTitle {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.45;
+  overflow-wrap: anywhere
+}
+
+.deadlineEntry.done .deadlineEntryTitle {
+  text-decoration: line-through;
+  opacity: .5
+}
+
+.deadlineEntryTime {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap
+}
+
+.deadlineEntryCount {
+  font-size: 12px;
+  color: var(--muted);
+  opacity: .8;
+  white-space: nowrap
+}
+
+.deadlineEntry.parent {
+  background: color-mix(in srgb, var(--accent) 20%, transparent)
+}
+
+.deadlineEntry.parent:hover {
+  background: color-mix(in srgb, var(--accent) 28%, transparent)
+}
+
+.deadlineEntry.sub {
+  background: color-mix(in srgb, var(--text) 5%, transparent)
+}
+
+.deadlineEntry.urg-overdue {
+  background: color-mix(in srgb, var(--dl-overdue) 22%, transparent)
+}
+
+.deadlineEntry.urg-overdue:hover {
+  background: color-mix(in srgb, var(--dl-overdue) 30%, transparent)
+}
+
+.deadlineEntry.urg-overdue .deadlineEntryDot {
+  background: var(--dl-overdue);
+  opacity: 1
+}
+
+.deadlineEntry.urg-today {
+  background: color-mix(in srgb, var(--dl-today) 24%, transparent)
+}
+
+.deadlineEntry.urg-today:hover {
+  background: color-mix(in srgb, var(--dl-today) 32%, transparent)
+}
+
+.deadlineEntry.urg-today .deadlineEntryDot {
+  background: var(--dl-today);
+  opacity: 1
+}
+
+.deadlineEntry.urg-soon {
+  background: color-mix(in srgb, var(--dl-soon) 20%, transparent)
+}
+
+.deadlineEntry.urg-soon:hover {
+  background: color-mix(in srgb, var(--dl-soon) 28%, transparent)
+}
+
+.deadlineEntry.urg-soon .deadlineEntryDot {
+  background: var(--dl-soon);
+  opacity: 1
+}
+
+.deadlineEntry.urg-week .deadlineEntryDot {
+  background: var(--accent);
+  opacity: .8
+}
+
+/* the detail card */
+.deadlineCard {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--bg) 60%, transparent);
+  backdrop-filter: blur(10px)
+}
+
+.deadlineCard.open {
+  display: flex
+}
+
+.deadlineCardPanel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: min(480px, 92vw);
+  max-height: 82vh;
+  overflow-y: auto;
+  padding: 26px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--bg) 88%, transparent)
+}
+
+.deadlineCardClose {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px
+}
+
+.deadlineCardClose:hover {
+  color: var(--text)
+}
+
+.deadlineCardTitle {
+  font-size: 21px;
+  font-weight: 400;
+  padding-right: 28px;
+  overflow-wrap: anywhere
+}
+
+.deadlineCard.done .deadlineCardTitle {
+  text-decoration: line-through;
+  opacity: .55
+}
+
+.deadlineCardWhen {
+  font-size: 14px;
+  color: var(--muted)
+}
+
+.deadlineCard.urg-overdue .deadlineCardWhen {
+  color: var(--dl-overdue)
+}
+
+.deadlineCard.urg-today .deadlineCardWhen {
+  color: var(--dl-today)
+}
+
+.deadlineCard.urg-soon .deadlineCardWhen {
+  color: var(--dl-soon)
+}
+
+.deadlineCrumb {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  border-bottom: 1px dashed var(--line);
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0
+}
+
+.deadlineCrumb:hover {
+  color: var(--text)
+}
+
+.deadlineCardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px
+}
+
+.deadlineCardActions button {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 16px;
+  cursor: pointer;
+  transition: color .2s, border-color .2s
+}
+
+.deadlineCardActions button:hover {
+  border-color: color-mix(in srgb, var(--text) 32%, transparent)
+}
+
+.deadlineCardActions .danger,
+.deadlineEditorActions .danger {
+  color: var(--dl-overdue);
+  border-color: color-mix(in srgb, var(--dl-overdue) 35%, transparent)
+}
+
+.deadlineCardList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px
+}
+
+.deadlineChild {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px
+}
+
+.deadlineChild:hover {
+  background: color-mix(in srgb, var(--text) 6%, transparent)
+}
+
+.deadlineChild.done .deadlineChildTitle {
+  text-decoration: line-through;
+  opacity: .5
+}
+
+.deadlineChildBody {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0
+}
+
+.deadlineChildTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap
+}
+
+.deadlineChildWhen {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap
+}
+
+.deadlineChildCount {
+  font-size: 12px;
+  color: var(--muted);
+  opacity: .7;
+  white-space: nowrap
+}
+
+.deadlineChildBtn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px
+}
+
+.deadlineChildBtn:hover {
+  color: var(--text)
+}
+
+/* the editor */
+.deadlineEditor {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--bg) 60%, transparent);
+  backdrop-filter: blur(10px)
+}
+
+.deadlineEditor.open {
+  display: flex
+}
+
+.deadlineEditorPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: min(400px, 90vw);
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--bg) 88%, transparent)
+}
+
+.deadlineEditorTitle {
+  font-size: 13px;
+  letter-spacing: .18em;
+  color: var(--muted)
+}
+
+.deadlineField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted)
+}
+
+.deadlineField em {
+  font-style: normal;
+  opacity: .6
+}
+
+.deadlineField input {
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  color: var(--text);
+  font: inherit;
+  font-size: 16px;
+  padding: 6px 2px;
+  outline: none;
+  color-scheme: dark
+}
+
+.deadlineField input:focus {
+  border-bottom-color: var(--accent)
+}
+
+.deadlineEditorActions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 6px
+}
+
+.deadlineEditorActions .danger {
+  margin-right: auto
+}
+
+.deadlineEditorActions button {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 16px;
+  cursor: pointer;
+  transition: color .2s, border-color .2s
+}
+
+.deadlineEditorActions button:hover {
+  border-color: color-mix(in srgb, var(--text) 32%, transparent)
+}
+
+.deadlineHint {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  letter-spacing: .06em;
+  opacity: .8;
+  padding: 10px 0 2px;
+  text-align: center
+}
+
+.deadlineHint .hintTouch {
+  display: none
+}
+
+/* keyboard focus: a visible ring on every operable deadline control */
+.deadlinesMode button:focus-visible,
+.deadlinesMode .deadlineRow:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px
+}
+
+/* the reminder card */
+.deadlineReminder {
+  position: fixed;
+  left: 50%;
+  top: 22px;
+  transform: translate(-50%, -160%);
+  z-index: 95;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 11px 12px 11px 18px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 10px 34px rgba(0, 0, 0, .35);
+  transition: transform .5s cubic-bezier(.2, .7, .2, 1)
+}
+
+.deadlineReminder.show {
+  transform: translate(-50%, 0)
+}
+
+.deadlineReminderBody {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0
+}
+
+.deadlineReminderLabel {
+  font-size: 11px;
+  letter-spacing: .22em;
+  color: var(--dl-today)
+}
+
+.deadlineReminderTitle {
+  font-size: 14px;
+  font-weight: 400;
+  max-width: 38vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap
+}
+
+.deadlineReminderWhen {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap
+}
+
+.deadlineReminderActions {
+  display: flex;
+  gap: 8px
+}
+
+.deadlineReminderActions button {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: color .2s, border-color .2s
+}
+
+.deadlineReminderActions button:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--text) 30%, transparent)
+}
+
+@media (hover:none), (pointer:coarse) {
+  .deadlineHint .hintPointer {
+    display: none
+  }
+
+  .deadlineHint .hintTouch {
+    display: inline
+  }
+}
+
+@media(max-width:840px) {
+  .deadlineLayout {
+    flex-direction: column
+  }
+
+  .deadlineOutline {
+    width: auto;
+    max-height: 32vh;
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+    padding: 0 0 10px
+  }
+
+  .deadlineTools {
+    margin-left: 0
+  }
+
+  .deadlineMonthHead {
+    font-size: 24px
+  }
+
+  .deadlineMonthCaret {
+    font-size: 13px;
+    width: 16px
+  }
+
+  .deadlineDayNum {
+    width: 42px;
+    padding-top: 6px
+  }
+
+  .deadlineDayNum .d {
+    font-size: 16px
+  }
+}
+
+@media(max-width:700px) {
+  .deadlineMode {
+    padding: 12px 10px 6px
+  }
+
+  .deadlineOutline {
+    max-height: 24vh
+  }
+
+  .deadlineTop {
+    gap: 8px
+  }
+
+  .deadlineNext {
+    font-size: 13px
+  }
+
+  .deadlineMonthHead {
+    font-size: 20px;
+    margin-bottom: 10px
+  }
+
+  .deadlineMonthCount {
+    font-size: 12px
+  }
+
+  .deadlineEntry {
+    font-size: 13px;
+    padding: 7px 11px
+  }
+
+  .deadlineDayItems {
+    padding-left: 12px;
+    gap: 5px
+  }
+
+  .deadlineAgenda {
+    gap: 12px
+  }
+
+  .deadlineReminderTitle {
+    max-width: 34vw
+  }
+}
+
+/* ---- the mode rail (desktop) + mode dock (phone) -------------------------
+   the top pill fits a handful of glyphs; six labeled screens deserve a
+   directory. the rail sits outside main#app so the layout shift never
+   pushes it, and main shrinks beside it — every absolutely-positioned
+   child re-anchors inside the narrowed box automatically. */
+:root {
+  --railW: 176px
+}
+
+#modeRail {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: var(--railW);
+  z-index: 150;
+  flex-direction: column;
+  gap: 2px;
+  padding: 22px 12px 14px;
+  border-right: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  backdrop-filter: blur(16px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  transition: width .25s cubic-bezier(.2, .7, .2, 1), box-shadow .25s
+}
+
+body.historyOpen #modeRail {
+  visibility: hidden
+}
+
+/* the date line belongs to the question screen; on the other walls it
+ * only steals space (especially on phones) */
+body:is(.focusModeVisual, .schedulerVisual, .stickyVisual, .quotesVisual, .deadlinesVisual) .topbar {
+  display: none
+}
+
+/* minimized: glyphs only. one source of truth — the JS-toggled .peek class
+ * drives BOTH the rail's visual width (--railW via body.railPeek) and the
+ * layout shift, so the rail can never disagree with the content beside it */
+#modeRail.min {
+  padding: 16px 12px 14px
+}
+
+#modeRail.min:not(.peek) .railName,
+#modeRail.min:not(.peek) .railStatus {
+  display: none
+}
+
+/* folded: the 28px glyph column centers on the rail itself — padding-left
+ * collapses so the icon column's midpoint lands on the rail's midpoint */
+#modeRail.min:not(.peek) .railEntry {
+  padding-left: 0
+}
+
+/* the rail header: the one-question mark leads on the left; the toggle
+ * lives in its own labeled row just below */
+.railHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 10px;
+  padding: 2px 0
+}
+
+.railLogo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0
+}
+
+.railLogoMark {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 11px
+}
+
+.railLogoText {
+  font-size: 10px;
+  letter-spacing: .14em;
+  color: var(--muted);
+  white-space: nowrap
+}
+
+/* the compact icon twin of the toggle, fixed at the header's right */
+.railModeIconBtn {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color .2s, border-color .2s
+}
+
+.railModeIconBtn:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--text) 32%, transparent)
+}
+
+/* the folded rail wears the logo instead of the toggle — the mark hints */
+#modeRail.min .railLogoMark {
+  cursor: pointer;
+  transition: color .2s, border-color .2s
+}
+
+#modeRail.min .railLogoMark:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--text) 34%, transparent)
+}
+
+#modeRail.min:not(.peek) .railLogoText {
+  display: none
+}
+
+/* the toggle row: icon + the mode it holds + a hint; clicking cycles */
+.railModeBtn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin: 0 0 14px;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: color .2s, border-color .2s
+}
+
+.railModeBtn:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--text) 32%, transparent)
+}
+
+.railModeIcon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px
+}
+
+.railModeLabel {
+  font-size: 11px;
+  letter-spacing: .16em;
+  color: var(--text)
+}
+
+.railModeHint {
+  margin-left: auto;
+  font-size: 10px;
+  letter-spacing: .04em;
+  color: var(--muted);
+  white-space: nowrap
+}
+
+/* folded: the toggle row and its icon twin step aside — the logo stands in
+ * for them, and they return once the rail unfolds (visibility keeps them
+ * tab-reachable) */
+#modeRail.min:not(.peek) .railModeBtn,
+#modeRail.min:not(.peek) .railModeIconBtn {
+  visibility: hidden
+}
+
+/* the look controls (light mode + settings) dock together at the bottom */
+.railTheme {
+  margin-top: auto
+}
+
+.railEntry {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  align-items: center;
+  column-gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  border-left: 2px solid transparent;
+  border-radius: 0 10px 10px 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: color .2s, background .2s, border-color .2s
+}
+
+.railEntry:hover {
+  color: var(--text);
+  background: color-mix(in srgb, var(--text) 5%, transparent)
+}
+
+.railEntry.active {
+  color: var(--text);
+  border-left-color: var(--accent);
+  background: color-mix(in srgb, var(--text) 6%, transparent)
+}
+
+.railGlyph {
+  grid-row: span 2;
+  font-size: 15px;
+  text-align: center;
+  justify-self: center;
+  opacity: .85
+}
+
+/* the rail's own text never reflows: names stay on one line and get
+ * clipped by the rail edge while it animates — only the page content
+ * flexes, the sidebar text just slides out from behind the fold */
+.railName {
+  font-size: 13px;
+  line-height: 1.3;
+  white-space: nowrap
+}
+
+.railStatus {
+  font-size: 10px;
+  letter-spacing: .04em;
+  color: var(--muted);
+  min-height: 13px;
+  line-height: 1.3;
+  white-space: nowrap
+}
+
+#modeRail .railEntry:focus-visible,
+#modeDock .dockEntry:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px
+}
+
+/* the phone dock: glyphs above the hydration glass, thumbs reach */
+#modeDock {
+  display: none;
+  position: fixed;
+  left: 50%;
+  bottom: calc(54px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 88;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  backdrop-filter: blur(14px)
+}
+
+.dockEntry {
+  width: 42px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  transition: color .2s, background .2s
+}
+
+.dockEntry.active {
+  color: var(--text);
+  background: color-mix(in srgb, var(--text) 11%, transparent)
+}
+
+@media(min-width:841px) {
+  #modeRail {
+    display: flex
+  }
+
+  /* the minimized rail narrows the whole layout with it — one variable,
+   * every anchored override follows. hovering a folded rail re-widens it
+   * (JS sets body.railPeek), pushing the content in the same motion */
+  body.railMin {
+    --railW: 56px
+  }
+
+  body.railMin.railPeek {
+    --railW: 176px
+  }
+
+  /* the shifted edges animate in step with the rail's own width */
+  main#app {
+    transition: margin-left .25s cubic-bezier(.2, .7, .2, 1), width .25s cubic-bezier(.2, .7, .2, 1)
+  }
+
+  .scheduler,
+  .stickyMode,
+  .quotesMode,
+  .deadlinesMode,
+  .bookStudio,
+  .historyPanel {
+    transition: left .25s cubic-bezier(.2, .7, .2, 1)
+  }
+
+  .bottomLeftTools,
+  .notePanel,
+  .todoFullscreen {
+    transition: left .25s cubic-bezier(.2, .7, .2, 1)
+  }
+
+  .hydrationReminder,
+  .deadlineReminder {
+    transition: margin-left .25s cubic-bezier(.2, .7, .2, 1)
+  }
+
+  /* the rail replaces the top pill on wide screens — and inherits the
+   * settings button, which moves into its bottom */
+  .modePicker {
+    display: none !important
+  }
+
+  #settings {
+    display: none !important
+  }
+
+  #themeToggle {
+    display: none !important
+  }
+
+  /* everything re-anchors inside the narrowed main */
+  main#app {
+    margin-left: var(--railW);
+    width: calc(100% - var(--railW))
+  }
+
+  /* fixed fullscreens anchor beside the rail */
+  .scheduler,
+  .stickyMode,
+  .quotesMode,
+  .deadlinesMode,
+  .bookStudio,
+  .historyPanel {
+    left: var(--railW);
+    right: 0
+  }
+
+  /* the fixed bottom-left cluster */
+  .bottomLeftTools,
+  .notePanel,
+  .todoFullscreen {
+    left: calc(20px + var(--railW)) !important
+  }
+
+  /* centered banners stay centered in the content area */
+  .hydrationReminder,
+  .deadlineReminder {
+    margin-left: calc(var(--railW) / 2)
+  }
+}
+
+@media(max-width:700px) {
+  #modeDock {
+    display: flex
   }
 }

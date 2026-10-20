@@ -1,0 +1,643 @@
+{
+  "version": 1,
+  "keys": {
+    "oneQuestionSettings": {
+      "updatedAt": 1791424131242,
+      "value": {
+        "categories": [
+          "all"
+        ],
+        "cycleSeconds": 6.5,
+        "modeSwitchExpand": "always",
+        "modeOrder": [
+          "question",
+          "focus",
+          "scheduler",
+          "sticky"
+        ],
+        "hiddenModes": [],
+        "stickyCategories": [
+          "general"
+        ],
+        "stickyPush": 110,
+        "stickyTilt": 1.8,
+        "stickyScale": 26,
+        "stickySpread": 100,
+        "tidyAnchor": "center-center",
+        "hydrationMinutes": 60,
+        "hydrationSize": 24,
+        "hydrationWave": true,
+        "hydrationHoverEnabled": false,
+        "hydrationHoverScale": 1.5,
+        "screenScale": 1,
+        "animation": true,
+        "timerAnimation": true,
+        "lowercase": false,
+        "schedulerListVisible": true,
+        "appearance": {
+          "backgroundColor": "#10100f",
+          "textColor": "#ebe8e0",
+          "accentColor": "#aaa69d",
+          "overlayColor": "#10100f",
+          "overlayOpacity": 30,
+          "backgroundOpacity": 35,
+          "backgroundImage": "",
+          "backgroundFileName": "",
+          "blur": 0,
+          "grayscale": 0,
+          "saturation": 100,
+          "brightness": 100,
+          "contrast": 100,
+          "sepia": 0,
+          "parallaxText": 10,
+          "parallaxBackground": 18,
+          "parallaxScale": 108,
+          "textSize": 100,
+          "fontWeight": 400,
+          "lightMode": false,
+          "lightModeRestore": null
+        },
+        "syncToken": "",
+        "syncServer": ""
+      }
+    },
+    "oneQuestionQuestionBank": {
+      "updatedAt": 1790059331115,
+      "value": [
+        [
+          "reflection",
+          "What's been taking up more of your mental space than it deserves?"
+        ],
+        [
+          "focus",
+          "What's the one thing worth making progress on today?"
+        ],
+        [
+          "self-awareness",
+          "What are you avoiding right now?"
+        ],
+        [
+          "life",
+          "What could you make slightly easier for yourself today?"
+        ],
+        [
+          "decision",
+          "What decision are you making harder than it needs to be?"
+        ],
+        [
+          "reflection",
+          "What's been quietly bothering you lately?"
+        ],
+        [
+          "focus",
+          "If you could only finish one thing today, what should it be?"
+        ],
+        [
+          "growth",
+          "What's something you're currently learning about yourself?"
+        ],
+        [
+          "relationships",
+          "Who would you genuinely like to hear from today?"
+        ],
+        [
+          "attention",
+          "What are you about to spend time on, and is it worth it?"
+        ],
+        [
+          "future",
+          "What would future-you thank you for starting today?"
+        ],
+        [
+          "creativity",
+          "What would you make if nobody else ever saw it?"
+        ],
+        [
+          "well-being",
+          "What would make tonight feel like a good night?"
+        ],
+        [
+          "reflection",
+          "What's something that went better than expected recently?"
+        ],
+        [
+          "growth",
+          "What mistake taught you something useful?"
+        ],
+        [
+          "life",
+          "What are you tolerating that you don't actually need to tolerate?"
+        ],
+        [
+          "focus",
+          "What's the smallest useful step you could take right now?"
+        ],
+        [
+          "decision",
+          "What are you waiting for permission to do?"
+        ],
+        [
+          "relationships",
+          "Is there someone you should thank?"
+        ],
+        [
+          "learning",
+          "What's something you changed your mind about recently?"
+        ],
+        [
+          "attention",
+          "Where has your attention been going lately?"
+        ],
+        [
+          "future",
+          "What do you want more of in your life six months from now?"
+        ],
+        [
+          "reflection",
+          "What are you proud of that you don't talk about much?"
+        ],
+        [
+          "self-awareness",
+          "What usually happens right before you procrastinate?"
+        ],
+        [
+          "life",
+          "What can you stop doing without anything important breaking?"
+        ],
+        [
+          "growth",
+          "Where are you expecting yourself to be perfect?"
+        ],
+        [
+          "fun",
+          "If today had a theme, what would it be?"
+        ],
+        [
+          "curiosity",
+          "What's something you've been curious about lately?"
+        ],
+        [
+          "well-being",
+          "What does your body probably need today?"
+        ],
+        [
+          "reflection",
+          "What did yesterday teach you?"
+        ],
+        [
+          "focus",
+          "What deserves your full attention today?"
+        ],
+        [
+          "decision",
+          "What would you choose if you weren't worried about disappointing anyone?"
+        ],
+        [
+          "relationships",
+          "Who makes your life better just by being around?"
+        ],
+        [
+          "future",
+          "What small thing could you start today that compounds over time?"
+        ],
+        [
+          "life",
+          "What's something you have enough of already?"
+        ],
+        [
+          "self-awareness",
+          "What story have you been telling yourself lately?"
+        ],
+        [
+          "creativity",
+          "What idea keeps coming back to you?"
+        ],
+        [
+          "learning",
+          "What do you wish you understood better?"
+        ],
+        [
+          "attention",
+          "What's one distraction you could remove today?"
+        ],
+        [
+          "reflection",
+          "What's something you want to remember about this period of your life?"
+        ],
+        [
+          "spark",
+          "Which project makes you most curious right now?"
+        ],
+        [
+          "spark",
+          "When did you last lose track of time — what were you doing?"
+        ],
+        [
+          "spark",
+          "What did you finally understand and get running?"
+        ],
+        [
+          "spark",
+          "If you had 30 free minutes, what would you poke at?"
+        ]
+      ]
+    },
+    "oneQuestionFocusQuestions": {
+      "updatedAt": 1789987029817,
+      "value": [
+        "What do you want to move forward right now?",
+        "What would make the next hour feel worthwhile?",
+        "What is the most useful thing you can do in the next 20 minutes?",
+        "What are you choosing to give your attention to right now?",
+        "What small action would create momentum?",
+        "What needs to happen before you can call today a good day?",
+        "If you stopped optimizing, what would you simply do next?",
+        "What deserves your attention more than the thing distracting you?"
+      ]
+    },
+    "oneQuestionHistory": {
+      "updatedAt": 1791257207634,
+      "value": [
+        {
+          "question": "What are you about to spend time on, and is it worth it?",
+          "category": "attention",
+          "answer": "Doing my skripsi",
+          "date": "2026-10-06T03:26:47.634Z",
+          "answeredAt": "2026-10-06T03:26:47.634Z"
+        },
+        {
+          "question": "What's been taking up more of your mental space than it deserves?",
+          "category": "reflection",
+          "answer": "WAKE ON FUCKING LAN WITH INDIHOME ITS CRAZY AAAAAAAAA",
+          "date": "2026-09-21T15:42:08.788Z",
+          "answeredAt": "2026-09-21T15:42:08.788Z"
+        },
+        {
+          "question": "What story have you been telling yourself lately?",
+          "category": "self-awareness",
+          "answer": "being yourself is always the best",
+          "date": "2026-09-21T10:39:13.987Z",
+          "answeredAt": "2026-09-21T10:39:13.987Z"
+        },
+        {
+          "question": "What decision are you making harder than it needs to be?",
+          "category": "decision",
+          "answer": "making characters than focusing on my thesis",
+          "date": "2026-09-19T11:25:50.964Z",
+          "answeredAt": "2026-09-19T11:25:50.964Z"
+        }
+      ]
+    },
+    "oneQuestionRecent": {
+      "updatedAt": 1791861998974,
+      "value": [
+        29,
+        33,
+        38,
+        23,
+        4,
+        15,
+        27,
+        32,
+        0,
+        8,
+        12,
+        24
+      ]
+    },
+    "oneQuestionTodos": {
+      "updatedAt": 1789987029817,
+      "value": []
+    },
+    "oneQuestionHydration": {
+      "updatedAt": 1791783789987,
+      "value": {
+        "lastDrinkAt": 1789772245794,
+        "drinkCount": 2,
+        "lastDate": "2026-09-19",
+        "drinkHistory": [
+          1789633042533,
+          1789633213328,
+          1789653462180,
+          1789653494322,
+          1789653511327,
+          1789660088800,
+          1789662515161,
+          1789670290881,
+          1789672737907,
+          1789697121532,
+          1789710058894,
+          1789745114827,
+          1789770144411,
+          1789772245794
+        ]
+      }
+    },
+    "oneQuestionSchedule": {
+      "updatedAt": 1791618734510,
+      "value": [
+        {
+          "start": 240,
+          "end": 361,
+          "label": "bangun subuh",
+          "color": "#7d8c7c"
+        },
+        {
+          "start": 365,
+          "end": 480,
+          "label": "tidur",
+          "color": "#8c7d8c"
+        },
+        {
+          "start": 536,
+          "end": 1440,
+          "label": "bangun",
+          "color": "#7c829c"
+        },
+        {
+          "start": 4,
+          "end": 233,
+          "label": "tidur",
+          "color": "#9c8d7c"
+        },
+        {
+          "start": 903,
+          "end": 1274,
+          "label": "hdheisn",
+          "color": "#7c9c95"
+        }
+      ]
+    },
+    "oneQuestionStickies": {
+      "updatedAt": 1791783796249,
+      "value": [
+        {
+          "id": "22f379cc-b095-48a9-95dc-efecef1440f1",
+          "text": "silence - akiyoshi rikako",
+          "created": 1790086231973,
+          "done": true,
+          "cat": "book",
+          "x": null,
+          "y": null
+        },
+        {
+          "id": "de79007c-cde8-4cd5-bf02-3bf5748fc121",
+          "text": "akatsuki - mulyatun n",
+          "created": 1790086198918,
+          "done": true,
+          "cat": "book",
+          "x": null,
+          "y": null
+        },
+        {
+          "id": "ff46289a-c71d-407d-ba27-c32abe602215",
+          "text": "laut bercerita",
+          "created": 1790086092926,
+          "done": true,
+          "cat": "film",
+          "x": null,
+          "y": null,
+          "z": "13"
+        },
+        {
+          "id": "29c686fb-3c1b-48ff-ae70-555d00903484",
+          "text": "the essential people skills",
+          "created": 1790004800440,
+          "done": true,
+          "cat": "book",
+          "x": null,
+          "y": null,
+          "z": "33"
+        },
+        {
+          "id": "9b876e1b-b032-4ede-9bc1-ddd91c8f6dc4",
+          "text": "filosofi teras",
+          "created": 1790004780554,
+          "done": true,
+          "cat": "book",
+          "x": null,
+          "y": null,
+          "z": "39"
+        },
+        {
+          "id": "c270681e-f50e-4d8b-95f5-cccd9670fae0",
+          "text": "how to influence people and win friends",
+          "created": 1790004768030,
+          "done": true,
+          "cat": "book",
+          "x": null,
+          "y": null,
+          "z": "16"
+        },
+        {
+          "id": "84948df2-974b-451d-8318-32d5bba9980c",
+          "text": "sebuah seni untuk bersikap bodo amat",
+          "created": 1790004750032,
+          "done": false,
+          "cat": "book",
+          "x": null,
+          "y": null,
+          "z": "15"
+        },
+        {
+          "id": "c10f0ff7-3ff0-49a8-ac80-446fe23a32ab",
+          "text": "hafidzuddin",
+          "created": 1789816515228,
+          "done": false,
+          "cat": "friend",
+          "x": null,
+          "y": null,
+          "z": "12"
+        },
+        {
+          "id": "2eca497c-70a8-487e-8d64-80b19c8f29f0",
+          "text": "micin",
+          "created": 1789816364531,
+          "done": false,
+          "cat": "friend",
+          "x": null,
+          "y": null,
+          "z": "17"
+        },
+        {
+          "id": "3b8d4056-03fb-4517-8ac9-072dd635b98c",
+          "text": "ross",
+          "created": 1789816362131,
+          "done": false,
+          "cat": "friend",
+          "x": null,
+          "y": null,
+          "z": "15"
+        },
+        {
+          "id": "2edd666d-418e-4b23-a79f-56b792e8722f",
+          "text": "vocal training",
+          "created": 1789816337074,
+          "done": false,
+          "cat": "skill",
+          "x": null,
+          "y": null,
+          "z": "20"
+        },
+        {
+          "id": "6ea96866-780b-4eec-b236-1868b48d62f5",
+          "text": "quality check",
+          "created": 1789816315707,
+          "done": false,
+          "cat": "skill",
+          "x": null,
+          "y": null,
+          "z": "18"
+        },
+        {
+          "id": "77bdee44-8458-4137-81cb-222ab5ec9ac1",
+          "text": "ken",
+          "created": 1789815892883,
+          "done": false,
+          "cat": "friend",
+          "x": null,
+          "y": null,
+          "z": "16"
+        },
+        {
+          "id": "6dd5e394-4218-46cb-8a42-374ea20d82e0",
+          "text": "quokka",
+          "created": 1789815885007,
+          "done": false,
+          "cat": "friend",
+          "x": null,
+          "y": null,
+          "z": "19"
+        },
+        {
+          "id": "51e5f2ac-4340-4e7e-a953-d8978d78fd81",
+          "text": "bogel",
+          "created": 1789814800974,
+          "done": false,
+          "cat": "friend",
+          "x": null,
+          "y": null,
+          "z": "16"
+        },
+        {
+          "id": "77b42b44-6ff7-4cc3-a94c-0d6fb2981474",
+          "text": "mito",
+          "created": 1789814786389,
+          "done": false,
+          "cat": "friend",
+          "x": null,
+          "y": null,
+          "z": "19"
+        },
+        {
+          "id": "d2aa6165-ef4f-401b-aa4e-632a62f4f344",
+          "text": "tugas akhir",
+          "created": 1789804934229,
+          "done": false,
+          "cat": "assignment",
+          "x": null,
+          "y": null,
+          "z": "28"
+        },
+        {
+          "id": "3eae8be6-1583-4a1a-b46e-d046b7660d37",
+          "text": "motion graphics",
+          "created": 1789804390454,
+          "done": false,
+          "cat": "skill",
+          "x": null,
+          "y": null,
+          "z": "17"
+        }
+      ]
+    },
+    "oneQuestionNote": {
+      "updatedAt": 1790143698763,
+      "value": "my secret note"
+    },
+    "oneQuestionJournal": {
+      "updatedAt": 1790655894619,
+      "value": [
+        {
+          "id": "pmum5u4mlwg69",
+          "date": "",
+          "text": "         \n   \n\n                    right here\n\n\n                                   \n\n                        \n\n                             \n\n\n                \n                          \n\n                           ",
+          "createdAt": 1790655139821,
+          "updatedAt": 1790655891498
+        },
+        {
+          "id": "pmum5u4mlir5p",
+          "date": "",
+          "text": "                                   \n                                       \n     \n                                           \n                                        \n                                     \n            \n                      \n                                        \n                     \n                   \n             \n\n                                      \n                         \n                   \n                    \n                              ",
+          "createdAt": 1790655139821,
+          "updatedAt": 1790655894018
+        }
+      ]
+    },
+    "oneQuestionBook": {
+      "updatedAt": 1791266277824,
+      "value": {
+        "title": "",
+        "chapters": [
+          {
+            "id": "ch-recovered-mup3wavg",
+            "title": "starting point(not really)",
+            "category": "everyday journal",
+            "html": "<p>I know that everyday feels wierd, kalau coba buat masuk ke mode fokus kadang bikin otak pusing ditambah yang kerasa itu perasaan nyambung ke otak, feels like they're battle-ing each other in some ways. and theres times when it feels like their pushing you away from doing things.</p><p>You also sometimes feels that you wanted to do things that you felt that you don't want to do it but you feel like you need it, its sometimes wierd that minds works like that. its kinda like your brain forces you to do something that you don't but you kept on doing it.</p><p>Like, for example right now aku malah ngomong kaya gini tiba tiba pengen pake bahasa inggris maybe its wierd to find it right but kalau udah terbiasa sama ga terlalu dipeduliin sih artinya jalanin aja. dulu aku pernah merasakan kalau hal tersebut ada istilah urutannya yang bagus bekerja di kepala, yaitu namanya&nbsp;</p>",
+            "createdAt": 1790833280524,
+            "updatedAt": 1791171123296
+          },
+          {
+            "id": "cmuur3gmmtcxs",
+            "title": "doing what i must",
+            "category": "progressing",
+            "html": "Rasanya sebenernya anehnya kalau kita ngerjain sesuatu tapi hampir 75% nya dikerjain sama AI, sebenernya aman aman aja ya kalau kita pakenya itu sesuai kebutuhan, tapi terkadang ada masanya dimana kita merasakan bawah kita dibandingkan dengan AI. tapi dari rasa tersebut muncul suatu argumen dimana jika kita merasakan hal tersebut artinya kita lebih mulai peka terhadap apa yang kita kurang dan apa yang sebenernya kita pelajari.&nbsp;",
+            "createdAt": 1791174576622,
+            "updatedAt": 1791174718159
+          },
+          {
+            "id": "cmuw2egzm5an1",
+            "title": "power napping",
+            "category": "cheat life",
+            "html": "I do think that doing power nap is a good thing since sometimes you need it.&nbsp;",
+            "createdAt": 1791254032258,
+            "updatedAt": 1791254154372
+          },
+          {
+            "id": "cmuw7xntnaj4q",
+            "title": "1. Cek Referensi GDLC",
+            "category": "thesis",
+            "html": "Sesuai dari buku \"Game Development Life Cycle Guidelines\" kenapa buku itu dibuat adalah :<p><p>1. karena video game itu bisa menjadi sebuah kemajuan untuk game industri dan sumber profitable/pendapatan industri dikarenakan semua video game semuanya ada di semua perangkat seperti smartphone, komputer, console, dan lain lain. oleh karena itu ada sebuah perusahaan yang&nbsp; mendistribusi perangkat pengembangan perangkat lunak (SDK) mereka secara terbuka kepada publik untuk memproduksi komponen atau produk (OEM) yang nantinya digunakan atau dijual kembali.&nbsp;</p><p>nanti cari [1] dari buku ini tuh apa</p><p>2. Gim gak bisa dibikin cuma pakai logika pemrograman. Software biasa (misal aplikasi kasir): fungsinya jalan = selesai. Gim yang fungsinya jalan tapi gak enak dimainkan = gagal. Jadi engineering doang gak cukup. Gim itu gak murni hasil rekayasa software, juga gak murni karya seni — tapi lebih mirip hasil keterampilan (kayak kerajinan tangan), yang dibikin dari gabungan banyak bidang yang jalin-menjalin: seni, musik, programming, acting, sama pengaturannya semua.<br>nanti cari [3][5]</p><p>Makanya pengembangan game itu perlu alur pembuatan untuk membantu referensi.</p><p><br></p><p>Dari referensi GDLC dijelaskan sistem SDLC, yaitu :<br>1. <b>Analisis </b>= mengumpulkan dan menggambarkan kebutuhan pengguna.</p><p>2. <b>Design </b>= dari analisis kebutuhan di fase ini ditranslasikan dengan model dan representasi perangkat lunak yang ada secara mendetail&nbsp;</p><p>3. <b>Code generation/Implementation</b> = model representasinya di translasi lagi ke source code seperti C++,Java dan lain lain agar menjadi aplikasi yang bisa dijalankan.</p><p>4.&nbsp; <b>Testing</b>&nbsp;= pengujian dilakukan untuk memastikan seluruh elemen berjalan sesuai fungsinya dan memenuhi spesifikasi yang telah ditentukan.</p><p><br></p><p><br></p><p><br></p></p>",
+            "createdAt": 1791263325659,
+            "updatedAt": 1791266277324
+          }
+        ],
+        "activeId": "cmuw7xntnaj4q"
+      }
+    },
+    "oneQuestionQuotes": {
+      "updatedAt": 1790914124531,
+      "value": [
+        {
+          "id": "793d7d20-9493-43f6-9f7f-64f71142260e",
+          "text": "If I have to fall, let me be. Because the person i become will catch me",
+          "author": "taigaa00",
+          "created": 1790913493112
+        },
+        {
+          "id": "fb3c9c70-0f9d-4b6c-8bcf-bdf504d7ea3e",
+          "text": "biarkan ketulusan menunjukan arah kita",
+          "author": "zani",
+          "created": 1790913846757
+        },
+        {
+          "id": "a03ff7d2-c092-48ad-afb1-28cfd4c802cf",
+          "text": "be yourself and never surender",
+          "author": "quokka",
+          "created": 1790914068416
+        }
+      ]
+    }
+  },
+  "updatedAt": 1791862000421
+}
