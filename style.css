@@ -9656,6 +9656,19 @@ body:is(.focusModeVisual, .schedulerVisual, .stickyVisual, .quotesVisual, .deadl
   50% { color: var(--text); opacity: 1 }
 }
 
+/* the update twin: hidden until the repo is a build ahead */
+.railUpdate {
+  display: none
+}
+
+.railUpdate.show {
+  display: grid
+}
+
+.railUpdate.show .railGlyph {
+  animation: railPushPulse 2.2s ease-in-out infinite
+}
+
 .railEntry {
   display: grid;
   grid-template-columns: 28px 1fr;

@@ -2,6 +2,8 @@ from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 import json
 import os
+import shutil
+import subprocess
 import threading
 import time
 
@@ -139,6 +141,57 @@ def export_snapshot():
 STATE = load_state()
 STATE_LOCK = threading.Lock()
 
+# ---- self-update: pull the latest code from git without any merging ----
+# Runtime state files are data, not code: they change while the server
+# serves and would collide with every pull. So an update never merges —
+# it backs the runtime files up, hard-resets to origin/main, then puts
+# the runtime files back. Code ends up exactly upstream, data survives.
+UPDATE_RUNTIME_FILES = [
+    "one-question-state.json",
+    "one-question-state-shared.json",
+    "settings export/one-question-backup-latest.json",
+]
+
+
+def _git(args, timeout=120):
+    proc = subprocess.run(
+        ["git", *args], cwd=ROOT, capture_output=True, text=True, timeout=timeout
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(f"git {' '.join(args)}: {proc.stderr.strip() or proc.stdout.strip()}")
+    return proc.stdout.strip()
+
+
+def self_update_from_git():
+    try:
+        before = _git(["rev-parse", "--short", "HEAD"])
+    except Exception:
+        raise RuntimeError("not a git repository (or git is unavailable)")
+    stamp = time.strftime("%Y%m%d-%H%M%S")
+    backup_dir = ROOT.parent / "one-question-update-backups" / f"{stamp}-{before}"
+    saved = []
+    for rel in UPDATE_RUNTIME_FILES:
+        src = ROOT / rel
+        if src.exists():
+            dst = backup_dir / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dst)
+            saved.append((src, dst))
+    try:
+        _git(["fetch", "origin"])
+        _git(["reset", "--hard", "origin/main"])
+        after = _git(["rev-parse", "--short", "HEAD"])
+        commits = _git(["rev-list", "--count", f"{before}..{after}"]) or "0"
+        return {"ok": True, "before": before, "after": after, "commits": commits,
+                "updated": before != after, "backup": str(backup_dir)}
+    finally:
+        # runtime data returns no matter how the reset went
+        for src, dst in saved:
+            try:
+                shutil.copy2(dst, src)
+            except Exception as exc:
+                print(f"[update] restore failed for {src.name}: {exc}", flush=True)
+
 
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -233,6 +286,15 @@ class Handler(SimpleHTTPRequestHandler):
             self._json(400, {"error": str(exc)})
 
     def do_POST(self):
+        if self.path == "/api/update":
+            if not self._authorized():
+                self._json(401, {"error": "unauthorized"})
+                return
+            try:
+                self._json(200, self_update_from_git())
+            except Exception as exc:
+                self._json(500, {"ok": False, "error": str(exc)})
+            return
         # Kept for compatibility with the old Stop Server button.
         if self.path == "/shutdown":
             body = b"Server stopping"

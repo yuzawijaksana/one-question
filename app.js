@@ -980,6 +980,23 @@ function renderModeRail(){
     railBindFlyout(pushBtn);
     pushBtn.onclick=async()=>{await syncNow();updateRailPushBtn();};
     rail.append(pushBtn);
+    // the update twin: a down-arrow that only exists when the repo is a
+    // build ahead — one tap and the server resets itself to origin/main
+    const updateBtn=document.createElement("button");
+    updateBtn.type="button";
+    updateBtn.className="railEntry railUpdate";
+    updateBtn.dataset.mode="update";
+    updateBtn.setAttribute("aria-label","update available");
+    const updGlyph=document.createElement("span");
+    updGlyph.className="railGlyph";updGlyph.textContent="↓";
+    const updName=document.createElement("span");
+    updName.className="railName";updName.textContent="update available";
+    const updStatus=document.createElement("span");
+    updStatus.className="railStatus";
+    updateBtn.append(updGlyph,updName,updStatus);
+    railBindFlyout(updateBtn);
+    updateBtn.onclick=runSelfUpdate;
+    rail.append(updateBtn);
     // the look controls dock at the rail's bottom: light mode above settings
     const themeBtn=document.createElement("button");
     themeBtn.type="button";
@@ -1014,6 +1031,7 @@ function renderModeRail(){
     rail.append(settingsBtn);
     markActiveModeRail();
     updateRailPushBtn();
+    updateRailUpdateBtn();
   }
   if(dock){
     dock.textContent="";
@@ -1030,6 +1048,61 @@ function updateRailPushBtn(){
   btn.classList.toggle("show",pending);
   const status=btn.querySelector(".railStatus");
   if(status)status.textContent=pending?"unsynced changes":"";
+}
+// ---- self-update: watch the repo, offer the newer build ----
+// the page knows its own build from the asset query (?v=…); the repo's
+// latest is the same query in index.html on GitHub raw. newer build ⇒ a
+// down-arrow steps forward; one tap asks the server to reset itself to
+// origin/main (runtime state is backed up and restored server-side)
+const UPDATE_REPO_RAW="https://raw.githubusercontent.com/yuzawijaksana/one-question/main/index.html";
+let updateInfo=null;
+function currentAssetVersion(){
+  const s=document.querySelector('script[src*="app.js?v="]');
+  const m=s&&s.src.match(/[?&]v=([\d.]+)/);
+  return m?m[1]:"0";
+}
+function versionNewer(a,b){
+  const pa=String(a).split(".").map(Number),pb=String(b).split(".").map(Number);
+  for(let i=0;i<Math.max(pa.length,pb.length);i++){
+    const d=(pa[i]||0)-(pb[i]||0);
+    if(d)return d>0;
+  }
+  return false;
+}
+async function checkForUpdate(){
+  try{
+    const res=await fetch(UPDATE_REPO_RAW,{cache:"no-store"});
+    if(!res.ok)return;
+    const html=await res.text();
+    const m=html.match(/app\.js\?v=([\d.]+)/);
+    if(!m)return;
+    if(versionNewer(m[1],currentAssetVersion())){
+      updateInfo={from:currentAssetVersion(),to:m[1]};
+      updateRailUpdateBtn();
+    }
+  }catch(e){/* offline or blocked: another boot will look again */}
+}
+function updateRailUpdateBtn(){
+  const btn=document.querySelector("#modeRail .railUpdate");
+  if(!btn)return;
+  btn.classList.toggle("show",!!updateInfo);
+  const status=btn.querySelector(".railStatus");
+  if(status)status.textContent=updateInfo?`${updateInfo.from} → ${updateInfo.to}`:"";
+}
+async function runSelfUpdate(){
+  const btn=document.querySelector("#modeRail .railUpdate");
+  const status=btn&&btn.querySelector(".railStatus");
+  if(status)status.textContent="updating…";
+  try{
+    const res=await fetch(`${syncBase()}/api/update`,{method:"POST",headers:syncHeaders(),cache:"no-store"});
+    if(!res.ok)throw new Error(`server answered ${res.status}`);
+    await res.json();
+    // the reload picks up the new index.html and its fresh ?v= query
+    location.reload();
+  }catch(e){
+    console.warn("One Question: self-update failed",e);
+    if(status)status.textContent="update failed";
+  }
 }
 function markActiveModeRail(){
   document.querySelectorAll("#modeRail .railEntry, #modeDock .dockEntry").forEach(btn=>{
@@ -6501,7 +6574,7 @@ startCycle();
 // adopt the server's data before anything local could be pushed over it.
 // the startup screen applies after the pull so a new device honors the
 // ⌂ pin that came with the synced settings.
-pullSyncFromServer().finally(()=>{pushSyncToServer();applyStartupMode();});
+pullSyncFromServer().finally(()=>{pushSyncToServer();applyStartupMode();checkForUpdate();});
 hydrateBrowserStorage().then(()=>{
   questions=loadQuestionBank();
   focusQuestions=loadFocusQuestions();
