@@ -167,6 +167,14 @@ def self_update_from_git():
         before = _git(["rev-parse", "--short", "HEAD"])
     except Exception:
         raise RuntimeError("not a git repository (or git is unavailable)")
+    # safety: never reset over work origin doesn't have. resetting while
+    # HEAD is ahead would orphan unpushed commits on main — refuse until
+    # they are pushed (they also survive on the unpushed-work branch)
+    _git(["fetch", "origin"])
+    ahead = _git(["rev-list", "--count", "origin/main..HEAD"]) or "0"
+    if int(ahead) > 0:
+        raise RuntimeError(
+            f"update skipped: HEAD is {ahead} commit(s) ahead of origin/main — push first")
     stamp = time.strftime("%Y%m%d-%H%M%S")
     backup_dir = ROOT.parent / "one-question-update-backups" / f"{stamp}-{before}"
     saved = []
@@ -175,10 +183,9 @@ def self_update_from_git():
         if src.exists():
             dst = backup_dir / rel
             dst.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(src, dst)
+            shutil.copy2(dst, src)
             saved.append((src, dst))
     try:
-        _git(["fetch", "origin"])
         _git(["reset", "--hard", "origin/main"])
         after = _git(["rev-parse", "--short", "HEAD"])
         commits = _git(["rev-list", "--count", f"{before}..{after}"]) or "0"
