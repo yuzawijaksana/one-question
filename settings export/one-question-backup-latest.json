@@ -1,7 +1,7 @@
 {
   "format": "one-question-zen-backup",
   "version": "2.21.3",
-  "exportedAt": "2026-10-21T01:55:49Z",
+  "exportedAt": "2026-10-21T13:53:47Z",
   "data": {
     "questions": [
       [
@@ -198,12 +198,16 @@
       "cycleSeconds": 6.5,
       "modeSwitchExpand": "always",
       "modeOrder": [
+        "sticky",
         "question",
-        "focus",
+        "deadlines",
+        "quotes",
         "scheduler",
-        "sticky"
+        "focus"
       ],
       "hiddenModes": [],
+      "startupMode": "deadlines",
+      "startupResume": false,
       "stickyCategories": [
         "general"
       ],
@@ -222,6 +226,8 @@
       "timerAnimation": true,
       "lowercase": false,
       "schedulerListVisible": true,
+      "deadlineRemind": true,
+      "deadlineRemindDays": 2,
       "appearance": {
         "backgroundColor": "#10100f",
         "textColor": "#ebe8e0",
@@ -246,7 +252,7 @@
         "lightModeRestore": null
       },
       "syncToken": "",
-      "syncServer": ""
+      "syncServer": "http://103.47.225.99:8080/"
     },
     "history": [
       {
@@ -279,56 +285,114 @@
       }
     ],
     "recent": [
-      8,
-      16,
-      25,
-      38,
-      5,
+      4,
+      33,
+      6,
+      35,
+      18,
       28,
-      41,
-      0,
-      32,
-      10,
+      25,
+      29,
       19,
-      33
+      14,
+      39,
+      41
     ],
     "todos": [],
     "note": "Bimbingan - 7 Sept 2026 s/d 9 Jan 2027\n\nTA\n1. Keunikan Gamenya (Judul)\n  + Data Pendukung(ini digunakan untuk memvalidasi argumen terhadap keunikan sebuah game\n\n",
     "schedule": [
       {
-        "start": 240,
-        "end": 361,
-        "label": "bangun subuh",
+        "start": 270,
+        "end": 300,
+        "label": "subuh",
         "color": "#7d8c7c"
       },
       {
-        "start": 365,
-        "end": 480,
-        "label": "tidur",
-        "color": "#8c7d8c"
+        "start": 720,
+        "end": 780,
+        "label": "dzuhur/lunch",
+        "color": "#7d8c7c"
       },
       {
-        "start": 536,
-        "end": 1440,
-        "label": "bangun",
+        "start": 555,
+        "end": 720,
+        "label": "focus",
         "color": "#7c829c"
       },
       {
-        "start": 4,
-        "end": 233,
-        "label": "tidur",
-        "color": "#9c8d7c"
+        "start": 780,
+        "end": 900,
+        "label": "focus",
+        "color": "#7c829c"
+      },
+      {
+        "start": 900,
+        "end": 960,
+        "label": "ashar",
+        "color": "#7d8c7c"
+      },
+      {
+        "start": 1080,
+        "end": 1110,
+        "label": "magrhib",
+        "color": "#7d8c7c"
+      },
+      {
+        "start": 1140,
+        "end": 1170,
+        "label": "isya",
+        "color": "#7d8c7c"
+      },
+      {
+        "start": 1200,
+        "end": 1320,
+        "label": "focus / gaming",
+        "color": "#8c7d8c"
+      },
+      {
+        "start": 300,
+        "end": 405,
+        "label": "book reading",
+        "color": "#7c829c"
+      },
+      {
+        "start": 540,
+        "end": 555,
+        "label": "rehat",
+        "color": "#7c9c95"
+      },
+      {
+        "start": 405,
+        "end": 420,
+        "label": "rehat",
+        "color": "#9c7c86"
+      },
+      {
+        "start": 1320,
+        "end": 1350,
+        "label": "screen detox",
+        "color": "#7d8c7c"
       }
     ],
     "stickies": [
+      {
+        "id": "2243d733-96aa-49c5-94eb-315d8afe4a66",
+        "text": "pudding telur (kukus /w mangkok kecil)",
+        "created": 1792471971368,
+        "done": false,
+        "cat": "general",
+        "x": 6,
+        "y": 8
+      },
       {
         "id": "22f379cc-b095-48a9-95dc-efecef1440f1",
         "text": "silence - akiyoshi rikako",
         "created": 1790086231973,
         "done": false,
         "cat": "book",
-        "x": 12.2,
-        "y": 24.1
+        "x": 43,
+        "y": 37,
+        "z": "65"
       },
       {
         "id": "de79007c-cde8-4cd5-bf02-3bf5748fc121",
@@ -336,8 +400,9 @@
         "created": 1790086198918,
         "done": false,
         "cat": "book",
-        "x": 30.8,
-        "y": 29
+        "x": 22,
+        "y": 14,
+        "z": "67"
       },
       {
         "id": "ff46289a-c71d-407d-ba27-c32abe602215",
@@ -345,9 +410,9 @@
         "created": 1790086092926,
         "done": false,
         "cat": "film",
-        "x": 45.2,
-        "y": 24.8,
-        "z": "13"
+        "x": 59,
+        "y": 43,
+        "z": "19"
       },
       {
         "id": "29c686fb-3c1b-48ff-ae70-555d00903484",
@@ -355,9 +420,9 @@
         "created": 1790004800440,
         "done": false,
         "cat": "book",
-        "x": 60.7,
-        "y": 28.5,
-        "z": "33"
+        "x": 38,
+        "y": 20,
+        "z": "68"
       },
       {
         "id": "9b876e1b-b032-4ede-9bc1-ddd91c8f6dc4",
@@ -365,8 +430,8 @@
         "created": 1790004780554,
         "done": false,
         "cat": "book",
-        "x": 75.1,
-        "y": 25.2,
+        "x": 17,
+        "y": 49,
         "z": "39"
       },
       {
@@ -375,9 +440,9 @@
         "created": 1790004768030,
         "done": false,
         "cat": "book",
-        "x": 83.9,
-        "y": 29,
-        "z": "16"
+        "x": 54,
+        "y": 26,
+        "z": "66"
       },
       {
         "id": "84948df2-974b-451d-8318-32d5bba9980c",
@@ -385,9 +450,9 @@
         "created": 1790004750032,
         "done": false,
         "cat": "book",
-        "x": 17.5,
-        "y": 40.4,
-        "z": "15"
+        "x": 33,
+        "y": 55,
+        "z": "20"
       },
       {
         "id": "c10f0ff7-3ff0-49a8-ac80-446fe23a32ab",
@@ -395,8 +460,8 @@
         "created": 1789816515228,
         "done": false,
         "cat": "friend",
-        "x": 34.9,
-        "y": 46.4,
+        "x": 12,
+        "y": 32,
         "z": "12"
       },
       {
@@ -405,8 +470,8 @@
         "created": 1789816364531,
         "done": false,
         "cat": "friend",
-        "x": 46.4,
-        "y": 42.4,
+        "x": 49,
+        "y": 9,
         "z": "17"
       },
       {
@@ -415,8 +480,8 @@
         "created": 1789816362131,
         "done": false,
         "cat": "friend",
-        "x": 62.2,
-        "y": 45,
+        "x": 28,
+        "y": 38,
         "z": "15"
       },
       {
@@ -425,8 +490,8 @@
         "created": 1789816337074,
         "done": false,
         "cat": "skill",
-        "x": 77.5,
-        "y": 39.9,
+        "x": 7,
+        "y": 15,
         "z": "20"
       },
       {
@@ -435,9 +500,9 @@
         "created": 1789816315707,
         "done": false,
         "cat": "skill",
-        "x": 90,
-        "y": 47,
-        "z": "18"
+        "x": 44,
+        "y": 44,
+        "z": "21"
       },
       {
         "id": "77bdee44-8458-4137-81cb-222ab5ec9ac1",
@@ -445,9 +510,9 @@
         "created": 1789815892883,
         "done": false,
         "cat": "friend",
-        "x": 16.1,
-        "y": 58.4,
-        "z": "16"
+        "x": 23,
+        "y": 21,
+        "z": "24"
       },
       {
         "id": "6dd5e394-4218-46cb-8a42-374ea20d82e0",
@@ -455,8 +520,8 @@
         "created": 1789815885007,
         "done": false,
         "cat": "friend",
-        "x": 30.1,
-        "y": 65.1,
+        "x": 60,
+        "y": 50,
         "z": "19"
       },
       {
@@ -465,8 +530,8 @@
         "created": 1789814800974,
         "done": false,
         "cat": "friend",
-        "x": 42.1,
-        "y": 59.6,
+        "x": 39,
+        "y": 27,
         "z": "16"
       },
       {
@@ -475,8 +540,8 @@
         "created": 1789814786389,
         "done": false,
         "cat": "friend",
-        "x": 56.1,
-        "y": 62.1,
+        "x": 18,
+        "y": 56,
         "z": "19"
       },
       {
@@ -485,9 +550,9 @@
         "created": 1789804934229,
         "done": false,
         "cat": "assignment",
-        "x": 69.7,
-        "y": 59.6,
-        "z": "28"
+        "x": 55,
+        "y": 33,
+        "z": "23"
       },
       {
         "id": "3eae8be6-1583-4a1a-b46e-d046b7660d37",
@@ -495,8 +560,8 @@
         "created": 1789804390454,
         "done": false,
         "cat": "skill",
-        "x": 83.9,
-        "y": 62.1,
+        "x": 34,
+        "y": 10,
         "z": "17"
       }
     ],
@@ -531,9 +596,9 @@
           "id": "cmuw7xntnaj4q",
           "title": "1. Cek Referensi GDLC",
           "category": "thesis",
-          "html": "Sesuai dari buku \"Game Development Life Cycle Guidelines\" kenapa buku itu dibuat adalah :<p><p>1. karena video game itu bisa menjadi sebuah kemajuan untuk game industri dan sumber profitable/pendapatan industri dikarenakan semua video game semuanya ada di semua perangkat seperti smartphone, komputer, console, dan lain lain. oleh karena itu ada sebuah perusahaan yang&nbsp; mendistribusi perangkat pengembangan perangkat lunak (SDK) mereka secara terbuka kepada publik untuk memproduksi komponen atau produk (OEM) yang nantinya digunakan atau dijual kembali.&nbsp;</p><p>nanti cari [1] dari buku ini tuh apa</p><p>2. Gim gak bisa dibikin cuma pakai logika pemrograman. Software biasa (misal aplikasi kasir): fungsinya jalan = selesai. Gim yang fungsinya jalan tapi gak enak dimainkan = gagal. Jadi engineering doang gak cukup. Gim itu gak murni hasil rekayasa software, juga gak murni karya seni — tapi lebih mirip hasil keterampilan (kayak kerajinan tangan), yang dibikin dari gabungan banyak bidang yang jalin-menjalin: seni, musik, programming, acting, sama pengaturannya semua.<br>nanti cari [3][5]</p><p>Makanya pengembangan game itu perlu alur pembuatan untuk membantu referensi.</p><p><br></p><p>Dari referensi GDLC dijelaskan sistem SDLC, yaitu :<br>1. <b>Analisis </b>= mengumpulkan dan menggambarkan kebutuhan pengguna.</p><p>2. <b>Design </b>= dari analisis kebutuhan di fase ini ditranslasikan dengan model dan representasi perangkat lunak yang ada secara mendetail&nbsp;</p><p>3. <b>Code generation/Implementation</b> = model representasinya di translasi lagi ke source code seperti C++,Java dan lain lain agar menjadi aplikasi yang bisa dijalankan.</p><p>4.&nbsp; <b>Testing</b>&nbsp;= pengujian dilakukan untuk memastikan seluruh elemen berjalan sesuai fungsinya dan memenuhi spesifikasi yang telah ditentukan.</p><p><br></p><p><br></p><p><br></p></p>",
+          "html": "Sesuai dari buku \"Game Development Life Cycle Guidelines\" kenapa buku itu dibuat adalah :<p></p><p>1. karena video game itu bisa menjadi sebuah kemajuan untuk game industri dan sumber profitable/pendapatan industri dikarenakan semua video game semuanya ada di semua perangkat seperti smartphone, komputer, console, dan lain lain. oleh karena itu ada sebuah perusahaan yang&nbsp; mendistribusi perangkat pengembangan perangkat lunak (SDK) mereka secara terbuka kepada publik untuk memproduksi komponen atau produk (OEM) yang nantinya digunakan atau dijual kembali.&nbsp;</p><p>nanti cari [1] dari buku ini tuh apa</p><p>2. Gim gak bisa dibikin cuma pakai logika pemrograman. Software biasa (misal aplikasi kasir): fungsinya jalan = selesai. Gim yang fungsinya jalan tapi gak enak dimainkan = gagal. Jadi engineering doang gak cukup. Gim itu gak murni hasil rekayasa software, juga gak murni karya seni — tapi lebih mirip hasil keterampilan (kayak kerajinan tangan), yang dibikin dari gabungan banyak bidang yang jalin-menjalin: seni, musik, programming, acting, sama pengaturannya semua.<br>nanti cari [3][5]</p><p>Makanya pengembangan game itu perlu alur pembuatan untuk membantu referensi.</p><p><br></p><p>Dari referensi GDLC dijelaskan sistem SDLC, yaitu :<br>1. <b>Analisis </b>= mengumpulkan dan menggambarkan kebutuhan pengguna.</p><p>2. <b>Design </b>= dari analisis kebutuhan di fase ini ditranslasikan dengan model dan representasi perangkat lunak yang ada secara mendetail&nbsp;</p><p>3. <b>Code generation/Implementation</b> = model representasinya di translasi lagi ke source code seperti C++,Java dan lain lain agar menjadi aplikasi yang bisa dijalankan.</p><p>4.&nbsp; <b>Testing</b>&nbsp;= pengujian dilakukan untuk memastikan seluruh elemen berjalan sesuai fungsinya dan memenuhi spesifikasi yang telah ditentukan.</p><p><br></p>",
           "createdAt": 1791263325659,
-          "updatedAt": 1791266277324
+          "updatedAt": 1792513172189
         }
       ],
       "activeId": "cmuw7xntnaj4q"
@@ -556,8 +621,195 @@
         "text": "be yourself and never surender",
         "author": "quokka",
         "created": 1790914068416
+      },
+      {
+        "id": "d701d15c-2073-4e11-ae33-47cadc969e65",
+        "text": "merasa bodoh itu bukan hal non-masculine, semua orang pasti merasa sedikit bodoh.",
+        "author": "taigaa00",
+        "created": 1792509061341
+      },
+      {
+        "id": "4425b60d-5e24-4bc4-b45d-90ff452b90da",
+        "text": "jika kamu tidak mau menerima pahitnya belajar, kamu akan menerima pahitnya kebodohan. dan itu akan berjalan seumur hidup.",
+        "author": "Imam Syafi'i",
+        "created": 1792509436234
+      },
+      {
+        "id": "b1b2ba43-2641-4628-8375-8f1ebb35b786",
+        "text": "Lebih baik pahit belajar daripada pahit tidak lulus.",
+        "author": "taigaa00",
+        "created": 1792509688076
       }
     ],
-    "deadlines": null
+    "deadlines": [
+      {
+        "id": "613d42f3-feb7-483d-b2d9-b75d0c665806",
+        "title": "Ketemu Quokka",
+        "date": "2026-11-01",
+        "time": "",
+        "note": "",
+        "importance": "low",
+        "done": false,
+        "collapsed": false,
+        "children": []
+      },
+      {
+        "id": "02c566ad-71f8-4fd7-8ce1-b725cc4a85e7",
+        "title": "Tugas Akhir",
+        "date": "2027-02-20",
+        "time": "",
+        "note": "",
+        "importance": "high",
+        "done": false,
+        "collapsed": false,
+        "children": [
+          {
+            "id": "74b56cc5-02d5-4c89-984e-13fdfb8cbd11",
+            "title": "Bimbingan /w taigaa",
+            "date": "2026-10-20",
+            "time": "",
+            "note": "",
+            "importance": "low",
+            "done": true,
+            "collapsed": false,
+            "children": [
+              {
+                "id": "62bdd717-f33c-4202-9afb-45ebf7ab9675",
+                "title": "Cari Jurnal/Sitasi/Referensi/Laporan dengan Keyword",
+                "date": "2026-10-21",
+                "time": "",
+                "note": "PR : Cari dan Baca 10 jurnal/laporan/skripsi yang relevan dengan GDLC,Unity,Pertarungan,etc.",
+                "importance": "high",
+                "done": false,
+                "collapsed": true,
+                "children": [
+                  {
+                    "id": "42699d0a-6479-4c1b-b994-53d84fb4249e",
+                    "title": "Jurnal 1",
+                    "date": "2026-10-21",
+                    "time": "",
+                    "note": "",
+                    "importance": "low",
+                    "done": false,
+                    "collapsed": false,
+                    "children": []
+                  },
+                  {
+                    "id": "a3f8ddf9-12ea-4d9b-8917-3439b4594064",
+                    "title": "Jurnal 2",
+                    "date": "2026-10-21",
+                    "time": "",
+                    "note": "",
+                    "importance": "low",
+                    "done": false,
+                    "collapsed": false,
+                    "children": []
+                  },
+                  {
+                    "id": "32eb6976-4e80-4d96-aa61-7dec6e4c8af6",
+                    "title": "Jurnal 3",
+                    "date": "2026-10-21",
+                    "time": "",
+                    "note": "",
+                    "importance": "low",
+                    "done": false,
+                    "collapsed": false,
+                    "children": []
+                  },
+                  {
+                    "id": "35be1e76-7124-4d33-811c-429e7b862fc5",
+                    "title": "Jurnal 4",
+                    "date": "2026-10-21",
+                    "time": "",
+                    "note": "",
+                    "importance": "low",
+                    "done": false,
+                    "collapsed": false,
+                    "children": []
+                  },
+                  {
+                    "id": "884ee86c-ed71-4238-b86d-7cdc002c9f32",
+                    "title": "Jurnal 5",
+                    "date": "2026-10-21",
+                    "time": "",
+                    "note": "",
+                    "importance": "low",
+                    "done": false,
+                    "collapsed": false,
+                    "children": []
+                  },
+                  {
+                    "id": "3c615e4d-6331-459f-80d7-566243beae3f",
+                    "title": "Jurnal 6",
+                    "date": "2026-10-21",
+                    "time": "",
+                    "note": "",
+                    "importance": "low",
+                    "done": false,
+                    "collapsed": false,
+                    "children": []
+                  },
+                  {
+                    "id": "7d935f67-8426-42b8-ab12-ebdddb5dbde8",
+                    "title": "Jurnal 7",
+                    "date": "2026-10-21",
+                    "time": "",
+                    "note": "",
+                    "importance": "low",
+                    "done": false,
+                    "collapsed": false,
+                    "children": []
+                  },
+                  {
+                    "id": "41f3cda6-2f73-4c03-b696-19daf0618ee5",
+                    "title": "Jurnal 8",
+                    "date": "2026-10-21",
+                    "time": "",
+                    "note": "",
+                    "importance": "low",
+                    "done": false,
+                    "collapsed": false,
+                    "children": []
+                  },
+                  {
+                    "id": "c523eea7-60e8-4bf2-afe5-959b482fce22",
+                    "title": "Jurnal 9",
+                    "date": "2026-10-21",
+                    "time": "",
+                    "note": "",
+                    "importance": "low",
+                    "done": false,
+                    "collapsed": false,
+                    "children": []
+                  },
+                  {
+                    "id": "c03c61a1-c5c3-45bf-b7fb-cca0479f657b",
+                    "title": "Jurnal 10",
+                    "date": "2026-10-21",
+                    "time": "",
+                    "note": "",
+                    "importance": "low",
+                    "done": false,
+                    "collapsed": false,
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "3d6366a2-8651-40a2-9aae-eac76b6010fb",
+            "title": "Bimbingan /w Yosi-sensei",
+            "date": "2026-10-17",
+            "time": "",
+            "note": "- Fokus laporan jadi penelitian = Tujuan S1 \n- Kalau bikin aplikasi = selesai = D3\n\nInput: Perhatiin garis merah antara latar belakang masalah dengan rumusan masalah, tujuan penelitian, batasan masalah, manfaat penelitian.\nAnalysis: dosen bilang kalau yang dipermasalahin itu bagian latar belakang masalah karena engga faktor pendukung + daftar pustakanya dikit bangeeet\nAnswer: minta bantu kalau bingung (taiga, or someone else)\n\nInput : apa yang di bahas di latar belakang masalah diperjelas lagi di kajian pustaka. (benang merah dari latar belakang)\nAnalysis:\nAnswer:\n\nInput: menambah kuisioner di bagian akhir metodologi penelitian.\nAnalysis: \nAnswer: \n\nInput: sama buka gemini lagi kemarin soal cara penulisan dan apa aja yang dibahas (bareng sama dosen) \nAnalysis: \nAnswer: ",
+            "importance": "low",
+            "done": true,
+            "collapsed": false,
+            "children": []
+          }
+        ]
+      }
+    ]
   }
 }
