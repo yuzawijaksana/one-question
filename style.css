@@ -8438,6 +8438,21 @@ body.deadlinesVisual .deadlinesMode {
   background: color-mix(in srgb, var(--text) 6%, transparent)
 }
 
+/* drag-to-refile: the carried row fades, the row that would receive it
+ * lights its edge, and the outline's own margin invites a top-level drop */
+.deadlineRow.dragging {
+  opacity: .35
+}
+
+.deadlineRow.dropOn {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  box-shadow: inset 2px 0 0 var(--accent)
+}
+
+.deadlineOutline.dropRoot {
+  box-shadow: inset 2px 0 0 var(--muted)
+}
+
 .deadlineRow.done {
   opacity: .45
 }
@@ -8670,13 +8685,20 @@ button.deadlineMonthHead:hover .deadlineMonthCaret {
 }
 
 .deadlineDayNum {
-  width: 54px;
+  width: 96px;
   flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 8px
+}
+
+.deadlineDayNum .dw {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 3px;
-  padding-top: 8px
+  gap: 3px
 }
 
 .deadlineDayNum .d {
@@ -8694,6 +8716,27 @@ button.deadlineMonthHead:hover .deadlineMonthCaret {
 
 .deadlineDay.today .deadlineDayNum .d {
   color: var(--dl-today)
+}
+
+/* the chip beside the date: how long until that day's first deadline */
+.deadlineDayCount {
+  font-size: 10px;
+  letter-spacing: .05em;
+  color: var(--muted);
+  white-space: nowrap;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 7px
+}
+
+.deadlineDay.today .deadlineDayCount {
+  color: var(--dl-today);
+  border-color: color-mix(in srgb, var(--dl-today) 42%, transparent)
+}
+
+.deadlineDayCount.late {
+  color: var(--dl-overdue);
+  border-color: color-mix(in srgb, var(--dl-overdue) 42%, transparent)
 }
 
 .deadlineDayItems {
@@ -8715,17 +8758,18 @@ button.deadlineMonthHead:hover .deadlineMonthCaret {
   font: inherit;
   font-size: 14px;
   color: var(--text);
-  background: color-mix(in srgb, var(--text) 7%, transparent);
-  border: none;
+  background: none;
+  border: 1px solid color-mix(in srgb, var(--text) 13%, transparent);
   border-radius: 10px;
-  padding: 9px 14px;
+  padding: 8px 13px;
   cursor: pointer;
   text-align: left;
-  transition: background .2s
+  transition: background .2s, border-color .2s
 }
 
 .deadlineEntry:hover {
-  background: color-mix(in srgb, var(--text) 11%, transparent)
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  border-color: color-mix(in srgb, var(--text) 24%, transparent)
 }
 
 .deadlineEntryDot {
@@ -8744,8 +8788,32 @@ button.deadlineMonthHead:hover .deadlineMonthCaret {
   overflow-wrap: anywhere
 }
 
+/* a note's first line previews right of the name: the title shrinks to
+ * its words and the preview breathes in the space that is left */
+.deadlineEntry.hasNote .deadlineEntryTitle {
+  flex: none;
+  max-width: 46%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap
+}
+
+.deadlineEntryNote {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.45;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis
+}
+
+.deadlineDay.today .deadlineEntryNote {
+  color: #565b66
+}
+
 .deadlineEntry.done .deadlineEntryTitle {
-  text-decoration: line-through;
   opacity: .5
 }
 
@@ -8762,50 +8830,11 @@ button.deadlineMonthHead:hover .deadlineMonthCaret {
   white-space: nowrap
 }
 
-.deadlineEntry.parent {
-  background: color-mix(in srgb, var(--accent) 20%, transparent)
-}
-
-.deadlineEntry.parent:hover {
-  background: color-mix(in srgb, var(--accent) 28%, transparent)
-}
-
-.deadlineEntry.sub {
-  background: color-mix(in srgb, var(--text) 5%, transparent)
-}
-
-.deadlineEntry.urg-overdue {
-  background: color-mix(in srgb, var(--dl-overdue) 22%, transparent)
-}
-
-.deadlineEntry.urg-overdue:hover {
-  background: color-mix(in srgb, var(--dl-overdue) 30%, transparent)
-}
-
-.deadlineEntry.urg-overdue .deadlineEntryDot {
-  background: var(--dl-overdue);
-  opacity: 1
-}
-
-.deadlineEntry.urg-today {
-  background: color-mix(in srgb, var(--dl-today) 24%, transparent)
-}
-
-.deadlineEntry.urg-today:hover {
-  background: color-mix(in srgb, var(--dl-today) 32%, transparent)
-}
-
+/* urgency never paints the body anymore — the colored dot and the late
+ * chip beside the date carry it; importance owns the background */
 .deadlineEntry.urg-today .deadlineEntryDot {
   background: var(--dl-today);
   opacity: 1
-}
-
-.deadlineEntry.urg-soon {
-  background: color-mix(in srgb, var(--dl-soon) 20%, transparent)
-}
-
-.deadlineEntry.urg-soon:hover {
-  background: color-mix(in srgb, var(--dl-soon) 28%, transparent)
 }
 
 .deadlineEntry.urg-soon .deadlineEntryDot {
@@ -8816,6 +8845,101 @@ button.deadlineMonthHead:hover .deadlineMonthCaret {
 .deadlineEntry.urg-week .deadlineEntryDot {
   background: var(--accent);
   opacity: .8
+}
+
+/* importance paints the entry: high wears a red edge and a warm tint that
+ * outranks the urgency washes (the dot still carries the urgency) */
+/* importance owns the body: each pick sets one variable, and the wash +
+ * left edge below dress every entry the same way. blank stays a quiet
+ * outlined frame */
+.deadlineEntry.imp-grey { --imp: #9aa3ad }
+.deadlineEntry.imp-blue { --imp: #5d9cf5 }
+.deadlineEntry.imp-green { --imp: #4cbe7d }
+.deadlineEntry.imp-red { --imp: #e5484d }
+.deadlineEntry.imp-gold { --imp: #d9b03c }
+
+.deadlineEntry[class*="imp-"]:not(.imp-none) {
+  background: color-mix(in srgb, var(--imp) 20%, transparent);
+  border-color: transparent;
+  box-shadow: inset 3px 0 0 var(--imp)
+}
+
+.deadlineEntry[class*="imp-"]:not(.imp-none):hover {
+  background: color-mix(in srgb, var(--imp) 28%, transparent)
+}
+
+/* opening a deadline is an explicit act: a quiet pill that steps forward
+ * only on hover (touch screens have no hover, so it simply stays) */
+.deadlineEntryOpen {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  margin-left: 4px;
+  font-size: 11.5px;
+  letter-spacing: .05em;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 11px;
+  opacity: 0;
+  transition: opacity .15s, color .15s, border-color .15s
+}
+
+.deadlineEntry:hover .deadlineEntryOpen,
+.deadlineEntry:focus-visible .deadlineEntryOpen {
+  opacity: 1
+}
+
+.deadlineEntry:hover .deadlineEntryOpen {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--text) 30%, transparent)
+}
+
+.deadlineEntryOpen:hover {
+  color: var(--text)
+}
+
+@media(hover:none) {
+  .deadlineEntryOpen {
+    opacity: 1
+  }
+}
+
+/* today's day row carries the torch: every entry on it — parents and
+ * sub-deadlines alike — lifts into warm paper, dark ink, one consistent
+ * size. bright enough to own the day, soft enough not to flashbang */
+.deadlineDay.today .deadlineEntry {
+  background: color-mix(in srgb, #ece7da 74%, var(--bg));
+  color: #1f2126;
+  box-shadow: none;
+  font-size: 14px;
+  letter-spacing: normal;
+  padding: 9px 14px
+}
+
+.deadlineDay.today .deadlineEntry:hover {
+  background: color-mix(in srgb, #ece7da 84%, var(--bg))
+}
+
+/* today lifts into warm paper; the importance color keeps speaking
+ * through the left edge so the pick survives the highlight */
+.deadlineDay.today .deadlineEntry[class*="imp-"]:not(.imp-none) {
+  box-shadow: inset 3px 0 0 var(--imp)
+}
+
+.deadlineDay.today .deadlineEntryTime,
+.deadlineDay.today .deadlineEntryCount {
+  font-size: 12px;
+  color: #565b66
+}
+
+.deadlineDay.today .deadlineEntryOpen {
+  color: #3d4048;
+  border-color: rgba(0, 0, 0, .22)
+}
+
+.deadlineDay.today .deadlineEntry.done .deadlineEntryTitle {
+  color: #1f2126
 }
 
 /* the detail card */
@@ -8839,10 +8963,10 @@ button.deadlineMonthHead:hover .deadlineMonthCaret {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  width: min(480px, 92vw);
-  max-height: 82vh;
+  width: min(640px, 94vw);
+  max-height: 86vh;
   overflow-y: auto;
-  padding: 26px;
+  padding: 28px 30px;
   border: 1px solid var(--line);
   border-radius: 18px;
   background: color-mix(in srgb, var(--bg) 88%, transparent)
@@ -8872,7 +8996,6 @@ button.deadlineMonthHead:hover .deadlineMonthCaret {
 }
 
 .deadlineCard.done .deadlineCardTitle {
-  text-decoration: line-through;
   opacity: .55
 }
 
@@ -8909,32 +9032,118 @@ button.deadlineMonthHead:hover .deadlineMonthCaret {
   color: var(--text)
 }
 
+/* the note lives right under the crumb: jot what this deadline needs you
+ * to remember — autosaves while you type, never re-renders under you.
+ * it writes and reads at full size: 16px like every input in the app, and
+ * it grows with its content so long notes never scroll inside */
+.deadlineNoteWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 7px
+}
+
+.deadlineNoteHead {
+  font-size: 12px;
+  letter-spacing: .14em;
+  color: var(--muted)
+}
+
+.deadlineNote {
+  resize: vertical;
+  min-height: 110px;
+  max-height: 46vh;
+  padding: 13px 15px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  outline: none;
+  transition: border-color .2s
+}
+
+.deadlineNote:focus {
+  border-color: var(--accent)
+}
+
+.deadlineNote::placeholder {
+  color: var(--muted)
+}
+
 .deadlineCardActions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px
 }
 
+/* soft filled pills, each with a job: done leads in full ink, importance
+ * reports its weight, delete stays honestly red */
 .deadlineCardActions button {
-  background: none;
-  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  border: 1px solid transparent;
   border-radius: 999px;
   color: var(--text);
   font: inherit;
-  font-size: 13px;
-  padding: 7px 16px;
+  font-size: 13.5px;
+  padding: 8px 18px;
   cursor: pointer;
-  transition: color .2s, border-color .2s
+  transition: background .15s, color .15s, transform .06s
 }
 
 .deadlineCardActions button:hover {
-  border-color: color-mix(in srgb, var(--text) 32%, transparent)
+  background: color-mix(in srgb, var(--text) 14%, transparent)
 }
 
-.deadlineCardActions .danger,
+.deadlineCardActions button:active {
+  transform: scale(.96)
+}
+
+.deadlineCardActions button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px
+}
+
+.deadlineCardActions .primary {
+  background: color-mix(in srgb, var(--text) 86%, transparent);
+  color: var(--bg)
+}
+
+.deadlineCardActions .primary:hover {
+  background: var(--text)
+}
+
+/* the little swatch inside the card's importance button */
+.deadlineImpDot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--imp);
+  margin-right: 8px;
+  vertical-align: baseline
+}
+
+.deadlineImpDot.blank {
+  background: none;
+  border: 1px solid var(--muted)
+}
+
 .deadlineEditorActions .danger {
   color: var(--dl-overdue);
   border-color: color-mix(in srgb, var(--dl-overdue) 35%, transparent)
+}
+
+/* delete carries its weight in a filled red wash, matching the new pills */
+.deadlineCardActions .danger {
+  color: var(--dl-overdue);
+  background: color-mix(in srgb, var(--dl-overdue) 12%, transparent)
+}
+
+.deadlineCardActions .danger:hover {
+  background: color-mix(in srgb, var(--dl-overdue) 20%, transparent)
 }
 
 .deadlineCardList {
@@ -8960,7 +9169,6 @@ button.deadlineMonthHead:hover .deadlineMonthCaret {
 }
 
 .deadlineChild.done .deadlineChildTitle {
-  text-decoration: line-through;
   opacity: .5
 }
 
@@ -9063,6 +9271,43 @@ button.deadlineMonthHead:hover .deadlineMonthCaret {
   color-scheme: dark
 }
 
+/* importance picks a color — six round swatches, blank first */
+.deadlineImportanceSeg {
+  display: flex;
+  align-items: center;
+  gap: 9px
+}
+
+.deadlineImportanceSeg button {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: none;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: box-shadow .15s, transform .06s
+}
+
+.deadlineImportanceSeg button[data-imp="grey"] { background: color-mix(in srgb, #9aa3ad 45%, transparent); border-color: #9aa3ad; color: transparent }
+.deadlineImportanceSeg button[data-imp="blue"] { background: color-mix(in srgb, #5d9cf5 45%, transparent); border-color: #5d9cf5; color: transparent }
+.deadlineImportanceSeg button[data-imp="green"] { background: color-mix(in srgb, #4cbe7d 45%, transparent); border-color: #4cbe7d; color: transparent }
+.deadlineImportanceSeg button[data-imp="red"] { background: color-mix(in srgb, #e5484d 45%, transparent); border-color: #e5484d; color: transparent }
+.deadlineImportanceSeg button[data-imp="gold"] { background: color-mix(in srgb, #d9b03c 45%, transparent); border-color: #d9b03c; color: transparent }
+
+.deadlineImportanceSeg button:hover {
+  transform: scale(1.08)
+}
+
+.deadlineImportanceSeg button.on {
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--text)
+}
+
 .deadlineField input:focus {
   border-bottom-color: var(--accent)
 }
@@ -9140,7 +9385,8 @@ button.deadlineMonthHead:hover .deadlineMonthCaret {
 .deadlineReminderBody {
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 4px 10px;
   min-width: 0
 }
 
@@ -9163,6 +9409,20 @@ button.deadlineMonthHead:hover .deadlineMonthCaret {
   font-size: 12px;
   color: var(--muted);
   white-space: nowrap
+}
+
+/* the note rides under the title line: it wraps to its own row inside the
+ * flex body, so a long note still reads as one breathing line */
+.deadlineReminderNote {
+  flex-basis: 100%;
+  max-width: 46vw;
+  font-size: 12px;
+  color: var(--muted);
+  overflow-wrap: anywhere
+}
+
+.deadlineReminderNote:empty {
+  display: none
 }
 
 .deadlineReminderActions {
@@ -9224,12 +9484,18 @@ button.deadlineMonthHead:hover .deadlineMonthCaret {
   }
 
   .deadlineDayNum {
-    width: 42px;
-    padding-top: 6px
+    width: 74px;
+    padding-top: 6px;
+    gap: 6px
   }
 
   .deadlineDayNum .d {
     font-size: 16px
+  }
+
+  .deadlineDayCount {
+    font-size: 9px;
+    padding: 1px 5px
   }
 }
 
@@ -9296,15 +9562,16 @@ button.deadlineMonthHead:hover .deadlineMonthCaret {
   width: var(--railW);
   z-index: 150;
   flex-direction: column;
+  justify-content: safe center;
   gap: 2px;
-  padding: 22px 12px 14px;
+  padding: 14px 9px;
   border-right: 1px solid var(--line);
   background: color-mix(in srgb, var(--bg) 72%, transparent);
   backdrop-filter: blur(16px);
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-  transition: width .25s cubic-bezier(.2, .7, .2, 1), box-shadow .25s
+  transition: box-shadow .25s
 }
 
 body.historyOpen #modeRail {
@@ -9317,32 +9584,31 @@ body:is(.focusModeVisual, .schedulerVisual, .stickyVisual, .quotesVisual, .deadl
   display: none
 }
 
-/* minimized: glyphs only. one source of truth — the JS-toggled .peek class
- * drives BOTH the rail's visual width (--railW via body.railPeek) and the
- * layout shift, so the rail can never disagree with the content beside it */
+/* icons-only rail: glyphs carry the meaning, the names live in the hover
+ * tooltips. the whole column hangs centered on the screen's vertical
+ * midpoint, the logo marks straight above it */
 #modeRail.min {
-  padding: 16px 12px 14px
+  padding: 14px 9px
 }
 
-#modeRail.min:not(.peek) .railName,
-#modeRail.min:not(.peek) .railStatus {
+#modeRail.min .railName,
+#modeRail.min .railStatus {
   display: none
 }
 
-/* folded: the 28px glyph column centers on the rail itself — padding-left
+/* the 28px glyph column centers on the rail itself — padding-left
  * collapses so the icon column's midpoint lands on the rail's midpoint */
-#modeRail.min:not(.peek) .railEntry {
+#modeRail.min .railEntry {
   padding-left: 0
 }
 
-/* the rail header: the one-question mark leads on the left; the toggle
- * lives in its own labeled row just below */
+/* the rail header: the one-question mark centers above the icon column */
 .railHead {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 8px;
-  margin: 0 0 10px;
+  margin: 0 0 12px;
   padding: 2px 0
 }
 
@@ -9365,105 +9631,10 @@ body:is(.focusModeVisual, .schedulerVisual, .stickyVisual, .quotesVisual, .deadl
   font-size: 11px
 }
 
-.railLogoText {
-  font-size: 10px;
-  letter-spacing: .14em;
-  color: var(--muted);
-  white-space: nowrap
-}
-
-/* the compact icon twin of the toggle, fixed at the header's right */
-.railModeIconBtn {
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  flex: none;
-  margin: 0;
-  padding: 0;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: none;
-  color: var(--muted);
-  cursor: pointer;
-  transition: color .2s, border-color .2s
-}
-
-.railModeIconBtn:hover {
-  color: var(--text);
-  border-color: color-mix(in srgb, var(--text) 32%, transparent)
-}
-
-/* the folded rail wears the logo instead of the toggle — the mark hints */
-#modeRail.min .railLogoMark {
-  cursor: pointer;
-  transition: color .2s, border-color .2s
-}
-
-#modeRail.min .railLogoMark:hover {
-  color: var(--text);
-  border-color: color-mix(in srgb, var(--text) 34%, transparent)
-}
-
-#modeRail.min:not(.peek) .railLogoText {
-  display: none
-}
-
-/* the toggle row: icon + the mode it holds + a hint; clicking cycles */
-.railModeBtn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  margin: 0 0 14px;
-  padding: 7px 12px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: none;
-  color: var(--muted);
-  font: inherit;
-  cursor: pointer;
-  text-align: left;
-  transition: color .2s, border-color .2s
-}
-
-.railModeBtn:hover {
-  color: var(--text);
-  border-color: color-mix(in srgb, var(--text) 32%, transparent)
-}
-
-.railModeIcon {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 20px
-}
-
-.railModeLabel {
-  font-size: 11px;
-  letter-spacing: .16em;
-  color: var(--text)
-}
-
-.railModeHint {
-  margin-left: auto;
-  font-size: 10px;
-  letter-spacing: .04em;
-  color: var(--muted);
-  white-space: nowrap
-}
-
-/* folded: the toggle row and its icon twin step aside — the logo stands in
- * for them, and they return once the rail unfolds (visibility keeps them
- * tab-reachable) */
-#modeRail.min:not(.peek) .railModeBtn,
-#modeRail.min:not(.peek) .railModeIconBtn {
-  visibility: hidden
-}
-
-/* the look controls (light mode + settings) dock together at the bottom */
+/* the look controls (light mode + settings) follow the modes with a
+ * breath of distance — the rail is one centered column now */
 .railTheme {
-  margin-top: auto
+  margin-top: 14px
 }
 
 .railEntry {
@@ -9489,18 +9660,71 @@ body:is(.focusModeVisual, .schedulerVisual, .stickyVisual, .quotesVisual, .deadl
   background: color-mix(in srgb, var(--text) 5%, transparent)
 }
 
-.railEntry.active {
-  color: var(--text);
-  border-left-color: var(--accent);
-  background: color-mix(in srgb, var(--text) 6%, transparent)
-}
-
 .railGlyph {
   grid-row: span 2;
   font-size: 15px;
   text-align: center;
   justify-self: center;
   opacity: .85
+}
+
+/* the active screen owns its icon: full ink, a stronger wash, and the
+ * accent spine — readable at a glance even in the slim rail */
+.railEntry.active {
+  color: var(--text);
+  border-left-color: var(--accent);
+  background: color-mix(in srgb, var(--text) 11%, transparent)
+}
+
+.railEntry.active .railGlyph {
+  opacity: 1
+}
+
+/* the flyout label: floats beside the rail at the hovered or focused
+ * icon — name, live status, and the digit that jumps straight there */
+.railFlyout {
+  position: fixed;
+  z-index: 160;
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  max-width: 46vw;
+  padding: 6px 13px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter: blur(12px);
+  color: var(--text);
+  font-size: 13px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity .16s ease, transform .16s ease
+}
+
+.railFlyout.show {
+  opacity: 1;
+  transform: none
+}
+
+.railFlyName {
+  letter-spacing: .02em
+}
+
+.railFlyKey {
+  font-size: 10px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 1px 6px
+}
+
+.railFlyStatus {
+  font-size: 11px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis
 }
 
 /* the rail's own text never reflows: names stay on one line and get
@@ -9568,15 +9792,10 @@ body:is(.focusModeVisual, .schedulerVisual, .stickyVisual, .quotesVisual, .deadl
     display: flex
   }
 
-  /* the minimized rail narrows the whole layout with it — one variable,
-   * every anchored override follows. hovering a folded rail re-widens it
-   * (JS sets body.railPeek), pushing the content in the same motion */
+  /* the icons-only rail narrows the whole layout with it — one variable,
+   * every anchored override follows */
   body.railMin {
-    --railW: 56px
-  }
-
-  body.railMin.railPeek {
-    --railW: 176px
+    --railW: 48px
   }
 
   /* the shifted edges animate in step with the rail's own width */

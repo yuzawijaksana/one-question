@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>One Question</title>
-  <link rel="stylesheet" href="style.css?v=2.54.0">
+  <link rel="stylesheet" href="style.css?v=2.54.7">
 </head>
 
 <body>
@@ -85,8 +85,7 @@
         <button id="quotePrev" type="button" aria-label="previous quote" title="previous quote">↑</button>
         <button id="quoteNext" type="button" aria-label="next quote" title="next quote">↓</button>
       </div>
-      <div class="quotesHint"><span class="hintPointer">scroll or ↑ ↓ to read · ← → switch
-          modes</span><span class="hintTouch">swipe up or down to read · swipe left or right to
+      <div class="quotesHint"><span class="hintPointer">scroll or space to read · ↑ ↓ switch modes</span><span class="hintTouch">swipe up or down to read · swipe left or right to
           switch modes</span></div>
     </section>
 
@@ -117,6 +116,16 @@
           <label class="deadlineField"><span>time <em>(optional)</em></span>
             <input id="deadlineTimeInput" type="time">
           </label>
+          <div class="deadlineField"><span>importance</span>
+            <div class="deadlineImportanceSeg" id="deadlineImportanceSeg" role="group" aria-label="importance">
+              <button type="button" data-imp="none" title="blank">○</button>
+              <button type="button" data-imp="grey" title="grey">●</button>
+              <button type="button" data-imp="blue" title="blue">●</button>
+              <button type="button" data-imp="green" title="green">●</button>
+              <button type="button" data-imp="red" title="red">●</button>
+              <button type="button" data-imp="gold" title="gold">●</button>
+            </div>
+          </div>
           <div class="deadlineEditorActions">
             <button id="deadlineEditorDelete" type="button" class="danger">delete</button>
             <button id="deadlineEditorCancel" type="button">cancel</button>
@@ -124,8 +133,7 @@
           </div>
         </div>
       </div>
-      <div class="deadlineHint"><span class="hintPointer">tap a day or a chip to add or open · ← → switch
-          modes</span><span class="hintTouch">tap a day or a chip · swipe left or right to switch modes</span></div>
+      <div class="deadlineHint"><span class="hintPointer">tap a day or a chip to add or open</span><span class="hintTouch">tap a day or a chip · swipe left or right to switch modes</span></div>
     </section>
 
     <button id="stickyPin" class="stickyPin" type="button" title="remember wall" aria-label="Open remember wall"></button>
@@ -409,6 +417,7 @@
         <span class="deadlineReminderLabel">deadline</span>
         <span id="deadlineReminderTitle" class="deadlineReminderTitle"></span>
         <span id="deadlineReminderWhen" class="deadlineReminderWhen"></span>
+        <span id="deadlineReminderNote" class="deadlineReminderNote"></span>
       </div>
       <div class="deadlineReminderActions">
         <button id="deadlineReminderOpen" type="button">open</button>
@@ -795,7 +804,7 @@
   </main>
   <nav id="modeRail" aria-label="screens"></nav>
   <nav id="modeDock" aria-label="screens"></nav>
-  <script src="app.js?v=2.54.0"></script>
+  <script src="app.js?v=2.54.7"></script>
 </body>
 
 </html>

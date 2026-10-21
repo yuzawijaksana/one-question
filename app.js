@@ -860,73 +860,95 @@ function enterModeByKey(key){
   else if(key==="quotes")enterQuotesMode();
   else if(key==="deadlines")enterDeadlinesMode();
 }
-function railSetPeek(on){
+// the flyout: a label chip that floats beside the rail at the hovered or
+// focused icon — instant, styled, and carrying the live status line. the
+// native tooltip is retired; this is the rail's way of speaking
+let railFlyEl=null;
+function railFlyEnsure(){
+  if(railFlyEl&&document.body.contains(railFlyEl))return railFlyEl;
+  railFlyEl=document.createElement("div");
+  railFlyEl.className="railFlyout";
+  railFlyEl.setAttribute("aria-hidden","true");
+  document.body.append(railFlyEl);
+  return railFlyEl;
+}
+function railShowFlyout(btn,keyHint){
   const rail=$("modeRail");
   if(!rail)return;
-  rail.classList.toggle("peek",on);
-  document.body.classList.toggle("railPeek",on);
+  const fly=railFlyEnsure();
+  const name=btn.querySelector(".railName")?.textContent||"";
+  const status=btn.querySelector(".railStatus")?.textContent||"";
+  fly.textContent="";
+  if(keyHint){
+    const k=document.createElement("span");
+    k.className="railFlyKey";k.textContent=keyHint;
+    fly.append(k);
+  }
+  const n=document.createElement("span");
+  n.className="railFlyName";n.textContent=name;
+  fly.append(n);
+  if(status){
+    const s=document.createElement("span");
+    s.className="railFlyStatus";s.textContent=status;
+    fly.append(s);
+  }
+  fly.classList.add("show");
+  const rb=rail.getBoundingClientRect(),bb=btn.getBoundingClientRect(),fb=fly.getBoundingClientRect();
+  fly.style.left=`${Math.round(rb.right+10)}px`;
+  fly.style.top=`${Math.round(bb.top+bb.height/2-fb.height/2)}px`;
 }
-function railBodyCanPeek(){
-  const rail=$("modeRail");
-  return !!rail&&rail.classList.contains("min")&&!rail.classList.contains("noHover");
+function railHideFlyout(){
+  if(railFlyEl)railFlyEl.classList.remove("show");
+}
+function railBindFlyout(btn,keyHint){
+  btn.addEventListener("mouseenter",()=>railShowFlyout(btn,keyHint));
+  btn.addEventListener("mouseleave",railHideFlyout);
+  btn.addEventListener("focusin",()=>railShowFlyout(btn,keyHint));
+  btn.addEventListener("focusout",railHideFlyout);
 }
 function renderModeRail(){
   const rail=$("modeRail"),dock=$("modeDock");
   const modes=activeModes();
+  // the digits jump straight to a mode: 1 is the first on the rail, and
+  // 0 opens settings — the hint rides along in the flyout
+  const digitFor=new Map(modes.map((key,i)=>[key,String(i+1)]));
   const buildEntry=(key,compact)=>{
     const btn=document.createElement("button");
     btn.type="button";
     btn.className=compact?"dockEntry":"railEntry";
     btn.dataset.mode=key;
-    btn.setAttribute("aria-label",MODE_ORDER_LABELS[key]||key);
+    const label=MODE_ORDER_LABELS[key]||key;
+    btn.setAttribute("aria-label",label);
     const glyph=document.createElement("span");
     glyph.className=compact?"dockGlyph":"railGlyph";
     glyph.textContent=MODE_ORDER_GLYPHS[key]||"·";
     btn.append(glyph);
     if(!compact){
       const name=document.createElement("span");
-      name.className="railName";name.textContent=MODE_ORDER_LABELS[key]||key;
+      name.className="railName";name.textContent=label;
       const status=document.createElement("span");
       status.className="railStatus";
       btn.append(name,status);
+      railBindFlyout(btn,digitFor.get(key));
     }
     btn.addEventListener("click",()=>enterModeByKey(key));
     return btn;
   };
   if(rail){
     rail.textContent="";
-    // the header: the one-question mark leads on the left. in a folded
-    // rail the logo stands in for the toggle — hover or tap it to unfold
+    // the rail is icons-only, always: the names live in the hover tooltips
+    rail.classList.add("min","noHover");
+    document.body.classList.add("railMin");
+    // the header: the one-question mark leads on the left
     const head=document.createElement("div");
     head.className="railHead";
     const logo=document.createElement("div");
     logo.className="railLogo";
     const mark=document.createElement("span");
     mark.className="railLogoMark";mark.textContent="?";
-    const word=document.createElement("span");
-    word.className="railLogoText";word.textContent="one question";
-    logo.append(mark,word);
-    logo.addEventListener("mouseenter",()=>{if(rail.classList.contains("min"))railSetPeek(true)});
-    logo.addEventListener("click",()=>{if(rail.classList.contains("min"))railSetPeek(true)});
-    // a compact icon twin of the toggle lives fixed at the header's right —
-    // same cycle, for muscle memory; the labeled row below spells it out
-    const iconBtn=document.createElement("button");
-    iconBtn.type="button";iconBtn.className="railModeIconBtn";
-    iconBtn.onclick=cycleRailMode;
-    head.append(logo,iconBtn);
+    logo.append(mark);
+    head.append(logo);
     rail.append(head);
-    // the toggle row says which mode it holds, right under the header
-    const modeBtn=document.createElement("button");
-    modeBtn.type="button";modeBtn.className="railModeBtn";
-    const icon=document.createElement("span");
-    icon.className="railModeIcon";
-    const label=document.createElement("span");
-    label.className="railModeLabel";
-    const hint=document.createElement("span");
-    hint.className="railModeHint";
-    modeBtn.append(icon,label,hint);
-    modeBtn.onclick=cycleRailMode;
-    rail.append(modeBtn);
     modes.forEach(key=>rail.append(buildEntry(key,false)));
     // the look controls dock at the rail's bottom: light mode above settings
     const themeBtn=document.createElement("button");
@@ -941,6 +963,7 @@ function renderModeRail(){
     const themeStatus=document.createElement("span");
     themeStatus.className="railStatus";
     themeBtn.append(themeGlyph,themeName,themeStatus);
+    railBindFlyout(themeBtn);
     themeBtn.onclick=()=>setLightMode(!settings.appearance.lightMode);
     rail.append(themeBtn);
     // settings follows; the corner fabs retire on desktop
@@ -956,20 +979,9 @@ function renderModeRail(){
     const status=document.createElement("span");
     status.className="railStatus";
     settingsBtn.append(gear,name,status);
+    railBindFlyout(settingsBtn,"0");
     settingsBtn.onclick=()=>{ $("settingsPanel").classList.contains("open")?closeSettings():openSettings(); };
     rail.append(settingsBtn);
-    if(!rail.dataset.bound){
-      rail.dataset.bound="1";
-      // one peek state drives everything: the rail's .peek class shows the
-      // names and the toggle, body.railPeek widens --railW so the content
-      // flexes with it. compact opts out of the rail-body hover — only the
-      // logo can unfold it there.
-      rail.addEventListener("mouseenter",()=>{if(railBodyCanPeek())railSetPeek(true)});
-      rail.addEventListener("mouseleave",()=>railSetPeek(false));
-      rail.addEventListener("focusin",()=>{if(railBodyCanPeek())railSetPeek(true)});
-      rail.addEventListener("focusout",e=>{if(!rail.contains(e.relatedTarget))railSetPeek(false)});
-    }
-    applyRailMode();
     markActiveModeRail();
   }
   if(dock){
@@ -977,59 +989,6 @@ function renderModeRail(){
     modes.forEach(key=>dock.append(buildEntry(key,true)));
     markActiveModeRail();
   }
-}
-// three ways to hold the rail: pinned open, folded with hover-expand, or
-// compact (icons only, no expansion). the toggle cycles through them.
-const RAIL_MODES=["pinned","hover","compact"];
-function railMode(){
-  try{
-    const saved=localStorage.getItem("oneQuestionRailMode");
-    if(RAIL_MODES.includes(saved))return saved;
-    // the old two-state flag folds into the new cycle
-    return localStorage.getItem("oneQuestionRailMin")==="1"?"hover":"pinned";
-  }catch{return "pinned"}
-}
-const RAIL_MODE_ICONS={
-  pinned:'<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2.5" width="12" height="11" rx="2.5"/><line x1="6.5" y1="2.5" x2="6.5" y2="13.5"/></svg>',
-  hover:'<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2.5" width="12" height="11" rx="2.5"/><line x1="6.5" y1="2.5" x2="6.5" y2="13.5"/><path d="M9.2 8h3M11.2 6.2 13 8l-1.8 1.8"/></svg>',
-  compact:'<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="4.2" height="11" rx="1.6"/><path d="M10.6 2.5h1.6M12.9 5.6h-.2M10.6 8h1.6M12.9 10.6h-.2M10.6 13.5h1.6"/></svg>'
-};
-const RAIL_MODE_HINTS={
-  pinned:"always open",
-  hover:"unfolds on hover",
-  compact:"icons only"
-};
-function applyRailMode(){
-  const mode=railMode();
-  const rail=$("modeRail");
-  if(rail){
-    rail.classList.toggle("min",mode!=="pinned");
-    rail.classList.toggle("noHover",mode==="compact");
-  }
-  document.body.classList.toggle("railMin",mode!=="pinned");
-  if(mode==="pinned"){
-    document.body.classList.remove("railPeek");
-    if(rail)rail.classList.remove("peek");
-  }
-  const btn=rail&&rail.querySelector(".railModeBtn");
-  if(btn){
-    btn.querySelector(".railModeIcon").innerHTML=RAIL_MODE_ICONS[mode];
-    btn.querySelector(".railModeLabel").textContent=mode;
-    btn.querySelector(".railModeHint").textContent=RAIL_MODE_HINTS[mode];
-    const title=`${mode} — ${RAIL_MODE_HINTS[mode]}`;
-    btn.title=title;
-    btn.setAttribute("aria-label",`rail mode: ${title}`);
-  }
-  const iconBtn=rail&&rail.querySelector(".railModeIconBtn");
-  if(iconBtn){
-    iconBtn.innerHTML=RAIL_MODE_ICONS[mode];
-    iconBtn.title=`rail mode: ${mode} — ${RAIL_MODE_HINTS[mode]}`;
-    iconBtn.setAttribute("aria-label",iconBtn.title);
-  }
-}
-function cycleRailMode(){
-  try{localStorage.setItem("oneQuestionRailMode",RAIL_MODES[(RAIL_MODES.indexOf(railMode())+1)%RAIL_MODES.length])}catch{}
-  applyRailMode();
 }
 function markActiveModeRail(){
   document.querySelectorAll("#modeRail .railEntry, #modeDock .dockEntry").forEach(btn=>{
@@ -2284,17 +2243,8 @@ function enterFocusMode(){
   if(pop){pop.classList.remove("open");pop.setAttribute("aria-hidden","true");}
   updateModeUI();
   setCycleStatus("the book",false);
-  // the book opens ready to write — caret at the end of the current chapter
-  const ed=$("bookEditor");
-  if(ed){
-    ed.focus();
-    const r=document.createRange();
-    r.selectNodeContents(ed);
-    r.collapse(false);
-    const sel=getSelection();
-    sel.removeAllRanges();
-    sel.addRange(r);
-  }
+  // the keyboard stays free: no auto-focus on the editor, so ↑ ↓ keep
+  // switching modes the moment the book appears — click in to write
 }
 // ---- day circle (time scheduler) mode --------------------------------
 const SCHEDULE_KEY="oneQuestionSchedule";
@@ -3000,6 +2950,9 @@ function enterSchedulerMode(){
 // a pure group that frames its children.
 const DEADLINES_KEY="oneQuestionDeadlines";
 const DAY_MS=86400000;
+// importance speaks in color: a blank frame or one of five washes
+const DEADLINE_IMPORTANCES=["none","grey","blue","green","red","gold"];
+const DEADLINE_IMP_COLORS={none:null,grey:"#9aa3ad",blue:"#5d9cf5",green:"#4cbe7d",red:"#e5484d",gold:"#d9b03c"};
 function normalizeDeadlineNode(raw){
   if(!raw||typeof raw!=="object")return null;
   const title=typeof raw.title==="string"?raw.title.trim().slice(0,80):"";
@@ -3009,6 +2962,9 @@ function normalizeDeadlineNode(raw){
     id:String(raw.id||uuid()),title,
     date:typeof raw.date==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(raw.date)?raw.date:"",
     time:typeof raw.time==="string"&&/^\d{2}:\d{2}$/.test(raw.time)?raw.time:"",
+    note:typeof raw.note==="string"?raw.note.slice(0,2000):"",
+    // importance is a palette pick; the old two-state flag folds in
+    importance:DEADLINE_IMPORTANCES.includes(raw.importance)?raw.importance:(raw.importance==="high"?"red":"none"),
     done:!!raw.done,collapsed:!!raw.collapsed,children
   };
 }
@@ -3031,6 +2987,38 @@ function deadlineParentOf(id){let hit=null;deadlineWalk(deadlines,(n,d,p)=>{if(n
 function deadlineRemove(id){
   const scrub=list=>{for(let i=list.length-1;i>=0;i--){if(list[i].id===id){list.splice(i,1);return true}if(scrub(list[i].children))return true}return false};
   scrub(deadlines);
+}
+// ---- dragging between parents ----
+// misfiled sub-deadlines move by drag: pull the node out with its subtree,
+// then push it under the row it was dropped on (or the top level)
+function deadlineDetach(id){
+  let detached=null;
+  const scrub=list=>{for(let i=list.length-1;i>=0;i--){if(list[i].id===id){detached=list.splice(i,1)[0];return true}if(scrub(list[i].children))return true}return false};
+  scrub(deadlines);
+  return detached;
+}
+function deadlineSubtreeHas(node,id){
+  let hit=node.id===id;
+  if(!hit)deadlineWalk([node],n=>{if(n.id===id)hit=true});
+  return hit;
+}
+function deadlineMoveTo(dragId,targetId){
+  if(dragId===targetId)return false;
+  const dragged=deadlineFind(dragId);
+  if(!dragged)return false;
+  const target=targetId?deadlineFind(targetId):null;
+  if(targetId&&!target)return false;
+  // a node can never land inside itself or its own subtree
+  if(target&&deadlineSubtreeHas(dragged,target.id))return false;
+  const sameParent=deadlineParentOf(dragId)?.id===(target?target.id:null);
+  deadlineDetach(dragId);
+  if(target){
+    target.children.push(dragged);
+    target.collapsed=false;
+  }else deadlines.push(dragged);
+  saveDeadlines();
+  renderDeadlines();
+  return !sameParent;
 }
 // whole days from today to the due date (noon vs noon, dst-safe); negative = overdue
 function deadlineDaysLeft(node){
@@ -3066,6 +3054,25 @@ function deadlineCountdown(node){
   if(d===0)return node.time?`today · ${node.time}`:"today";
   if(d===1)return "tomorrow";
   return `in ${d} days`;
+}
+// the chip beside the calendar date: compact units — minutes/hours on the
+// day itself, whole days beyond it, "late" behind it
+function deadlineCountdownShort(node){
+  if(!node.date||node.done)return "";
+  const d=deadlineDaysLeft(node);
+  if(d<0)return `${-d}d late`;
+  if(d===0){
+    if(node.time){
+      const [h,m]=node.time.split(":").map(Number);
+      const now=new Date();
+      const mins=h*60+m-(now.getHours()*60+now.getMinutes());
+      if(mins<=0)return "now";
+      if(mins<60)return `${mins}m`;
+      return `${Math.floor(mins/60)}h`;
+    }
+    return "today";
+  }
+  return `${d}d`;
 }
 function deadlineNextKey(node){return node.date+(node.time||"99:99")}
 function deadlineNextNode(){
@@ -3105,10 +3112,32 @@ function updateDeadlineNextLine(){
   el.classList.toggle("soon",urg==="overdue"||urg==="today"||urg==="soon");
 }
 // ---- the outline: the nested tree ----
+// the live drag id lives here: dataTransfer can't be read during dragover,
+// so the outline tracks which node is being carried
+let deadlineDragId=null;
 function renderDeadlineOutline(){
   const wrap=$("deadlineOutline");
   if(!wrap)return;
   wrap.textContent="";
+  if(!wrap.dataset.bound){
+    wrap.dataset.bound="1";
+    // dropping on the outline's own empty margin un-nests to the top level
+    wrap.addEventListener("dragover",e=>{
+      if(e.target===wrap&&deadlineDragId){
+        e.preventDefault();
+        e.dataTransfer.dropEffect="move";
+        wrap.classList.add("dropRoot");
+      }
+    });
+    wrap.addEventListener("dragleave",()=>wrap.classList.remove("dropRoot"));
+    wrap.addEventListener("drop",e=>{
+      wrap.classList.remove("dropRoot");
+      if(e.target!==wrap)return;
+      e.preventDefault();
+      const dragId=e.dataTransfer.getData("text/plain");
+      if(dragId)deadlineMoveTo(dragId,null);
+    });
+  }
   if(!deadlines.length){
     const empty=document.createElement("div");
     empty.className="deadlineEmpty";
@@ -3152,8 +3181,42 @@ function deadlineOutlineRow(node,depth){
     if(e.key==="Enter"||e.key===" "){e.preventDefault();openDeadlineCard(node.id);}
   });
   frag.append(row);
+  // drag to re-file: pull this row (with everything inside it) onto another
+  // deadline to nest it there — or onto the empty outline to un-nest it
+  row.draggable=true;
+  row.dataset.id=node.id;
+  row.addEventListener("dragstart",e=>{
+    e.dataTransfer.setData("text/plain",node.id);
+    e.dataTransfer.effectAllowed="move";
+    deadlineDragId=node.id;
+    row.classList.add("dragging");
+  });
+  row.addEventListener("dragend",()=>{deadlineDragId=null;row.classList.remove("dragging")});
+  row.addEventListener("dragover",e=>{
+    if(deadlineDragOk(node.id)){
+      e.preventDefault();
+      e.dataTransfer.dropEffect="move";
+      row.classList.add("dropOn");
+    }
+  });
+  row.addEventListener("dragleave",()=>row.classList.remove("dropOn"));
+  row.addEventListener("drop",e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    row.classList.remove("dropOn");
+    const dragId=e.dataTransfer.getData("text/plain");
+    if(dragId)deadlineMoveTo(dragId,node.id);
+  });
   if(kids&&!node.collapsed)deadlineSortedSiblings(node.children).forEach(kid=>{const r=deadlineOutlineRow(kid,depth+1);if(r)frag.append(r)});
   return frag;
+}
+// a drop target is valid while a drag is live and the dragged node is not
+// this row itself or inside this row's subtree
+function deadlineDragOk(targetId){
+  const dragId=deadlineDragId;
+  if(!dragId||dragId===targetId)return false;
+  const dragged=deadlineFind(dragId);
+  return !!dragged&&!deadlineSubtreeHas(dragged,targetId);
 }
 // ---- the wall: month grids with chips on their days ----
 function renderDeadlineWall(){
@@ -3275,53 +3338,128 @@ function deadlineMonthBlock(month,byDay,today,nowYm){
     day.className="deadlineDay"+(key===today?" today":"");
     const num=document.createElement("div");
     num.className="deadlineDayNum";
+    const dw=document.createElement("div");
+    dw.className="dw";
     const dd=document.createElement("span");
     dd.className="d";dd.textContent=String(d.getDate()).padStart(2,"0");
     const ww=document.createElement("span");
     ww.className="w";ww.textContent=d.toLocaleDateString(undefined,{weekday:"short"}).toLowerCase();
-    num.append(dd,ww);
+    dw.append(dd,ww);
     const items=document.createElement("div");
     items.className="deadlineDayItems";
     list.sort((a,b)=>(a.node.time||"99:99").localeCompare(b.node.time||"99:99"));
-    list.forEach(entry=>items.append(deadlineAgendaEntry(entry)));
+    // an entry whose ancestor shares the day hangs under that ancestor:
+    // expanding and collapsing works right inside the calendar
+    const inDay=new Set(list.map(e=>e.node.id));
+    const inDayParentId=node=>{
+      let p=deadlineParentOf(node.id);
+      while(p){
+        if(inDay.has(p.id))return p.id;
+        p=deadlineParentOf(p.id);
+      }
+      return null;
+    };
+    const appendTree=(entries,depth)=>{
+      entries.forEach(entry=>{
+        const kids=list.filter(e=>inDayParentId(e.node)===entry.node.id);
+        items.append(deadlineAgendaEntry({node:entry.node,depth,kidsInDay:kids.length}));
+        if(kids.length&&!entry.node.collapsed)appendTree(kids,depth+1);
+      });
+    };
+    appendTree(list.filter(e=>!inDayParentId(e.node)),0);
+    // left of the date: how long until that day's first open deadline —
+    // hours on the day itself, days beyond it. the date stays glued to
+    // the entries column, always right-aligned the same way
+    const firstOpen=list.find(e=>!e.node.done)||list[0];
+    const short=deadlineCountdownShort(firstOpen.node);
+    if(short){
+      const c=document.createElement("span");
+      c.className="deadlineDayCount"+(deadlineDaysLeft(firstOpen.node)<0?" late":"");
+      c.textContent=short;
+      num.append(c);
+    }
+    num.append(dw);
     day.append(num,items);
     agenda.append(day);
   }
   block.append(head,agenda);
   return block;
 }
-function deadlineAgendaEntry({node,depth}){
+function deadlineAgendaEntry({node,depth,kidsInDay=0}){
   const btn=document.createElement("button");
   btn.type="button";
   const urg=deadlineUrgency(node);
-  btn.className="deadlineEntry"+(depth>0?" sub":" parent")+(urg?` urg-${urg}`:"")+(node.done?" done":"");
+  btn.className="deadlineEntry"+(depth>0?" sub":" parent")+(urg?` urg-${urg}`:"")+(DEADLINE_IMPORTANCES.includes(node.importance)&&node.importance!=="none"?` imp-${node.importance}`:"")+(node.done?" done":"");
   btn.style.setProperty("--depth",Math.min(depth,4));
   const dot=document.createElement("span");dot.className="deadlineEntryDot";
   const title=document.createElement("span");
   title.className="deadlineEntryTitle";title.textContent=node.title;
   btn.append(dot,title);
+  // the note's first line rides beside the name — a whisper of what this
+  // deadline is about, ellipsized long before it crowds the row
+  const noteFirstLine=(node.note||"").split("\n").map(s=>s.trim()).find(s=>s);
+  if(noteFirstLine){
+    btn.classList.add("hasNote");
+    const prev=document.createElement("span");
+    prev.className="deadlineEntryNote";
+    prev.textContent=noteFirstLine;
+    btn.append(prev);
+  }
   if(node.time){
     const t=document.createElement("span");
     t.className="deadlineEntryTime";t.textContent=node.time;
     btn.append(t);
   }
-  if(node.children.length){
+  if(kidsInDay&&!node.collapsed){
+    // expanded: the brood shows below, nothing extra on the row
+  }else if(kidsInDay){
+    // folded: a quiet count says what's tucked away
     const n=document.createElement("span");
-    n.className="deadlineEntryCount";n.textContent=`${node.children.length} inside`;
+    n.className="deadlineEntryCount";n.textContent=`${kidsInDay} ≡`;
+    btn.append(n);
+  }else if(node.children.length){
+    const n=document.createElement("span");
+    n.className="deadlineEntryCount";n.textContent=`${node.children.length} ≡`;
     btn.append(n);
   }
+  const openCtl=document.createElement("span");
+  openCtl.className="deadlineEntryOpen";
+  openCtl.textContent="open";
+  btn.append(openCtl);
   btn.title=`${node.title}${node.date?` · ${deadlineCountdown(node)}`:""}`;
-  btn.onclick=e=>{e.stopPropagation();openDeadlineCard(node.id)};
+  // the block itself never opens the card: it folds and unfolds its
+  // same-day sub-deadlines — "open" is the only way in, no misclicks
+  btn.onclick=e=>{
+    e.stopPropagation();
+    if(e.target.closest(".deadlineEntryOpen")){openDeadlineCard(node.id);return}
+    if(kidsInDay){
+      node.collapsed=!node.collapsed;
+      saveDeadlines();
+      renderDeadlines();
+    }
+  };
   return btn;
 }
 // ---- the detail card: one deadline, its children, its actions ----
 let deadlineCardId=null;
+// the note keeps a draft while you type: a wall re-render rebuilds the card,
+// and the draft bridges those rebuilds so focus and text never get lost
+let deadlineNoteDraft=null,deadlineNoteTimer=null;
+function flushDeadlineNote(){
+  clearTimeout(deadlineNoteTimer);
+  if(!deadlineNoteDraft)return;
+  const node=deadlineFind(deadlineNoteDraft.id);
+  if(node){node.note=deadlineNoteDraft.text;saveDeadlines()}
+  deadlineNoteDraft=null;
+}
 function openDeadlineCard(id){
   if(!deadlineFind(id))return;
+  flushDeadlineNote();
   deadlineCardId=id;
   renderDeadlineCard();
 }
 function closeDeadlineCard(){
+  flushDeadlineNote();
   deadlineCardId=null;
   const card=$("deadlineCard");
   if(card){card.classList.remove("open");card.setAttribute("aria-hidden","true")}
@@ -3353,10 +3491,56 @@ function renderDeadlineCard(){
     crumb.onclick=()=>openDeadlineCard(parent.id);
     panel.append(crumb);
   }
+  // the note: what to remember about this deadline. it autosaves as you
+  // type (debounced), and a re-render of the card never eats a draft
+  const noteWrap=document.createElement("label");
+  noteWrap.className="deadlineNoteWrap";
+  const noteHead=document.createElement("span");
+  noteHead.className="deadlineNoteHead";noteHead.textContent="remember";
+  const note=document.createElement("textarea");
+  note.className="deadlineNote";
+  note.rows=3;
+  note.maxLength=2000;
+  note.spellcheck=false;
+  note.placeholder="what should you remember about this one?";
+  note.value=(deadlineNoteDraft&&deadlineNoteDraft.id===node.id)?deadlineNoteDraft.text:(node.note||"");
+  // the box grows with its words — reading a long note never means
+  // scrolling inside a tiny window
+  const fitDeadlineNote=()=>{
+    note.style.height="auto";
+    note.style.height=Math.min(note.scrollHeight,Math.round(window.innerHeight*.46))+"px";
+  };
+  note.addEventListener("input",()=>{
+    deadlineNoteDraft={id:node.id,text:note.value};
+    clearTimeout(deadlineNoteTimer);
+    deadlineNoteTimer=setTimeout(flushDeadlineNote,400);
+    fitDeadlineNote();
+  });
+  note.addEventListener("change",flushDeadlineNote);
+  noteWrap.append(noteHead,note);
+  panel.append(noteWrap);
   const actions=document.createElement("div");actions.className="deadlineCardActions";
   const doneBtn=document.createElement("button");
-  doneBtn.type="button";doneBtn.textContent=node.done?"reopen":"✓ done";
+  doneBtn.type="button";doneBtn.className="primary";
+  doneBtn.textContent=node.done?"reopen":"✓ done";
   doneBtn.onclick=()=>{node.done=!node.done;saveDeadlines();renderDeadlines();};
+  const impBtn=document.createElement("button");
+  impBtn.type="button";
+  const syncImpBtn=()=>{
+    const imp=DEADLINE_IMPORTANCES.includes(node.importance)?node.importance:"none";
+    impBtn.textContent="";
+    const dot=document.createElement("span");
+    dot.className="deadlineImpDot"+(imp==="none"?" blank":"");
+    dot.style.setProperty("--imp",DEADLINE_IMP_COLORS[imp]||"transparent");
+    impBtn.append(dot,document.createTextNode(`importance: ${imp}`));
+  };
+  syncImpBtn();
+  impBtn.onclick=()=>{
+    const cur=DEADLINE_IMPORTANCES.includes(node.importance)?node.importance:"none";
+    node.importance=DEADLINE_IMPORTANCES[(DEADLINE_IMPORTANCES.indexOf(cur)+1)%DEADLINE_IMPORTANCES.length];
+    saveDeadlines();
+    renderDeadlines();
+  };
   const editBtn=document.createElement("button");
   editBtn.type="button";editBtn.textContent="edit";
   editBtn.onclick=()=>openDeadlineEditor({nodeId:node.id});
@@ -3366,7 +3550,7 @@ function renderDeadlineCard(){
   const delBtn=document.createElement("button");
   delBtn.type="button";delBtn.className="danger";delBtn.textContent="delete";
   delBtn.onclick=()=>{deadlineRemove(node.id);saveDeadlines();closeDeadlineCard();renderDeadlines();};
-  actions.append(doneBtn,editBtn,addBtn,delBtn);
+  actions.append(doneBtn,impBtn,editBtn,addBtn,delBtn);
   panel.append(actions);
   if(node.children.length){
     const list=document.createElement("div");list.className="deadlineCardList";
@@ -3374,6 +3558,8 @@ function renderDeadlineCard(){
     panel.append(list);
   }
   card.append(panel);
+  // sized once the note is live in the layout
+  fitDeadlineNote();
 }
 function deadlineChildRow(node){
   const row=document.createElement("div");
@@ -3389,7 +3575,7 @@ function deadlineChildRow(node){
   body.append(t,w);
   if(node.children.length){
     const n=document.createElement("span");
-    n.className="deadlineChildCount";n.textContent=`${node.children.length} inside`;
+    n.className="deadlineChildCount";n.textContent=`${node.children.length} ≡`;
     body.append(n);
   }
   const edit=document.createElement("button");
@@ -3420,6 +3606,8 @@ function openDeadlineEditor(ctx={}){
   $("deadlineTitleInput").value=editing?editing.title:"";
   $("deadlineDateInput").value=editing?editing.date:(ctx.date||"");
   $("deadlineTimeInput").value=editing?editing.time:"";
+  const imp=editing&&DEADLINE_IMPORTANCES.includes(editing.importance)?editing.importance:"none";
+  $("deadlineImportanceSeg")?.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.imp===imp));
   $("deadlineEditorDelete").style.display=editing?"":"none";
   overlay.classList.add("open");
   overlay.setAttribute("aria-hidden","false");
@@ -3438,11 +3626,13 @@ function commitDeadlineEditor(){
   const dateInput=$("deadlineDateInput"),timeInput=$("deadlineTimeInput");
   const date=/^\d{4}-\d{2}-\d{2}$/.test(dateInput.value||"")?dateInput.value:"";
   const time=/^\d{2}:\d{2}$/.test(timeInput.value||"")?timeInput.value:"";
+  const impRaw=$("deadlineImportanceSeg")?.querySelector("button.on")?.dataset.imp;
+  const imp=DEADLINE_IMPORTANCES.includes(impRaw)?impRaw:"none";
   const editing=deadlineEditorCtx.nodeId?deadlineFind(deadlineEditorCtx.nodeId):null;
   if(editing){
-    editing.title=title.slice(0,80);editing.date=date;editing.time=time;
+    editing.title=title.slice(0,80);editing.date=date;editing.time=time;editing.importance=imp;
   }else{
-    const fresh=normalizeDeadlineNode({title,date,time});
+    const fresh=normalizeDeadlineNode({title,date,time,importance:imp});
     const parent=deadlineEditorCtx.parentId?deadlineFind(deadlineEditorCtx.parentId):null;
     if(parent)parent.children.push(fresh);
     else deadlines.push(fresh);
@@ -3498,6 +3688,8 @@ function tickDeadlineReminders(){
     activeDeadlineReminderId=best.id;
     $("deadlineReminderTitle").textContent=best.title;
     $("deadlineReminderWhen").textContent=deadlineCountdown(best);
+    const noteEl=$("deadlineReminderNote");
+    if(noteEl)noteEl.textContent=best.note||"";
     el.classList.add("show");
     el.setAttribute("aria-hidden","false");
     playDeadlineChime();
@@ -3545,6 +3737,11 @@ function initDeadlinesMode(){
   $("deadlineEditorSave")?.addEventListener("click",commitDeadlineEditor);
   $("deadlineEditorCancel")?.addEventListener("click",closeDeadlineEditor);
   $("deadlineEditorDelete")?.addEventListener("click",deleteDeadlineFromEditor);
+  $("deadlineImportanceSeg")?.querySelectorAll("button").forEach(b=>{
+    b.addEventListener("click",()=>{
+      $("deadlineImportanceSeg").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
+    });
+  });
   $("deadlineEditor")?.addEventListener("click",e=>{if(e.target===$("deadlineEditor"))closeDeadlineEditor()});
   $("deadlineTitleInput")?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();commitDeadlineEditor()}});
   $("deadlineReminderDismiss")?.addEventListener("click",dismissDeadlineReminder);
@@ -5818,7 +6015,8 @@ function initQuotesMode(){
       updateQuoteMeta();
     }
   },{passive:true});
-  // reels-style keyboard navigation: one quote per key press
+  // reels-style keyboard navigation: space and page keys turn the quotes —
+  // ↑ ↓ stay free to switch modes, the way they do on every other screen
   document.addEventListener("keydown",e=>{
     if(currentMode!=="quotes")return;
     if(e.altKey||e.ctrlKey||e.metaKey)return;
@@ -5829,10 +6027,10 @@ function initQuotesMode(){
     const t=e.target;
     if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.isContentEditable))return;
     const last=(feed.children.length||1)-1;
-    if(e.key==="ArrowDown"||e.key==="PageDown"||e.key===" "){
+    if(e.key==="PageDown"||e.key===" "){
       e.preventDefault();
       quotesGoto(quoteIndex+1);
-    }else if(e.key==="ArrowUp"||e.key==="PageUp"){
+    }else if(e.key==="PageUp"){
       e.preventDefault();
       quotesGoto(quoteIndex-1);
     }else if(e.key==="Home"){
@@ -6118,9 +6316,16 @@ document.addEventListener("keydown",e=>{
 function cycleMode(dir){
   const order=activeModes();
   if(!order.length)return;
-  const idx=Math.max(0,order.indexOf(currentMode));
-  const next=order[(idx+dir+order.length)%order.length];
-  if(next===currentMode)return;
+  // settings rides at the end of the cycle as its own page — the arrows
+  // reach it the same way they reach every mode, not by click alone
+  const settingsOpen=$("settingsPanel").classList.contains("open");
+  const seq=[...order,"settings"];
+  const cur=settingsOpen?"settings":currentMode;
+  const idx=Math.max(0,seq.indexOf(cur));
+  const next=seq[(idx+dir+seq.length)%seq.length];
+  if(next===cur)return;
+  if(next==="settings"){openSettings();return}
+  if(settingsOpen)closeSettings();
   if(next==="question")enterQuestionMode();
   else if(next==="focus")enterFocusMode();
   else if(next==="scheduler")enterSchedulerMode();
@@ -6129,17 +6334,43 @@ function cycleMode(dir){
   else if(next==="deadlines")enterDeadlinesMode();
 }
 document.addEventListener("keydown",e=>{
-  if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight")return;
+  if(e.key!=="ArrowUp"&&e.key!=="ArrowDown")return;
+  // the rail runs vertically, so the mode cycle rides ↑ ↓ — on every
+  // screen alike; the quiet feed turns its quotes with space instead
   if(e.altKey||e.ctrlKey||e.metaKey)return;
   if($("historyPanel").classList.contains("open"))return;
   if(document.querySelector(".appDialog.open"))return;
   const t=e.target;
   if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.isContentEditable))return;
   e.preventDefault();
-  cycleMode(e.key==="ArrowRight"?1:-1);
+  cycleMode(e.key==="ArrowDown"?1:-1);
+});
+// direct jumps: digits land on the rail's modes in order, 0 toggles
+// settings — no cycling through everything just to reach one screen
+document.addEventListener("click",e=>{
+  if(!e.target.closest("#modeRail"))railHideFlyout();
+},true);
+document.addEventListener("keydown",e=>{
+  if(e.altKey||e.ctrlKey||e.metaKey)return;
+  if(e.key!=="0"&&!(e.key>="1"&&e.key<="9"))return;
+  if($("historyPanel").classList.contains("open"))return;
+  if(document.querySelector(".appDialog.open"))return;
+  const t=e.target;
+  if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.isContentEditable))return;
+  if(e.key==="0"){
+    e.preventDefault();
+    $("settingsPanel").classList.contains("open")?closeSettings():openSettings();
+    return;
+  }
+  const order=activeModes();
+  const idx=Number(e.key)-1;
+  if(idx<0||idx>=order.length)return;
+  e.preventDefault();
+  if($("settingsPanel").classList.contains("open"))closeSettings();
+  enterModeByKey(order[idx]);
 });
 
-// mobile: a decisive horizontal swipe cycles modes the way ← → do.
+// mobile: a decisive horizontal swipe cycles modes the way ↑ ↓ do.
 // vertical movement is left alone — it scrolls the feed, drags notes,
 // selects text in the book.
 (function initModeSwipe(){
