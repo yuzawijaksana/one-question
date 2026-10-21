@@ -2,7 +2,7 @@
   "version": 1,
   "keys": {
     "oneQuestionSettings": {
-      "updatedAt": 1792097218846,
+      "updatedAt": 1792471492285,
       "value": {
         "categories": [
           "all"
@@ -16,8 +16,6 @@
           "sticky"
         ],
         "hiddenModes": [],
-        "startupMode": "question",
-        "startupResume": false,
         "stickyCategories": [
           "general"
         ],
@@ -60,11 +58,11 @@
           "lightModeRestore": null
         },
         "syncToken": "",
-        "syncServer": "http://103.47.225.99:8080/"
+        "syncServer": ""
       }
     },
     "oneQuestionQuestionBank": {
-      "updatedAt": 1790059331115,
+      "updatedAt": 1792471492285,
       "value": [
         [
           "reflection",
@@ -245,7 +243,7 @@
       ]
     },
     "oneQuestionFocusQuestions": {
-      "updatedAt": 1789987029817,
+      "updatedAt": 1792471492285,
       "value": [
         "What do you want to move forward right now?",
         "What would make the next hour feel worthwhile?",
@@ -258,7 +256,7 @@
       ]
     },
     "oneQuestionHistory": {
-      "updatedAt": 1791257207634,
+      "updatedAt": 1792471492285,
       "value": [
         {
           "question": "What are you about to spend time on, and is it worth it?",
@@ -291,28 +289,28 @@
       ]
     },
     "oneQuestionRecent": {
-      "updatedAt": 1792469558406,
+      "updatedAt": 1792471504197,
       "value": [
-        0,
+        8,
+        16,
+        25,
+        38,
+        5,
+        28,
         41,
+        0,
         32,
-        35,
         10,
-        12,
-        20,
-        11,
-        39,
-        26,
-        24,
-        34
+        19,
+        33
       ]
     },
     "oneQuestionTodos": {
-      "updatedAt": 1789987029817,
+      "updatedAt": 1792471492285,
       "value": []
     },
     "oneQuestionHydration": {
-      "updatedAt": 1792110782521,
+      "updatedAt": 1792471492285,
       "value": {
         "lastDrinkAt": 1789772245794,
         "drinkCount": 2,
@@ -336,141 +334,93 @@
       }
     },
     "oneQuestionSchedule": {
-      "updatedAt": 1792097519326,
+      "updatedAt": 1792471492285,
       "value": [
         {
-          "start": 270,
-          "end": 300,
-          "label": "subuh",
+          "start": 240,
+          "end": 361,
+          "label": "bangun subuh",
           "color": "#7d8c7c"
         },
         {
-          "start": 720,
-          "end": 780,
-          "label": "dzuhur/lunch",
-          "color": "#7d8c7c"
-        },
-        {
-          "start": 555,
-          "end": 720,
-          "label": "focus",
-          "color": "#7c829c"
-        },
-        {
-          "start": 780,
-          "end": 900,
-          "label": "focus",
-          "color": "#7c829c"
-        },
-        {
-          "start": 900,
-          "end": 960,
-          "label": "ashar",
-          "color": "#7d8c7c"
-        },
-        {
-          "start": 1080,
-          "end": 1110,
-          "label": "magrhib",
-          "color": "#7d8c7c"
-        },
-        {
-          "start": 1140,
-          "end": 1170,
-          "label": "isya",
-          "color": "#7d8c7c"
-        },
-        {
-          "start": 1200,
-          "end": 1320,
-          "label": "focus / gaming",
+          "start": 365,
+          "end": 480,
+          "label": "tidur",
           "color": "#8c7d8c"
         },
         {
-          "start": 300,
-          "end": 405,
-          "label": "book reading",
+          "start": 536,
+          "end": 1440,
+          "label": "bangun",
           "color": "#7c829c"
         },
         {
-          "start": 540,
-          "end": 555,
-          "label": "rehat",
-          "color": "#7c9c95"
-        },
-        {
-          "start": 405,
-          "end": 420,
-          "label": "rehat",
-          "color": "#9c7c86"
-        },
-        {
-          "start": 1320,
-          "end": 1350,
-          "label": "screen detox",
-          "color": "#7d8c7c"
+          "start": 4,
+          "end": 233,
+          "label": "tidur",
+          "color": "#9c8d7c"
         }
       ]
     },
     "oneQuestionStickies": {
-      "updatedAt": 1792317104610,
+      "updatedAt": 1792471492285,
       "value": [
         {
           "id": "22f379cc-b095-48a9-95dc-efecef1440f1",
           "text": "silence - akiyoshi rikako",
           "created": 1790086231973,
-          "done": true,
+          "done": false,
           "cat": "book",
-          "x": 6,
-          "y": 8
+          "x": 12.2,
+          "y": 24.1
         },
         {
           "id": "de79007c-cde8-4cd5-bf02-3bf5748fc121",
           "text": "akatsuki - mulyatun n",
           "created": 1790086198918,
-          "done": true,
+          "done": false,
           "cat": "book",
-          "x": 43,
-          "y": 36.9
+          "x": 30.8,
+          "y": 29
         },
         {
           "id": "ff46289a-c71d-407d-ba27-c32abe602215",
           "text": "laut bercerita",
           "created": 1790086092926,
-          "done": true,
+          "done": false,
           "cat": "film",
-          "x": 22,
-          "y": 13.9,
+          "x": 45.2,
+          "y": 24.8,
           "z": "13"
         },
         {
           "id": "29c686fb-3c1b-48ff-ae70-555d00903484",
           "text": "the essential people skills",
           "created": 1790004800440,
-          "done": true,
+          "done": false,
           "cat": "book",
-          "x": 59,
-          "y": 43,
+          "x": 60.7,
+          "y": 28.5,
           "z": "33"
         },
         {
           "id": "9b876e1b-b032-4ede-9bc1-ddd91c8f6dc4",
           "text": "filosofi teras",
           "created": 1790004780554,
-          "done": true,
+          "done": false,
           "cat": "book",
-          "x": 38,
-          "y": 20,
+          "x": 75.1,
+          "y": 25.2,
           "z": "39"
         },
         {
           "id": "c270681e-f50e-4d8b-95f5-cccd9670fae0",
           "text": "how to influence people and win friends",
           "created": 1790004768030,
-          "done": true,
+          "done": false,
           "cat": "book",
-          "x": 17,
-          "y": 49,
+          "x": 83.9,
+          "y": 29,
           "z": "16"
         },
         {
@@ -479,8 +429,8 @@
           "created": 1790004750032,
           "done": false,
           "cat": "book",
-          "x": 54,
-          "y": 26,
+          "x": 17.5,
+          "y": 40.4,
           "z": "15"
         },
         {
@@ -489,8 +439,8 @@
           "created": 1789816515228,
           "done": false,
           "cat": "friend",
-          "x": 33,
-          "y": 54.9,
+          "x": 34.9,
+          "y": 46.4,
           "z": "12"
         },
         {
@@ -499,8 +449,8 @@
           "created": 1789816364531,
           "done": false,
           "cat": "friend",
-          "x": 12,
-          "y": 31.9,
+          "x": 46.4,
+          "y": 42.4,
           "z": "17"
         },
         {
@@ -509,8 +459,8 @@
           "created": 1789816362131,
           "done": false,
           "cat": "friend",
-          "x": 49,
-          "y": 9.1,
+          "x": 62.2,
+          "y": 45,
           "z": "15"
         },
         {
@@ -519,8 +469,8 @@
           "created": 1789816337074,
           "done": false,
           "cat": "skill",
-          "x": 28,
-          "y": 38,
+          "x": 77.5,
+          "y": 39.9,
           "z": "20"
         },
         {
@@ -529,8 +479,8 @@
           "created": 1789816315707,
           "done": false,
           "cat": "skill",
-          "x": 7,
-          "y": 15,
+          "x": 90,
+          "y": 47,
           "z": "18"
         },
         {
@@ -539,8 +489,8 @@
           "created": 1789815892883,
           "done": false,
           "cat": "friend",
-          "x": 44,
-          "y": 44,
+          "x": 16.1,
+          "y": 58.4,
           "z": "16"
         },
         {
@@ -549,8 +499,8 @@
           "created": 1789815885007,
           "done": false,
           "cat": "friend",
-          "x": 23,
-          "y": 21,
+          "x": 30.1,
+          "y": 65.1,
           "z": "19"
         },
         {
@@ -559,8 +509,8 @@
           "created": 1789814800974,
           "done": false,
           "cat": "friend",
-          "x": 60,
-          "y": 50.1,
+          "x": 42.1,
+          "y": 59.6,
           "z": "16"
         },
         {
@@ -569,8 +519,8 @@
           "created": 1789814786389,
           "done": false,
           "cat": "friend",
-          "x": 39,
-          "y": 27.1,
+          "x": 56.1,
+          "y": 62.1,
           "z": "19"
         },
         {
@@ -579,8 +529,8 @@
           "created": 1789804934229,
           "done": false,
           "cat": "assignment",
-          "x": 18,
-          "y": 56,
+          "x": 69.7,
+          "y": 59.6,
           "z": "28"
         },
         {
@@ -589,14 +539,14 @@
           "created": 1789804390454,
           "done": false,
           "cat": "skill",
-          "x": 55,
-          "y": 33,
+          "x": 83.9,
+          "y": 62.1,
           "z": "17"
         }
       ]
     },
     "oneQuestionNote": {
-      "updatedAt": 1792209769208,
+      "updatedAt": 1792471492285,
       "value": "Bimbingan - 7 Sept 2026 s/d 9 Jan 2027\n\nTA\n1. Keunikan Gamenya (Judul)\n  + Data Pendukung(ini digunakan untuk memvalidasi argumen terhadap keunikan sebuah game\n\n"
     },
     "oneQuestionJournal": {
@@ -619,7 +569,7 @@
       ]
     },
     "oneQuestionBook": {
-      "updatedAt": 1791266277824,
+      "updatedAt": 1792471492285,
       "value": {
         "title": "",
         "chapters": [
@@ -660,7 +610,7 @@
       }
     },
     "oneQuestionQuotes": {
-      "updatedAt": 1790914124531,
+      "updatedAt": 1792471492285,
       "value": [
         {
           "id": "793d7d20-9493-43f6-9f7f-64f71142260e",
@@ -683,5 +633,5 @@
       ]
     }
   },
-  "updatedAt": 1792469559422
+  "updatedAt": 1792471505041
 }
