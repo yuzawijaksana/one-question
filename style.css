@@ -9637,6 +9637,25 @@ body:is(.focusModeVisual, .schedulerVisual, .stickyVisual, .quotesVisual, .deadl
   margin-top: 14px
 }
 
+/* the push nudge: hidden until the server owes a sync, then a soft
+ * pulsing up-arrow with its reason riding in the flyout */
+.railPush {
+  display: none
+}
+
+.railPush.show {
+  display: grid
+}
+
+.railPush.show .railGlyph {
+  animation: railPushPulse 2.2s ease-in-out infinite
+}
+
+@keyframes railPushPulse {
+  0%, 100% { color: var(--muted); opacity: .8 }
+  50% { color: var(--text); opacity: 1 }
+}
+
 .railEntry {
   display: grid;
   grid-template-columns: 28px 1fr;

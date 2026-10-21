@@ -196,6 +196,16 @@ function scheduleSyncPush(){
   clearTimeout(syncPushTimer);
   syncPushTimer=setTimeout(pushSyncToServer,800);
 }
+// pending = some section was saved after the last push that made it to the
+// server. it survives reloads, so a push that failed before closing the
+// browser still asks for one the next time the rail renders
+function syncLastPushAt(){
+  try{return Number(localStorage.getItem("oneQuestionSyncLastPush"))||0}catch{return 0}
+}
+function syncHasPendingChanges(){
+  const last=syncLastPushAt(),times=readSyncTimes();
+  return SYNC_KEYS.some(k=>(times[k]||0)>last);
+}
 async function pushSyncToServer(base){
   if(syncBusy)return false;
   syncBusy=true;
@@ -216,11 +226,14 @@ async function pushSyncToServer(base){
       body:JSON.stringify({changes})
     });
     if(!res.ok)throw new Error(`server answered ${res.status}`);
+    try{localStorage.setItem("oneQuestionSyncLastPush",String(Date.now()))}catch{}
     setDataStatus("synced to server");
+    updateRailPushBtn();
     return true;
   }catch(e){
     console.warn("One Question: sync push failed",e);
     setDataStatus("sync push failed");
+    updateRailPushBtn();
     return false;
   }finally{syncBusy=false}
 }
@@ -950,6 +963,23 @@ function renderModeRail(){
     head.append(logo);
     rail.append(head);
     modes.forEach(key=>rail.append(buildEntry(key,false)));
+    // the sync nudge: an up-arrow that only steps forward when changes are
+    // waiting for the server — one tap pushes, then it slips away again
+    const pushBtn=document.createElement("button");
+    pushBtn.type="button";
+    pushBtn.className="railEntry railPush";
+    pushBtn.dataset.mode="push";
+    pushBtn.setAttribute("aria-label","push changes");
+    const pushGlyph=document.createElement("span");
+    pushGlyph.className="railGlyph";pushGlyph.textContent="↑";
+    const pushName=document.createElement("span");
+    pushName.className="railName";pushName.textContent="push changes";
+    const pushStatus=document.createElement("span");
+    pushStatus.className="railStatus";
+    pushBtn.append(pushGlyph,pushName,pushStatus);
+    railBindFlyout(pushBtn);
+    pushBtn.onclick=async()=>{await syncNow();updateRailPushBtn();};
+    rail.append(pushBtn);
     // the look controls dock at the rail's bottom: light mode above settings
     const themeBtn=document.createElement("button");
     themeBtn.type="button";
@@ -983,12 +1013,23 @@ function renderModeRail(){
     settingsBtn.onclick=()=>{ $("settingsPanel").classList.contains("open")?closeSettings():openSettings(); };
     rail.append(settingsBtn);
     markActiveModeRail();
+    updateRailPushBtn();
   }
   if(dock){
     dock.textContent="";
     modes.forEach(key=>dock.append(buildEntry(key,true)));
     markActiveModeRail();
   }
+}
+// the up-arrow wears its state: shown while a push is owed, its flyout
+// says why, and a successful sync folds it back out of sight
+function updateRailPushBtn(){
+  const btn=document.querySelector("#modeRail .railPush");
+  if(!btn)return;
+  const pending=syncHasPendingChanges();
+  btn.classList.toggle("show",pending);
+  const status=btn.querySelector(".railStatus");
+  if(status)status.textContent=pending?"unsynced changes":"";
 }
 function markActiveModeRail(){
   document.querySelectorAll("#modeRail .railEntry, #modeDock .dockEntry").forEach(btn=>{
@@ -6316,16 +6357,14 @@ document.addEventListener("keydown",e=>{
 function cycleMode(dir){
   const order=activeModes();
   if(!order.length)return;
-  // settings rides at the end of the cycle as its own page — the arrows
-  // reach it the same way they reach every mode, not by click alone
+  // the cycle walks the modes only — settings is a page you click (or
+  // press 0) into, never one the arrows drop you on
   const settingsOpen=$("settingsPanel").classList.contains("open");
-  const seq=[...order,"settings"];
-  const cur=settingsOpen?"settings":currentMode;
-  const idx=Math.max(0,seq.indexOf(cur));
-  const next=seq[(idx+dir+seq.length)%seq.length];
-  if(next===cur)return;
-  if(next==="settings"){openSettings();return}
+  const idx=Math.max(0,order.indexOf(currentMode));
+  const next=order[(idx+dir+order.length)%order.length];
+  if(next===currentMode&&!settingsOpen)return;
   if(settingsOpen)closeSettings();
+  if(next===currentMode)return;
   if(next==="question")enterQuestionMode();
   else if(next==="focus")enterFocusMode();
   else if(next==="scheduler")enterSchedulerMode();
