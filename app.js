@@ -787,6 +787,32 @@ const DEFAULT_APPEARANCE={
   textSize:100,
   fontWeight:400
 };
+// light mode is its own look, not paper warmed over: a clear neutral page,
+// dark ink, no sepia and no muted filters. it used to spread the paper
+// preset, which read warm — the one thing it must never do again
+const LIGHT_MODE_PRESET={
+  backgroundColor:"#fafafa",
+  textColor:"#1d1d1f",
+  accentColor:"#6d6d72",
+  overlayColor:"#ffffff",
+  overlayOpacity:8,
+  backgroundOpacity:12,
+  blur:0,
+  grayscale:0,
+  saturation:100,
+  brightness:100,
+  contrast:100,
+  sepia:0
+};
+// v2 is the warm→clear switch. devices that already had light mode on carry
+// the old warm values inside their saved appearance, so the preset is
+// re-applied once on load; the dark-mode snapshot still restores cleanly
+const LIGHT_MODE_VERSION=2;
+function migrateLightMode(a){
+  if(a&&a.lightMode&&(Number(a.lightModeVersion)||1)<LIGHT_MODE_VERSION){
+    Object.assign(a,LIGHT_MODE_PRESET,{lightMode:true,lightModeVersion:LIGHT_MODE_VERSION});
+  }
+}
 const DEFAULT_SETTINGS={categories:["all"],cycleSeconds:6.5,modeSwitchExpand:"always",modeOrder:["question","focus","scheduler","sticky","quotes","deadlines"],hiddenModes:[],startupMode:"question",startupResume:false,stickyCategories:["general"],stickyPush:110,stickyTilt:1.8,stickyScale:12,stickySpread:100,tidyAnchor:"center-center",hydrationMinutes:DEFAULT_HYDRATION_MINUTES,hydrationSize:DEFAULT_HYDRATION_SIZE,hydrationWave:true,hydrationHoverEnabled:false,hydrationHoverScale:DEFAULT_HYDRATION_HOVER_SCALE,screenScale:DEFAULT_SCREEN_SCALE,animation:true,timerAnimation:true,lowercase:false,schedulerListVisible:true,deadlineRemind:true,deadlineRemindDays:2,appearance:{...DEFAULT_APPEARANCE}};
 let settings=loadSettings();
 
@@ -794,7 +820,9 @@ function loadSettings(){
   try{
     const saved=JSON.parse(localStorage.getItem("oneQuestionSettings")||"{}");
     const categories=Array.isArray(saved.categories)&&saved.categories.length?saved.categories:["all"];
-    return {...DEFAULT_SETTINGS,...saved,categories,appearance:{...DEFAULT_APPEARANCE,...(saved.appearance||{})}};
+    const merged={...DEFAULT_SETTINGS,...saved,categories,appearance:{...DEFAULT_APPEARANCE,...(saved.appearance||{})}};
+    migrateLightMode(merged.appearance);
+    return merged;
   }catch{return {...DEFAULT_SETTINGS,appearance:{...DEFAULT_APPEARANCE}}}
 }
 const MODE_ORDER_CLASSES={question:"modeQuestion",focus:"modeFocus",scheduler:"modeScheduler",sticky:"modeSticky",quotes:"modeQuotes",deadlines:"modeDeadlines"};
@@ -2038,14 +2066,13 @@ function applyAppearancePreset(name){
   saveSettings();
   applyAppearance();
 }
-const LIGHT_MODE_PRESET={...APPEARANCE_PRESETS.paper,backgroundOpacity:12,overlayOpacity:8};
 // snapshot of the user's look, so light mode can be undone cleanly
 function setLightMode(on){
   const a=settings.appearance;
   if(on&&!a.lightMode){
     const snapshot={...a};
-    delete snapshot.lightMode;delete snapshot.lightModeRestore;
-    Object.assign(a,LIGHT_MODE_PRESET,{lightMode:true,lightModeRestore:snapshot});
+    delete snapshot.lightMode;delete snapshot.lightModeRestore;delete snapshot.lightModeVersion;
+    Object.assign(a,LIGHT_MODE_PRESET,{lightMode:true,lightModeVersion:LIGHT_MODE_VERSION,lightModeRestore:snapshot});
   }else if(!on&&a.lightMode){
     const restore=a.lightModeRestore||{...DEFAULT_APPEARANCE};
     delete restore.lightMode;delete restore.lightModeRestore;
@@ -2137,6 +2164,7 @@ async function importBackup(file){
     questions=importedQuestions;
     focusQuestions=importedFocus;
     settings={...DEFAULT_SETTINGS,...d.settings,categories:Array.isArray(d.settings.categories)&&d.settings.categories.length?d.settings.categories:["all"],appearance:{...DEFAULT_APPEARANCE,...(d.settings.appearance||{})}};
+    migrateLightMode(settings.appearance);
     saveQuestionBank();
     saveFocusQuestions();
     saveSettings();
