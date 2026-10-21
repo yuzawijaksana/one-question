@@ -193,6 +193,23 @@ def self_update_from_git():
                 print(f"[update] restore failed for {src.name}: {exc}", flush=True)
 
 
+def git_update_status():
+    # a read-only look at what a self-update would bring: fetch origin,
+    # then count and list the commits HEAD is behind. never touches the
+    # working tree, so the corner card can poll it freely
+    try:
+        _git(["fetch", "origin"], timeout=30)
+        current = _git(["rev-parse", "--short", "HEAD"])
+        remote = _git(["rev-parse", "--short", "origin/main"])
+        count = _git(["rev-list", "--count", "HEAD..origin/main"]) or "0"
+        log = _git(["log", "--format=%s", "HEAD..origin/main"]) if count != "0" else ""
+        changes = [line.strip() for line in log.splitlines() if line.strip()]
+        return {"ok": True, "current": current, "remote": remote,
+                "behind": int(count), "changes": changes}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc), "behind": 0, "changes": []}
+
+
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT), **kwargs)
@@ -232,6 +249,12 @@ class Handler(SimpleHTTPRequestHandler):
             with STATE_LOCK:
                 payload = json.loads(json.dumps(STATE))
             self._json(200, payload)
+            return
+        if self.path == "/api/update/status":
+            if not self._authorized():
+                self._json(401, {"error": "unauthorized"})
+                return
+            self._json(200, git_update_status())
             return
         super().do_GET()
 

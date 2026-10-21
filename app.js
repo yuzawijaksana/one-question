@@ -228,12 +228,12 @@ async function pushSyncToServer(base){
     if(!res.ok)throw new Error(`server answered ${res.status}`);
     try{localStorage.setItem("oneQuestionSyncLastPush",String(Date.now()))}catch{}
     setDataStatus("synced to server");
-    updateRailPushBtn();
+    updatePushPill();
     return true;
   }catch(e){
     console.warn("One Question: sync push failed",e);
     setDataStatus("sync push failed");
-    updateRailPushBtn();
+    updatePushPill();
     return false;
   }finally{syncBusy=false}
 }
@@ -991,40 +991,9 @@ function renderModeRail(){
     head.append(logo);
     rail.append(head);
     modes.forEach(key=>rail.append(buildEntry(key,false)));
-    // the sync nudge: an up-arrow that only steps forward when changes are
-    // waiting for the server — one tap pushes, then it slips away again
-    const pushBtn=document.createElement("button");
-    pushBtn.type="button";
-    pushBtn.className="railEntry railPush";
-    pushBtn.dataset.mode="push";
-    pushBtn.setAttribute("aria-label","push changes");
-    const pushGlyph=document.createElement("span");
-    pushGlyph.className="railGlyph";pushGlyph.textContent="↑";
-    const pushName=document.createElement("span");
-    pushName.className="railName";pushName.textContent="push changes";
-    const pushStatus=document.createElement("span");
-    pushStatus.className="railStatus";
-    pushBtn.append(pushGlyph,pushName,pushStatus);
-    railBindFlyout(pushBtn);
-    pushBtn.onclick=async()=>{await syncNow();updateRailPushBtn();};
-    rail.append(pushBtn);
-    // the update twin: a down-arrow that only exists when the repo is a
-    // build ahead — one tap and the server resets itself to origin/main
-    const updateBtn=document.createElement("button");
-    updateBtn.type="button";
-    updateBtn.className="railEntry railUpdate";
-    updateBtn.dataset.mode="update";
-    updateBtn.setAttribute("aria-label","update available");
-    const updGlyph=document.createElement("span");
-    updGlyph.className="railGlyph";updGlyph.textContent="↓";
-    const updName=document.createElement("span");
-    updName.className="railName";updName.textContent="update available";
-    const updStatus=document.createElement("span");
-    updStatus.className="railStatus";
-    updateBtn.append(updGlyph,updName,updStatus);
-    railBindFlyout(updateBtn);
-    updateBtn.onclick=runSelfUpdate;
-    rail.append(updateBtn);
+    // push + update left the rail: they live in the bottom-right corner as
+    // floating notifications now — the corner stack builds itself below
+    ensureSyncCorner();
     // the look controls dock at the rail's bottom: light mode above settings
     const themeBtn=document.createElement("button");
     themeBtn.type="button";
@@ -1058,8 +1027,6 @@ function renderModeRail(){
     settingsBtn.onclick=()=>{ $("settingsPanel").classList.contains("open")?closeSettings():openSettings(); };
     rail.append(settingsBtn);
     markActiveModeRail();
-    updateRailPushBtn();
-    updateRailUpdateBtn();
   }
   if(dock){
     dock.textContent="";
@@ -1067,20 +1034,55 @@ function renderModeRail(){
     markActiveModeRail();
   }
 }
-// the up-arrow wears its state: shown while a push is owed, its flyout
-// says why, and a successful sync folds it back out of sight
-function updateRailPushBtn(){
-  const btn=document.querySelector("#modeRail .railPush");
-  if(!btn)return;
-  const pending=syncHasPendingChanges();
-  btn.classList.toggle("show",pending);
-  const status=btn.querySelector(".railStatus");
-  if(status)status.textContent=pending?"unsynced changes":"";
+// ---- the corner sync notifications ----
+// push + update float in the bottom-right corner like little notifications:
+// an update card that reads like a changelog (title, changes, version) and,
+// tucked beneath it, the push pill — visible only while a push is owed
+function ensureSyncCorner(){
+  if($("syncCorner"))return;
+  const corner=document.createElement("div");
+  corner.id="syncCorner";
+  const card=document.createElement("button");
+  card.type="button";card.id="syncUpdateCard";card.className="syncUpdateCard";
+  card.setAttribute("aria-label","update available — install now");
+  const title=document.createElement("span");
+  title.className="syncUpdTitle";
+  const titleText=document.createElement("span");
+  titleText.className="syncUpdTitleText";titleText.textContent="update available!";
+  const arrow=document.createElement("span");
+  arrow.className="syncUpdArrow";arrow.textContent="↓";
+  title.append(titleText,arrow);
+  const changes=document.createElement("span");
+  changes.className="syncUpdChanges";
+  const version=document.createElement("span");
+  version.className="syncUpdVersion";
+  card.append(title,changes,version);
+  card.onclick=runSelfUpdate;
+  const pill=document.createElement("button");
+  pill.type="button";pill.id="syncPushPill";pill.className="syncPushPill";
+  pill.setAttribute("aria-label","push changes (P)");
+  const label=document.createElement("span");
+  label.className="syncPillLabel";label.textContent="push changes";
+  const key=document.createElement("span");
+  key.className="syncPillKey";key.textContent="P";
+  pill.append(label,key);
+  pill.onclick=async()=>{await syncNow();updatePushPill();};
+  corner.append(card,pill);
+  document.body.append(corner);
+  updatePushPill();
+  updateUpdateCard();
+}
+// the pill wears the push state: shown while a push is owed, folded back
+// out of sight once the sync lands (or stays to nag when it fails)
+function updatePushPill(){
+  const pill=$("syncPushPill");
+  if(!pill)return;
+  pill.classList.toggle("show",syncHasPendingChanges());
 }
 // ---- self-update: watch the repo, offer the newer build ----
 // the page knows its own build from the asset query (?v=…); the repo's
-// latest is the same query in index.html on GitHub raw. newer build ⇒ a
-// down-arrow steps forward; one tap asks the server to reset itself to
+// latest is the same query in index.html on GitHub raw. newer build ⇒ the
+// corner card steps forward; one tap asks the server to reset itself to
 // origin/main (runtime state is backed up and restored server-side)
 const UPDATE_REPO_RAW="https://raw.githubusercontent.com/yuzawijaksana/one-question/main/index.html";
 let updateInfo=null;
@@ -1105,22 +1107,45 @@ async function checkForUpdate(){
     const m=html.match(/app\.js\?v=([\d.]+)/);
     if(!m)return;
     if(versionNewer(m[1],currentAssetVersion())){
-      updateInfo={from:currentAssetVersion(),to:m[1]};
-      updateRailUpdateBtn();
+      updateInfo={from:currentAssetVersion(),to:m[1],changes:[]};
+      fetchUpdateChanges();
+      updateUpdateCard();
     }
   }catch(e){/* offline or blocked: another boot will look again */}
 }
-function updateRailUpdateBtn(){
-  const btn=document.querySelector("#modeRail .railUpdate");
-  if(!btn)return;
-  btn.classList.toggle("show",!!updateInfo);
-  const status=btn.querySelector(".railStatus");
-  if(status)status.textContent=updateInfo?`${updateInfo.from} → ${updateInfo.to}`:"";
+// the changelog under the card's title: the sync server reads its own git
+// (fetch + log, read-only) and hands back the subjects this build is
+// behind. no endpoint (local server, extension) ⇒ the card falls back to
+// the version line alone
+async function fetchUpdateChanges(){
+  try{
+    const res=await fetch(`${syncBase()}/api/update/status`,{cache:"no-store",headers:syncHeaders()});
+    if(!res.ok)return;
+    const d=await res.json();
+    if(Array.isArray(d.changes)&&d.changes.length&&updateInfo){
+      updateInfo.changes=d.changes.slice(0,5);
+      updateUpdateCard();
+    }
+  }catch(e){/* no changelog: title + version still tell the story */}
+}
+function updateUpdateCard(){
+  const card=$("syncUpdateCard");
+  if(!card)return;
+  card.classList.toggle("show",!!updateInfo);
+  const changes=card.querySelector(".syncUpdChanges");
+  const version=card.querySelector(".syncUpdVersion");
+  if(!updateInfo){
+    if(changes)changes.textContent="";
+    if(version)version.textContent="";
+    return;
+  }
+  const list=(updateInfo.changes||[]).filter(Boolean);
+  if(changes)changes.textContent=list.length?`Changes: ${list.join(" · ")}`:"";
+  if(version)version.textContent=`v${updateInfo.to}`;
 }
 async function runSelfUpdate(){
-  const btn=document.querySelector("#modeRail .railUpdate");
-  const status=btn&&btn.querySelector(".railStatus");
-  if(status)status.textContent="updating…";
+  const titleText=document.querySelector("#syncUpdateCard .syncUpdTitleText");
+  if(titleText)titleText.textContent="updating…";
   try{
     const res=await fetch(`${syncBase()}/api/update`,{method:"POST",headers:syncHeaders(),cache:"no-store"});
     if(!res.ok)throw new Error(`server answered ${res.status}`);
@@ -1129,7 +1154,7 @@ async function runSelfUpdate(){
     location.reload();
   }catch(e){
     console.warn("One Question: self-update failed",e);
-    if(status)status.textContent="update failed";
+    if(titleText)titleText.textContent="update failed — tap to retry";
   }
 }
 function markActiveModeRail(){
@@ -6508,6 +6533,21 @@ document.addEventListener("keydown",e=>{
   e.preventDefault();
   if($("settingsPanel").classList.contains("open"))closeSettings();
   enterModeByKey(order[idx]);
+});
+
+// p pushes: the corner pill's shortcut — same guards as the digits, and
+// only while the pill actually has something left to push
+document.addEventListener("keydown",e=>{
+  if(e.key!=="p"&&e.key!=="P")return;
+  if(e.altKey||e.ctrlKey||e.metaKey)return;
+  if($("historyPanel").classList.contains("open"))return;
+  if(document.querySelector(".appDialog.open"))return;
+  const t=e.target;
+  if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.isContentEditable))return;
+  const pill=$("syncPushPill");
+  if(!pill||!pill.classList.contains("show"))return;
+  e.preventDefault();
+  pill.click();
 });
 
 // mobile: a decisive horizontal swipe cycles modes the way ↑ ↓ do.
