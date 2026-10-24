@@ -2,6 +2,7 @@ from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 import json
 import os
+import re
 import shutil
 import subprocess
 import threading
@@ -175,6 +176,19 @@ def self_update_from_git():
     if int(ahead) > 0:
         raise RuntimeError(
             f"update skipped: HEAD is {ahead} commit(s) ahead of origin/main — push first")
+    # safety: the reset below discards uncommitted edits to tracked files.
+    # runtime data is backed up and restored, but code edits are not —
+    # refuse and name them so a day's work is never silently lost
+    protected = set(UPDATE_RUNTIME_FILES)
+    dirty = []
+    for line in _git(["status", "--porcelain", "--untracked-files=no"]).splitlines():
+        path = line[3:].split(" -> ")[-1].strip().strip('"')
+        if path and path not in protected:
+            dirty.append(path)
+    if dirty:
+        listed = ", ".join(dirty[:5]) + (" …" if len(dirty) > 5 else "")
+        raise RuntimeError(
+            f"update skipped: uncommitted changes in {listed} — commit or stash first")
     stamp = time.strftime("%Y%m%d-%H%M%S")
     backup_dir = ROOT.parent / "one-question-update-backups" / f"{stamp}-{before}"
     saved = []
@@ -183,8 +197,13 @@ def self_update_from_git():
         if src.exists():
             dst = backup_dir / rel
             dst.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(dst, src)
-            saved.append((src, dst))
+            # copy runtime → backup; a file that cannot be read is skipped
+            # (warned) rather than cancelling the whole update
+            try:
+                shutil.copy2(src, dst)
+                saved.append((src, dst))
+            except Exception as exc:
+                print(f"[update] backup failed for {rel}: {exc}", flush=True)
     try:
         _git(["reset", "--hard", "origin/main"])
         after = _git(["rev-parse", "--short", "HEAD"])
@@ -200,21 +219,51 @@ def self_update_from_git():
                 print(f"[update] restore failed for {src.name}: {exc}", flush=True)
 
 
+def installed_version():
+    """The build this server actually serves: the ?v= query in its index.html.
+    Lets clients tell 'server behind origin' from 'page behind server'."""
+    try:
+        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        m = re.search(r"app\.js\?v=([\d.]+)", html)
+        return m.group(1) if m else ""
+    except Exception:
+        return ""
+
+
+# runtime data lives inside the repo but is not code. commits that only
+# touch these paths are snapshots (the PC's auto-push task), not updates —
+# they must never light up the update card
+UPDATE_DATA_EXCLUDES = [
+    ":!one-question-state.json",
+    ":!one-question-state-shared.json",
+    ":!settings export",
+]
+
+
 def git_update_status():
     # a read-only look at what a self-update would bring: fetch origin,
-    # then count and list the commits HEAD is behind. never touches the
-    # working tree, so the corner card can poll it freely
+    # then count and list the commits HEAD is behind — counting only commits
+    # that touch code, so data snapshots don't pose as updates. never touches
+    # the working tree, so the corner card can poll it freely
     try:
         _git(["fetch", "origin"], timeout=30)
         current = _git(["rev-parse", "--short", "HEAD"])
         remote = _git(["rev-parse", "--short", "origin/main"])
-        count = _git(["rev-list", "--count", "HEAD..origin/main"]) or "0"
-        log = _git(["log", "--format=%s", "HEAD..origin/main"]) if count != "0" else ""
+        count = _git(["rev-list", "--count", "HEAD..origin/main", "--",
+                      ".", *UPDATE_DATA_EXCLUDES]) or "0"
+        # ahead = unpushed local commits; a self-update refuses to run over
+        # them, so the client needs to know to say "push first"
+        ahead = _git(["rev-list", "--count", "origin/main..HEAD"]) or "0"
+        log = (_git(["log", "--format=%s", "HEAD..origin/main", "--",
+                     ".", *UPDATE_DATA_EXCLUDES])
+               if count != "0" else "")
         changes = [line.strip() for line in log.splitlines() if line.strip()]
         return {"ok": True, "current": current, "remote": remote,
-                "behind": int(count), "changes": changes}
+                "behind": int(count), "ahead": int(ahead), "changes": changes,
+                "version": installed_version()}
     except Exception as exc:
-        return {"ok": False, "error": str(exc), "behind": 0, "changes": []}
+        return {"ok": False, "error": str(exc), "behind": 0, "ahead": 0,
+                "changes": [], "version": installed_version()}
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -227,7 +276,9 @@ class Handler(SimpleHTTPRequestHandler):
         # Authorization must be allowed or browsers block cross-origin pushes
         # from any page not served by this server (CORS preflight fails)
         self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
-        self.send_header("Access-Control-Allow-Methods", "GET, PUT, OPTIONS")
+        # POST matters too: the self-update call is a POST, and a page served
+        # from another origin would fail its CORS preflight without it
+        self.send_header("Access-Control-Allow-Methods", "GET, PUT, POST, OPTIONS")
         super().end_headers()
 
     def do_OPTIONS(self):

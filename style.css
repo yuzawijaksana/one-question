@@ -9769,6 +9769,354 @@ body:is(.focusModeVisual, .schedulerVisual, .stickyVisual, .quotesVisual, .deadl
   }
 }
 
+/* the status dot: the corner's quiet heartbeat — green while everything
+ * sits on the server, amber (pulsing) while a push is owed, red while the
+ * server can't be reached. its tooltip says which, a tap opens the center */
+.syncStatusDot {
+  pointer-events: auto;
+  position: relative;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  backdrop-filter: blur(12px);
+  cursor: pointer;
+  transition: border-color .25s
+}
+
+.syncStatusDot:hover,
+.syncStatusDot:focus-visible {
+  border-color: color-mix(in srgb, var(--text) 30%, transparent);
+  outline: none
+}
+
+.syncDotCore {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #79b58b
+}
+
+.syncStatusDot.pending .syncDotCore {
+  background: #c9a66a;
+  animation: syncDotPulse 2s ease-in-out infinite
+}
+
+.syncStatusDot.off .syncDotCore {
+  background: #c96b5d
+}
+
+@keyframes syncDotPulse {
+  0%, 100% { transform: scale(1); opacity: .8 }
+  50% { transform: scale(1.3); opacity: 1 }
+}
+
+.syncDotTip {
+  position: absolute;
+  right: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter: blur(12px);
+  font-size: 11px;
+  color: var(--text);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .2s ease, visibility .2s ease;
+  pointer-events: none
+}
+
+.syncStatusDot:hover .syncDotTip,
+.syncStatusDot:focus-visible .syncDotTip {
+  opacity: 1;
+  visibility: visible
+}
+
+/* the pill's green beat: the sync landed, seen before it folds away */
+.syncPushPill.ok {
+  border-color: rgba(121, 181, 139, .5);
+  color: #9fd0af
+}
+
+/* the card's changelog: one commit per line with its own dash */
+.syncUpdChange {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap
+}
+
+.syncUpdChange::before {
+  content: "–";
+  margin-right: 6px;
+  color: var(--muted)
+}
+
+/* the arrow spins while the server resets itself */
+.syncUpdateCard.busy .syncUpdArrow {
+  animation: syncSpin 1s linear infinite
+}
+
+@keyframes syncSpin {
+  to { transform: rotate(360deg) }
+}
+
+/* ---- the sync center: every section, its state, and the update story ---- */
+.syncCenterCard {
+  width: min(520px, calc(100vw - 40px));
+  max-height: min(82vh, 720px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--bg) 94%, var(--text) 6%)
+}
+
+.syncCTitleRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px
+}
+
+.syncCTitle {
+  font-size: 14px;
+  letter-spacing: .08em;
+  color: var(--text)
+}
+
+.syncCHost {
+  font-size: 11px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap
+}
+
+.syncCHost.isError {
+  color: #c96b5d
+}
+
+.syncCStats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px
+}
+
+.syncCChip {
+  font-size: 10.5px;
+  letter-spacing: .04em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted)
+}
+
+.syncCChip.ok {
+  color: #9fd0af;
+  border-color: rgba(121, 181, 139, .45)
+}
+
+.syncCChip.warn {
+  color: #d9bd8a;
+  border-color: rgba(201, 166, 106, .45)
+}
+
+.syncCChip.bad {
+  color: #c96b5d;
+  border-color: rgba(201, 107, 93, .45)
+}
+
+.syncCSection {
+  margin-top: 2px;
+  font-size: 10px;
+  letter-spacing: .1em;
+  color: var(--muted)
+}
+
+.syncCRows {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-right: 2px;
+  min-height: 44px
+}
+
+.syncCReading {
+  font-size: 11.5px;
+  color: var(--muted);
+  padding: 6px 2px
+}
+
+.syncCRow {
+  display: grid;
+  grid-template-columns: minmax(84px, 1fr) minmax(56px, 1.2fr) 56px 88px;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 11px
+}
+
+.syncCRowName {
+  color: var(--text)
+}
+
+.syncCRowSum {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap
+}
+
+.syncCRowWhen {
+  color: var(--muted);
+  font-size: 10px;
+  text-align: right
+}
+
+.syncCRowState {
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: .04em;
+  border-radius: 999px;
+  padding: 2px 0
+}
+
+/* the row states follow the compare dialog's colors: green speaks for the
+ * server, amber for this device — synced stays quiet */
+.syncCRow.pending {
+  border-color: rgba(201, 166, 106, .4)
+}
+
+.syncCRow.pending .syncCRowState {
+  color: #d9bd8a;
+  background: rgba(201, 166, 106, .12)
+}
+
+.syncCRow.server {
+  border-color: rgba(121, 181, 139, .4)
+}
+
+.syncCRow.server .syncCRowState {
+  color: #9fd0af;
+  background: rgba(121, 181, 139, .12)
+}
+
+.syncCRow.ok .syncCRowState {
+  color: var(--muted)
+}
+
+.syncCUpdate {
+  display: flex;
+  flex-direction: column;
+  gap: 8px
+}
+
+.syncCVersion {
+  font-size: 11.5px;
+  color: var(--muted)
+}
+
+.syncCVersion b {
+  color: var(--text);
+  font-weight: 500
+}
+
+.syncCNote {
+  font-size: 11px;
+  line-height: 1.5;
+  color: #d9bd8a
+}
+
+.syncCNote.isError {
+  color: #c96b5d
+}
+
+.syncCChanges {
+  display: flex;
+  flex-direction: column;
+  gap: 3px
+}
+
+.syncCChange {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap
+}
+
+.syncCChange::before {
+  content: "–";
+  margin-right: 6px
+}
+
+.syncCUpdateBtns,
+.syncCActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px
+}
+
+.syncCActions {
+  justify-content: flex-end;
+  border-top: 1px solid var(--line);
+  padding-top: 12px
+}
+
+.syncCBtn {
+  padding: 7px 14px;
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: .06em;
+  color: var(--text);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color .2s, border-color .2s, background .2s
+}
+
+.syncCBtn:hover {
+  border-color: color-mix(in srgb, var(--text) 35%, transparent)
+}
+
+.syncCBtn:disabled {
+  opacity: .5;
+  cursor: default
+}
+
+.syncCPrimary {
+  color: var(--bg);
+  background: var(--text);
+  border-color: transparent
+}
+
+.syncCPrimary:hover {
+  background: color-mix(in srgb, var(--text) 86%, var(--bg))
+}
+
+@media(max-width:700px) {
+  .syncCRow {
+    grid-template-columns: minmax(70px, 1fr) 1fr 76px
+  }
+
+  .syncCRowWhen {
+    display: none
+  }
+}
+
 .railEntry {
   display: grid;
   grid-template-columns: 28px 1fr;

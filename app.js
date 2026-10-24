@@ -175,7 +175,12 @@ function syncBase(){
   // VPS), that origin is the target — a brand-new device picks its data up
   // without typing anything in settings. wallpaper / extension / file pages
   // have no http origin and keep the local-PC default.
-  if(/^https?:$/.test(location.protocol)&&location.host)return `${location.protocol}//${location.host}`;
+  if(/^https?:$/.test(location.protocol)&&location.host){
+    // served under a subpath (e.g. /one/): keep the subpath in API base
+    const m=location.pathname.match(/^(\/[^/]+)\//);
+    if(m && m[1] !== "") return `${location.protocol}//${location.host}${m[1]}`;
+    return `${location.protocol}//${location.host}`;
+  }
   return SYNC_BASE;
 }
 function syncHeaders(extra){
@@ -194,6 +199,7 @@ function touchSyncTime(key){
 }
 function scheduleSyncPush(){
   clearTimeout(syncPushTimer);
+  updateSyncDot();
   syncPushTimer=setTimeout(pushSyncToServer,800);
 }
 // pending = some section was saved after the last push that made it to the
@@ -206,6 +212,13 @@ function syncHasPendingChanges(){
   const last=syncLastPushAt(),times=readSyncTimes();
   return SYNC_KEYS.some(k=>(times[k]||0)>last);
 }
+function syncPendingCount(){
+  const last=syncLastPushAt(),times=readSyncTimes();
+  return SYNC_KEYS.filter(k=>(times[k]||0)>last).length;
+}
+// the health of the last push attempt: true until a push lands again. the
+// corner dot wears it red so a silent sync failure never goes unnoticed
+let syncLastPushFailed=false;
 async function pushSyncToServer(base){
   if(syncBusy)return false;
   syncBusy=true;
@@ -227,11 +240,13 @@ async function pushSyncToServer(base){
     });
     if(!res.ok)throw new Error(`server answered ${res.status}`);
     try{localStorage.setItem("oneQuestionSyncLastPush",String(Date.now()))}catch{}
+    syncLastPushFailed=false;
     setDataStatus("synced to server");
     updatePushPill();
     return true;
   }catch(e){
     console.warn("One Question: sync push failed",e);
+    syncLastPushFailed=true;
     setDataStatus("sync push failed");
     updatePushPill();
     return false;
@@ -347,12 +362,18 @@ function summarizeValue(key,value){
     return `${value.length} ${unit}`;
   }catch{return "data"}
 }
+function fmtAgo(ts){
+  if(!ts)return "";
+  const mins=Math.round((Date.now()-ts)/60000);
+  if(mins<1)return "just now";
+  if(mins<60)return `${mins}m ago`;
+  if(mins<60*24)return `${Math.round(mins/60)}h ago`;
+  return `${Math.round(mins/(60*24))}d ago`;
+}
 function fmtWhen(ts){
   if(!ts)return "no timestamp";
-  const mins=Math.round((Date.now()-ts)/60000);
-  const rel=mins<1?"just now":mins<60?`${mins}m ago`:mins<60*24?`${Math.round(mins/60)}h ago`:`${Math.round(mins/(60*24))}d ago`;
   const when=new Date(ts).toLocaleString([],{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
-  return `${rel} · ${when}`;
+  return `${fmtAgo(ts)} · ${when}`;
 }
 let compareEl=null,compareServerKeys=null;
 async function openCompareDialog(){
@@ -1066,18 +1087,63 @@ function ensureSyncCorner(){
   const key=document.createElement("span");
   key.className="syncPillKey";key.textContent="P";
   pill.append(label,key);
-  pill.onclick=async()=>{await syncNow();updatePushPill();};
-  corner.append(card,pill);
+  pill.onclick=async()=>{
+    await syncNow();
+    // a quiet green beat before the pill folds away — the sync landing
+    // deserves to be seen, not just inferred from the pill disappearing
+    if(!syncHasPendingChanges()){
+      label.textContent="synced ✓";
+      pill.classList.add("show","ok");
+      setTimeout(()=>{pill.classList.remove("ok");updatePushPill();},1400);
+    }
+    updatePushPill();
+  };
+  // the status dot: the corner's quiet heartbeat. green when everything is
+  // on the server, amber while a push is owed, red while the server can't
+  // be reached — one tap opens the sync center for the full picture
+  const dot=document.createElement("button");
+  dot.type="button";dot.id="syncStatusDot";dot.className="syncStatusDot";
+  dot.setAttribute("aria-label","sync status — open the sync center");
+  const dotCore=document.createElement("span");
+  dotCore.className="syncDotCore";
+  const dotTip=document.createElement("span");
+  dotTip.className="syncDotTip";
+  dot.append(dotCore,dotTip);
+  dot.onclick=openSyncCenter;
+  corner.append(card,pill,dot);
   document.body.append(corner);
   updatePushPill();
+  updateSyncDot();
   updateUpdateCard();
 }
 // the pill wears the push state: shown while a push is owed, folded back
-// out of sight once the sync lands (or stays to nag when it fails)
+// out of sight once the sync lands (or stays to nag when it fails). the
+// label counts the sections waiting, so "3 changes" beats a bare "push"
 function updatePushPill(){
   const pill=$("syncPushPill");
   if(!pill)return;
-  pill.classList.toggle("show",syncHasPendingChanges());
+  const pending=syncHasPendingChanges();
+  pill.classList.toggle("show",pending);
+  if(pending){
+    const label=pill.querySelector(".syncPillLabel");
+    const n=syncPendingCount();
+    if(label)label.textContent=n===1?"push 1 change":`push ${n} changes`;
+    pill.setAttribute("aria-label",`push changes — ${n} section${n===1?"":"s"} waiting (P)`);
+  }
+}
+function updateSyncDot(){
+  const dot=$("syncStatusDot");
+  if(!dot)return;
+  const failed=syncLastPushFailed,pending=syncHasPendingChanges();
+  dot.classList.toggle("off",failed);
+  dot.classList.toggle("pending",pending&&!failed);
+  const tip=dot.querySelector(".syncDotTip");
+  if(tip){
+    if(failed)tip.textContent="sync problem — tap for details";
+    else if(pending){const n=syncPendingCount();tip.textContent=`${n} section${n===1?"":"s"} to push — tap to sync`}
+    else tip.textContent=`all synced · pushed ${fmtAgo(syncLastPushAt())||"never"}`;
+  }
+  if(!failed&&!pending)dot.setAttribute("aria-label","sync status: all data synced — open the sync center");
 }
 // ---- self-update: watch the repo, offer the newer build ----
 // the page knows its own build from the asset query (?v=…); the repo's
@@ -1085,7 +1151,7 @@ function updatePushPill(){
 // corner card steps forward; one tap asks the server to reset itself to
 // origin/main (runtime state is backed up and restored server-side)
 const UPDATE_REPO_RAW="https://raw.githubusercontent.com/yuzawijaksana/one-question/main/index.html";
-let updateInfo=null;
+let updateInfo=null,updateBusy=false,updateLastError=null,lastUpdateCheckAt=0;
 function currentAssetVersion(){
   const s=document.querySelector('script[src*="app.js?v="]');
   const m=s&&s.src.match(/[?&]v=([\d.]+)/);
@@ -1099,19 +1165,49 @@ function versionNewer(a,b){
   }
   return false;
 }
-async function checkForUpdate(){
+// two witnesses, asked in order: the server's own git counts exactly the
+// commits it sits behind (and reads their subjects from the log), while the
+// version probe compares this page's ?v= against the repo's index.html on
+// GitHub raw. git first — it catches every push, even one whose ?v= was
+// forgotten; the probe covers static hosts with no git endpoints
+async function checkForUpdate(manual=false){
+  if(updateBusy)return;
+  lastUpdateCheckAt=Date.now();
+  let next=null;
   try{
-    const res=await fetch(UPDATE_REPO_RAW,{cache:"no-store"});
-    if(!res.ok)return;
-    const html=await res.text();
-    const m=html.match(/app\.js\?v=([\d.]+)/);
-    if(!m)return;
-    if(versionNewer(m[1],currentAssetVersion())){
-      updateInfo={from:currentAssetVersion(),to:m[1],changes:[]};
-      fetchUpdateChanges();
-      updateUpdateCard();
+    const res=await fetch(`${syncBase()}/api/update/status`,{cache:"no-store",headers:syncHeaders()});
+    if(res.ok){
+      const d=await res.json();
+      if(d&&d.ok&&d.behind>0){
+        next={from:currentAssetVersion(),to:"",changes:Array.isArray(d.changes)?d.changes.slice(0,6):[],behind:Number(d.behind)||0,ahead:Number(d.ahead)||0,source:"git"};
+        // the target build number rides in origin's index.html — nice to
+        // have, never required: the commit count already tells the story
+        try{
+          const raw=await fetch(UPDATE_REPO_RAW,{cache:"no-store"});
+          if(raw.ok){
+            const m=(await raw.text()).match(/app\.js\?v=([\d.]+)/);
+            if(m)next.to=m[1];
+          }
+        }catch(e){/* leave the version blank */}
+      }
     }
-  }catch(e){/* offline or blocked: another boot will look again */}
+  }catch(e){/* static host or offline: the version probe still works */}
+  if(!next){
+    try{
+      const res=await fetch(UPDATE_REPO_RAW,{cache:"no-store"});
+      if(res.ok){
+        const m=(await res.text()).match(/app\.js\?v=([\d.]+)/);
+        if(m&&versionNewer(m[1],currentAssetVersion())){
+          next={from:currentAssetVersion(),to:m[1],changes:[],behind:0,source:"version"};
+          fetchUpdateChanges();
+        }
+      }
+    }catch(e){/* offline or blocked: another poll will look again */}
+  }
+  updateInfo=next;
+  updateUpdateCard();
+  renderSyncCenterUpdate();
+  if(manual)setDataStatus(next?`update available — ${updateSummary(next)}`:"no update — this build is current");
 }
 // the changelog under the card's title: the sync server reads its own git
 // (fetch + log, read-only) and hands back the subjects this build is
@@ -1123,10 +1219,18 @@ async function fetchUpdateChanges(){
     if(!res.ok)return;
     const d=await res.json();
     if(Array.isArray(d.changes)&&d.changes.length&&updateInfo){
-      updateInfo.changes=d.changes.slice(0,5);
+      updateInfo.changes=d.changes.slice(0,6);
+      updateInfo.behind=Number(d.behind)||updateInfo.behind||0;
+      updateInfo.ahead=Number(d.ahead)||0;
       updateUpdateCard();
+      renderSyncCenterUpdate();
     }
   }catch(e){/* no changelog: title + version still tell the story */}
+}
+function updateSummary(info){
+  if(!info)return"";
+  if(info.source==="git")return`${info.behind} commit${info.behind===1?"":"s"} behind`;
+  return`v${info.from} → v${info.to}`;
 }
 function updateUpdateCard(){
   const card=$("syncUpdateCard");
@@ -1139,22 +1243,236 @@ function updateUpdateCard(){
     if(version)version.textContent="";
     return;
   }
-  const list=(updateInfo.changes||[]).filter(Boolean);
-  if(changes)changes.textContent=list.length?`Changes: ${list.join(" · ")}`:"";
-  if(version)version.textContent=`v${updateInfo.to}`;
+  // the changelog reads like one: one commit per line, its own dash
+  if(changes){
+    changes.textContent="";
+    (updateInfo.changes||[]).filter(Boolean).slice(0,5).forEach(text=>{
+      const line=document.createElement("span");
+      line.className="syncUpdChange";
+      line.textContent=text;
+      changes.append(line);
+    });
+  }
+  if(version){
+    const jump=updateInfo.to&&versionNewer(updateInfo.to,updateInfo.from)?`v${updateInfo.from} → v${updateInfo.to}`:`v${updateInfo.from}`;
+    version.textContent=updateInfo.source==="git"
+      ?`${jump} · ${updateInfo.behind} commit${updateInfo.behind===1?"":"s"} behind — tap to install`
+      :`${jump} — tap to install`;
+  }
 }
 async function runSelfUpdate(){
-  const titleText=document.querySelector("#syncUpdateCard .syncUpdTitleText");
+  if(updateBusy)return;
+  updateBusy=true;
+  const card=$("syncUpdateCard");
+  const titleText=card&&card.querySelector(".syncUpdTitleText");
+  const version=card&&card.querySelector(".syncUpdVersion");
+  card&&card.classList.add("busy");
   if(titleText)titleText.textContent="updating…";
+  updateLastError=null;
   try{
     const res=await fetch(`${syncBase()}/api/update`,{method:"POST",headers:syncHeaders(),cache:"no-store"});
-    if(!res.ok)throw new Error(`server answered ${res.status}`);
-    await res.json();
-    // the reload picks up the new index.html and its fresh ?v= query
-    location.reload();
+    if(!res.ok){
+      let msg=`server answered ${res.status}`;
+      try{const d=await res.json();if(d&&d.error)msg=d.error}catch{}
+      throw new Error(msg);
+    }
+    const d=await res.json().catch(()=>null);
+    if(titleText)titleText.textContent=d&&d.updated===false?"already current — restarting…":"updated ✓ — restarting…";
+    // give the success a beat to be read, then the reload picks up the new
+    // index.html and its fresh ?v= query
+    setTimeout(()=>location.reload(),700);
   }catch(e){
-    console.warn("One Question: self-update failed",e);
+    updateBusy=false;
+    updateLastError=String(e.message||e);
+    card&&card.classList.remove("busy");
     if(titleText)titleText.textContent="update failed — tap to retry";
+    // the server explains itself ("HEAD is ahead — push first"); show its
+    // words instead of a generic shrug
+    if(version)version.textContent=updateLastError.slice(0,140);
+    console.warn("One Question: self-update failed",e);
+  }
+}
+// the update watch: the boot check runs once; after that a slow poll every
+// 15 minutes — and an immediate look when the tab comes back — keep the
+// corner card honest for an app that stays open for days
+setInterval(()=>{checkForUpdate()},15*60*1000);
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState==="visible"&&Date.now()-lastUpdateCheckAt>5*60*1000)checkForUpdate();
+});
+// ---- the sync center: the whole picture in one panel ----
+// the corner speaks only when something needs doing; this panel shows the
+// data itself — every section this device syncs, what it holds, whether it
+// sits safe on the server, and the update story. one tap on the corner dot
+// (or the settings button) opens it
+let syncCenterEl=null;
+function syncCenterSectionState(key,entry){
+  const times=readSyncTimes(),last=syncLastPushAt(),local=times[key]||0;
+  if(local>last)return{cls:"pending",label:"to push",when:local};
+  const server=entry&&Number(entry.updatedAt)||0;
+  if(server>local)return{cls:"server",label:"server newer",when:server};
+  return{cls:"ok",label:"synced",when:local||server};
+}
+async function openSyncCenter(){
+  ensureSyncCorner();
+  if(!syncCenterEl){
+    syncCenterEl=document.createElement("div");
+    syncCenterEl.className="appDialog syncCenterDialog";
+    syncCenterEl.innerHTML=`<div class="appDialogCard syncCenterCard" role="dialog" aria-label="sync and update center">
+      <div class="syncCTitleRow"><span class="syncCTitle">sync & update</span><span class="syncCHost"></span></div>
+      <div class="syncCStats"></div>
+      <div class="syncCSection">data on this device</div>
+      <div class="syncCRows"></div>
+      <div class="syncCSection">app update</div>
+      <div class="syncCUpdate"></div>
+      <div class="syncCActions">
+        <button type="button" class="syncCBtn syncCPrimary syncCActNow">sync now</button>
+        <button type="button" class="syncCBtn syncCActCompare">compare & recover</button>
+        <button type="button" class="syncCBtn syncCActPush">push this device</button>
+        <button type="button" class="syncCBtn syncCClose">close</button>
+      </div>
+    </div>`;
+    document.body.append(syncCenterEl);
+    syncCenterEl.querySelector(".syncCClose").addEventListener("click",()=>syncCenterEl.classList.remove("open"));
+    syncCenterEl.addEventListener("click",e=>{if(e.target===syncCenterEl)syncCenterEl.classList.remove("open")});
+    syncCenterEl.querySelector(".syncCActNow").addEventListener("click",async()=>{
+      const btn=syncCenterEl.querySelector(".syncCActNow");
+      btn.disabled=true;
+      await syncNow();
+      btn.disabled=false;
+      await refreshSyncCenter();
+    });
+    syncCenterEl.querySelector(".syncCActCompare").addEventListener("click",()=>{
+      syncCenterEl.classList.remove("open");
+      openCompareDialog();
+    });
+    syncCenterEl.querySelector(".syncCActPush").addEventListener("click",async()=>{
+      await pushThisDevice();
+      await refreshSyncCenter();
+    });
+  }
+  syncCenterEl.classList.add("open");
+  await refreshSyncCenter();
+}
+async function refreshSyncCenter(){
+  if(!syncCenterEl||!syncCenterEl.classList.contains("open"))return;
+  const hostEl=syncCenterEl.querySelector(".syncCHost");
+  const statsEl=syncCenterEl.querySelector(".syncCStats");
+  const rowsEl=syncCenterEl.querySelector(".syncCRows");
+  const target=syncBase();
+  hostEl.textContent="";
+  rowsEl.innerHTML=`<div class="syncCReading">reading ${target.replace(/^https?:\/\//,"")}…</div>`;
+  let entries={},reachable=false;
+  try{
+    const res=await fetch(`${target}/api/state`,{cache:"no-store",headers:syncHeaders()});
+    if(res.ok){
+      const d=await res.json();
+      entries=(d&&d.keys)||{};
+      reachable=true;
+    }
+  }catch(e){/* unreachable: the chips below say so */}
+  // a reachable GET is a fair health probe: clear the red dot when the
+  // server answers, raise it when it doesn't (a real push sets it too)
+  if(reachable)syncLastPushFailed=false;
+  else if(!syncBusy)syncLastPushFailed=true;
+  updateSyncDot();
+  hostEl.textContent=target.replace(/^https?:\/\//,"");
+  hostEl.classList.toggle("isError",!reachable);
+  statsEl.textContent="";
+  const chips=[];
+  chips.push(reachable?["ok","server online"]:["bad","server unreachable"]);
+  chips.push(["plain",syncLastPushAt()?`last push ${fmtAgo(syncLastPushAt())}`:"never pushed"]);
+  const waiting=syncPendingCount();
+  if(waiting)chips.push(["warn",`${waiting} section${waiting===1?"":"s"} waiting`]);
+  chips.forEach(([cls,text])=>{
+    const chip=document.createElement("span");
+    chip.className=`syncCChip ${cls}`;
+    chip.textContent=text;
+    statsEl.append(chip);
+  });
+  rowsEl.innerHTML="";
+  for(const [key,label] of COMPARE_KEYS){
+    let value=null;
+    try{const raw=localStorage.getItem(key);if(raw!==null)value=JSON.parse(raw)}catch{}
+    const st=syncCenterSectionState(key,entries[key]);
+    const row=document.createElement("div");
+    row.className=`syncCRow ${st.cls}`;
+    row.innerHTML=`<span class="syncCRowName">${label}</span>
+      <span class="syncCRowSum"></span>
+      <span class="syncCRowWhen">${st.when?fmtAgo(st.when):"—"}</span>
+      <span class="syncCRowState">${st.label}</span>`;
+    row.querySelector(".syncCRowSum").textContent=summarizeValue(key,value);
+    rowsEl.append(row);
+  }
+  renderSyncCenterUpdate();
+}
+function renderSyncCenterUpdate(){
+  if(!syncCenterEl)return;
+  const box=syncCenterEl.querySelector(".syncCUpdate");
+  if(!box)return;
+  box.textContent="";
+  const cur=currentAssetVersion();
+  const head=document.createElement("div");
+  head.className="syncCVersion";
+  if(updateInfo){
+    const jump=updateInfo.to&&versionNewer(updateInfo.to,updateInfo.from)?`v${cur} → v${updateInfo.to}`:`v${cur}`;
+    head.innerHTML=`<b>update available</b> · ${jump}`;
+    if(updateInfo.source==="git"&&updateInfo.behind)head.innerHTML+=` · ${updateInfo.behind} commit${updateInfo.behind===1?"":"s"} behind`;
+    // the install can refuse when the server's repo has unpushed commits —
+    // say so up front instead of letting the tap discover it
+    if(updateInfo.source==="git"&&updateInfo.ahead>0){
+      const warn=document.createElement("div");
+      warn.className="syncCNote";
+      warn.textContent=`the server has ${updateInfo.ahead} unpushed commit${updateInfo.ahead===1?"":"s"} — push the repo first, or the install will refuse`;
+      head.after(warn);
+    }
+    if(updateLastError){
+      const err=document.createElement("div");
+      err.className="syncCNote isError";
+      err.textContent=updateLastError;
+      head.after(err);
+    }
+    const list=document.createElement("div");
+    list.className="syncCChanges";
+    (updateInfo.changes||[]).filter(Boolean).slice(0,6).forEach(text=>{
+      const line=document.createElement("span");
+      line.className="syncCChange";
+      line.textContent=text;
+      list.append(line);
+    });
+    const install=document.createElement("button");
+    install.type="button";
+    install.className="syncCBtn syncCPrimary";
+    install.textContent="install update";
+    install.onclick=async()=>{
+      install.disabled=true;
+      install.textContent="updating…";
+      await runSelfUpdate();
+      install.disabled=false;
+      install.textContent="install update";
+      renderSyncCenterUpdate();
+    };
+    const again=document.createElement("button");
+    again.type="button";
+    again.className="syncCBtn";
+    again.textContent="check again";
+    again.onclick=()=>{checkForUpdate(true).then(renderSyncCenterUpdate)};
+    const wrap=document.createElement("div");
+    wrap.className="syncCUpdateBtns";
+    wrap.append(install,again);
+    box.append(head);
+    if(list.children.length)box.append(list);
+    box.append(wrap);
+  }else{
+    head.innerHTML=`<b>v${cur}</b> · up to date`;
+    const again=document.createElement("button");
+    again.type="button";
+    again.className="syncCBtn";
+    again.textContent="check again";
+    again.onclick=()=>{checkForUpdate(true).then(renderSyncCenterUpdate)};
+    const wrap=document.createElement("div");
+    wrap.className="syncCUpdateBtns";
+    wrap.append(again);
+    box.append(head,wrap);
   }
 }
 function markActiveModeRail(){
@@ -6305,6 +6623,7 @@ $("syncServer")?.addEventListener("change",e=>{
 $("syncNowBtn")?.addEventListener("click",()=>{syncNow();});
 $("compareBtn")?.addEventListener("click",()=>{openCompareDialog();});
 $("pushBtn")?.addEventListener("click",()=>{pushThisDevice();});
+$("syncCenterBtn")?.addEventListener("click",()=>{closeSettings();openSyncCenter();});
 $("syncToken")?.addEventListener("change",e=>{
   settings.syncToken=e.target.value.trim();
   saveSettings();
@@ -6468,6 +6787,8 @@ document.addEventListener("keydown",e=>{
   if(e.key!=="Escape")return;
   if($("todoFullscreen").classList.contains("open")){closeToday();return;}
   if($("calendarPanel").classList.contains("open")){closeCalendar();return;}
+  if(syncCenterEl&&syncCenterEl.classList.contains("open")){syncCenterEl.classList.remove("open");return;}
+  if(compareEl&&compareEl.classList.contains("open")){compareEl.classList.remove("open");return;}
   if($("settingsPanel").classList.contains("open")){closeSettings();return;}
   if(readerIsOpen()){readerClose();return;}
   const pop=$("bookFormatPop");

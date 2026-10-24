@@ -5,7 +5,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>One Question</title>
-  <link rel="stylesheet" href="style.css?v=2.55">
+  <link rel="stylesheet" href="style.css?v=2.56">
+<link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon-192.png">
+<meta name="theme-color" content="#000000">
+<link rel="apple-touch-icon" href="/icon-192.png">
 </head>
 
 <body>
@@ -676,6 +680,7 @@
             <button id="syncNowBtn" class="syncNowBtn" type="button">sync now</button>
             <button id="pushBtn" class="syncNowBtn" type="button">push this device</button>
             <button id="compareBtn" class="syncNowBtn" type="button">compare &amp; recover</button>
+            <button id="syncCenterBtn" class="syncNowBtn" type="button">sync center</button>
           </div>
         </section>
 
@@ -804,7 +809,12 @@
   </main>
   <nav id="modeRail" aria-label="screens"></nav>
   <nav id="modeDock" aria-label="screens"></nav>
-  <script src="app.js?v=2.55"></script>
+  <script src="app.js?v=2.56"></script>
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js").catch(()=>{});
+}
+</script>
 </body>
 
 </html>
