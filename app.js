@@ -1172,6 +1172,7 @@ function versionNewer(a,b){
 // forgotten; the probe covers static hosts with no git endpoints
 async function checkForUpdate(manual=false){
   if(updateBusy)return;
+  updateBusy=true; // released in checkForUpdateFinish() below
   lastUpdateCheckAt=Date.now();
   let next=null;
   try{
@@ -1205,6 +1206,7 @@ async function checkForUpdate(manual=false){
     }catch(e){/* offline or blocked: another poll will look again */}
   }
   updateInfo=next;
+  updateBusy=false;
   updateUpdateCard();
   renderSyncCenterUpdate();
   if(manual)setDataStatus(next?`update available — ${updateSummary(next)}`:"no update — this build is current");
@@ -1362,16 +1364,28 @@ async function refreshSyncCenter(){
   hostEl.textContent="";
   rowsEl.innerHTML=`<div class="syncCReading">reading ${target.replace(/^https?:\/\//,"")}…</div>`;
   let entries={},reachable=false;
-  try{
-    const res=await fetch(`${target}/api/state`,{cache:"no-store",headers:syncHeaders()});
-    if(res.ok){
-      const d=await res.json();
-      entries=(d&&d.keys)||{};
-      reachable=true;
-    }
-  }catch(e){/* unreachable: the chips below say so */}
   // a reachable GET is a fair health probe: clear the red dot when the
-  // server answers, raise it when it doesn't (a real push sets it too)
+  // server answers, raise it when it doesn't (a real push sets it too).
+  // unreachable doesn't fail immediately — it retries with a short backoff
+  // and shows "reconnecting…" while it waits, so a hiccup or a waking
+  // server doesn't flash a scary red state
+  const attempts=3;
+  for(let i=0;i<attempts;i++){
+    if(i){
+      rowsEl.innerHTML=`<div class="syncCReading">server unreachable — reconnecting${".".repeat(i)}…</div>`;
+      await new Promise(r=>setTimeout(r,1500*i));
+      if(!syncCenterEl.classList.contains("open"))return;
+    }
+    try{
+      const res=await fetch(`${target}/api/state`,{cache:"no-store",headers:syncHeaders()});
+      if(res.ok){
+        const d=await res.json();
+        entries=(d&&d.keys)||{};
+        reachable=true;
+        break;
+      }
+    }catch(e){/* unreachable: retry, then the chips below say so */}
+  }
   if(reachable)syncLastPushFailed=false;
   else if(!syncBusy)syncLastPushFailed=true;
   updateSyncDot();
@@ -1413,6 +1427,16 @@ function renderSyncCenterUpdate(){
   const cur=currentAssetVersion();
   const head=document.createElement("div");
   head.className="syncCVersion";
+  if(updateBusy&&!updateInfo){
+    // a check is in flight and nothing is known yet — say so instead of
+    // flashing "up to date" before the answer lands
+    head.innerHTML=`<b>checking for update…</b>`;
+    const spinner=document.createElement("div");
+    spinner.className="syncCReading";
+    spinner.textContent="asking the server / GitHub raw…";
+    box.append(head,spinner);
+    return;
+  }
   if(updateInfo){
     const jump=updateInfo.to&&versionNewer(updateInfo.to,updateInfo.from)?`v${cur} → v${updateInfo.to}`:`v${cur}`;
     head.innerHTML=`<b>update available</b> · ${jump}`;
@@ -4175,6 +4199,9 @@ function tickDeadlineReminders(){
     $("deadlineReminderWhen").textContent=deadlineCountdown(best);
     const noteEl=$("deadlineReminderNote");
     if(noteEl)noteEl.textContent=best.note||"";
+    // the card wears its urgency: the left bar and the when line take
+    // the deadline wall's colors, so the notif reads at a glance
+    el.dataset.urg=deadlineUrgency(best)||"";
     el.classList.add("show");
     el.setAttribute("aria-hidden","false");
     playDeadlineChime();
@@ -6620,9 +6647,19 @@ $("syncServer")?.addEventListener("change",e=>{
   saveSettings();
   pushSyncToServer();
 });
+const IS_REMOTE_ORIGIN=/^https?:$/.test(location.protocol)&&!/^(localhost|127\.0\.0\.1|\[::1\]|192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(location.hostname);
+if(!IS_REMOTE_ORIGIN){
+  // opened from a local file / localhost / LAN source: the VPS sync UI is
+  // meaningless here, so hide the sync buttons entirely
+  for(const id of["syncNowBtn","pushBtn","compareBtn","syncCenterBtn"]){
+    const el=document.getElementById(id);
+    const section=el?.closest(".settingSection");
+    if(section)section.style.display="none";
+    else if(el)el.style.display="none";
+  }
+}
 $("syncNowBtn")?.addEventListener("click",()=>{syncNow();});
 $("compareBtn")?.addEventListener("click",()=>{openCompareDialog();});
-$("pushBtn")?.addEventListener("click",()=>{pushThisDevice();});
 $("syncCenterBtn")?.addEventListener("click",()=>{closeSettings();openSyncCenter();});
 $("syncToken")?.addEventListener("change",e=>{
   settings.syncToken=e.target.value.trim();

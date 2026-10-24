@@ -8369,7 +8369,7 @@ body.deadlinesVisual .deadlinesMode {
 }
 
 .deadlineNext.soon {
-  color: var(--dl-today);
+  color: var(--dl-today, #f2964e);
   font-weight: 450
 }
 
@@ -8483,17 +8483,17 @@ body.deadlinesVisual .deadlinesMode {
 }
 
 .deadlineRow.urg-overdue .deadlineDot {
-  background: var(--dl-overdue);
+  background: var(--dl-overdue, #e5484d);
   opacity: 1
 }
 
 .deadlineRow.urg-today .deadlineDot {
-  background: var(--dl-today);
+  background: var(--dl-today, #f2964e);
   opacity: 1
 }
 
 .deadlineRow.urg-soon .deadlineDot {
-  background: var(--dl-soon);
+  background: var(--dl-soon, #d9b03c);
   opacity: 1
 }
 
@@ -8517,17 +8517,17 @@ body.deadlinesVisual .deadlinesMode {
 
 .deadlineRow.urg-overdue .deadlineRowWhen,
 .deadlineChild.urg-overdue .deadlineChildWhen {
-  color: var(--dl-overdue)
+  color: var(--dl-overdue, #e5484d)
 }
 
 .deadlineRow.urg-today .deadlineRowWhen,
 .deadlineChild.urg-today .deadlineChildWhen {
-  color: var(--dl-today)
+  color: var(--dl-today, #f2964e)
 }
 
 .deadlineRow.urg-soon .deadlineRowWhen,
 .deadlineChild.urg-soon .deadlineChildWhen {
-  color: var(--dl-soon)
+  color: var(--dl-soon, #d9b03c)
 }
 
 .deadlineCheck {
@@ -8715,7 +8715,7 @@ button.deadlineMonthHead:hover .deadlineMonthCaret {
 }
 
 .deadlineDay.today .deadlineDayNum .d {
-  color: var(--dl-today)
+  color: var(--dl-today, #f2964e)
 }
 
 /* the chip beside the date: how long until that day's first deadline */
@@ -8730,12 +8730,12 @@ button.deadlineMonthHead:hover .deadlineMonthCaret {
 }
 
 .deadlineDay.today .deadlineDayCount {
-  color: var(--dl-today);
+  color: var(--dl-today, #f2964e);
   border-color: color-mix(in srgb, var(--dl-today) 42%, transparent)
 }
 
 .deadlineDayCount.late {
-  color: var(--dl-overdue);
+  color: var(--dl-overdue, #e5484d);
   border-color: color-mix(in srgb, var(--dl-overdue) 42%, transparent)
 }
 
@@ -8833,12 +8833,12 @@ button.deadlineMonthHead:hover .deadlineMonthCaret {
 /* urgency never paints the body anymore — the colored dot and the late
  * chip beside the date carry it; importance owns the background */
 .deadlineEntry.urg-today .deadlineEntryDot {
-  background: var(--dl-today);
+  background: var(--dl-today, #f2964e);
   opacity: 1
 }
 
 .deadlineEntry.urg-soon .deadlineEntryDot {
-  background: var(--dl-soon);
+  background: var(--dl-soon, #d9b03c);
   opacity: 1
 }
 
@@ -9005,15 +9005,15 @@ button.deadlineMonthHead:hover .deadlineMonthCaret {
 }
 
 .deadlineCard.urg-overdue .deadlineCardWhen {
-  color: var(--dl-overdue)
+  color: var(--dl-overdue, #e5484d)
 }
 
 .deadlineCard.urg-today .deadlineCardWhen {
-  color: var(--dl-today)
+  color: var(--dl-today, #f2964e)
 }
 
 .deadlineCard.urg-soon .deadlineCardWhen {
-  color: var(--dl-soon)
+  color: var(--dl-soon, #d9b03c)
 }
 
 .deadlineCrumb {
@@ -9132,13 +9132,13 @@ button.deadlineMonthHead:hover .deadlineMonthCaret {
 }
 
 .deadlineEditorActions .danger {
-  color: var(--dl-overdue);
+  color: var(--dl-overdue, #e5484d);
   border-color: color-mix(in srgb, var(--dl-overdue) 35%, transparent)
 }
 
 /* delete carries its weight in a filled red wash, matching the new pills */
 .deadlineCardActions .danger {
-  color: var(--dl-overdue);
+  color: var(--dl-overdue, #e5484d);
   background: color-mix(in srgb, var(--dl-overdue) 12%, transparent)
 }
 
@@ -9359,7 +9359,9 @@ button.deadlineMonthHead:hover .deadlineMonthCaret {
   outline-offset: 2px
 }
 
-/* the reminder card */
+/* the reminder card — a quiet stack, not a stuffed capsule: a small meta
+ * line (label + when), the title, the note, and two calm actions. the
+ * left bar carries the urgency so nothing else has to shout */
 .deadlineReminder {
   position: fixed;
   left: 50%;
@@ -9368,10 +9370,11 @@ button.deadlineMonthHead:hover .deadlineMonthCaret {
   z-index: 95;
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 11px 12px 11px 18px;
+  gap: 18px;
+  max-width: min(440px, calc(100vw - 32px));
+  padding: 13px 15px 13px 19px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: 16px;
   background: color-mix(in srgb, var(--bg) 82%, transparent);
   backdrop-filter: blur(14px);
   box-shadow: 0 10px 34px rgba(0, 0, 0, .35);
@@ -9382,42 +9385,94 @@ button.deadlineMonthHead:hover .deadlineMonthCaret {
   transform: translate(-50%, 0)
 }
 
+.deadlineReminder::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 13px;
+  bottom: 13px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--muted)
+}
+
+.deadlineReminder[data-urg="overdue"]::before {
+  background: var(--dl-overdue, #e5484d)
+}
+
+.deadlineReminder[data-urg="today"]::before {
+  background: var(--dl-today, #f2964e)
+}
+
+.deadlineReminder[data-urg="soon"]::before,
+.deadlineReminder[data-urg="week"]::before {
+  background: var(--dl-soon, #d9b03c)
+}
+
 .deadlineReminderBody {
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
-  gap: 4px 10px;
-  min-width: 0
+  gap: 4px 8px;
+  min-width: 0;
+  flex: 1
 }
 
+/* DOM order is label/title/when/note; the eye wants label + when as one
+ * quiet meta line, then the title — flex order draws that without
+ * touching the markup */
 .deadlineReminderLabel {
-  font-size: 11px;
-  letter-spacing: .22em;
-  color: var(--dl-today)
-}
-
-.deadlineReminderTitle {
-  font-size: 14px;
-  font-weight: 400;
-  max-width: 38vw;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap
+  order: 1;
+  font-size: 10px;
+  letter-spacing: .2em;
+  color: var(--muted)
 }
 
 .deadlineReminderWhen {
-  font-size: 12px;
+  order: 2;
+  font-size: 11px;
   color: var(--muted);
   white-space: nowrap
 }
 
-/* the note rides under the title line: it wraps to its own row inside the
- * flex body, so a long note still reads as one breathing line */
-.deadlineReminderNote {
+.deadlineReminder[data-urg="overdue"] .deadlineReminderWhen {
+  color: var(--dl-overdue, #e5484d)
+}
+
+.deadlineReminder[data-urg="today"] .deadlineReminderWhen {
+  color: var(--dl-today, #f2964e)
+}
+
+.deadlineReminder[data-urg="soon"] .deadlineReminderWhen,
+.deadlineReminder[data-urg="week"] .deadlineReminderWhen {
+  color: var(--dl-soon, #d9b03c)
+}
+
+/* the title owns its line — up to two of them, then a quiet fade */
+.deadlineReminderTitle {
+  order: 3;
   flex-basis: 100%;
-  max-width: 46vw;
-  font-size: 12px;
+  font-size: 14.5px;
+  line-height: 1.35;
+  font-weight: 400;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden
+}
+
+/* the note rides under the title, clamped to two lines so a long one
+ * never turns the card into a letter */
+.deadlineReminderNote {
+  order: 4;
+  flex-basis: 100%;
+  font-size: 11.5px;
+  line-height: 1.45;
   color: var(--muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
   overflow-wrap: anywhere
 }
 
@@ -9425,26 +9480,38 @@ button.deadlineMonthHead:hover .deadlineMonthCaret {
   display: none
 }
 
+/* one bordered action is enough; dismiss stays a ghost */
 .deadlineReminderActions {
   display: flex;
-  gap: 8px
+  gap: 4px;
+  align-items: center;
+  flex: none
 }
 
 .deadlineReminderActions button {
   background: none;
-  border: 1px solid var(--line);
+  border: 1px solid transparent;
   border-radius: 999px;
   color: var(--muted);
   font: inherit;
-  font-size: 12px;
-  padding: 5px 12px;
+  font-size: 11.5px;
+  letter-spacing: .04em;
+  padding: 5px 11px;
   cursor: pointer;
   transition: color .2s, border-color .2s
 }
 
-.deadlineReminderActions button:hover {
-  color: var(--text);
+#deadlineReminderOpen {
+  border-color: var(--line);
+  color: var(--text)
+}
+
+#deadlineReminderOpen:hover {
   border-color: color-mix(in srgb, var(--text) 30%, transparent)
+}
+
+#deadlineReminderDismiss:hover {
+  color: var(--text)
 }
 
 @media (hover:none), (pointer:coarse) {
@@ -9537,10 +9604,6 @@ button.deadlineMonthHead:hover .deadlineMonthCaret {
 
   .deadlineAgenda {
     gap: 12px
-  }
-
-  .deadlineReminderTitle {
-    max-width: 34vw
   }
 }
 
