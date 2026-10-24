@@ -2702,7 +2702,7 @@ body.lowercase [contenteditable] {
 }
 
 /* collapsed: only the active mode's icon stays visible */
-body:not(.focusModeVisual):not(.schedulerVisual):not(.stickyVisual):not(.quotesVisual):not(.deadlinesVisual) .focusModeToggle .modeIcon.modeQuestion,
+body:not(.focusModeVisual):not(.schedulerVisual):not(.stickyVisual):not(.quotesVisual):not(.deadlinesVisual):not(.notifsVisual) .focusModeToggle .modeIcon.modeQuestion,
 body.focusModeVisual .focusModeToggle .modeIcon.modeFocus,
 body.schedulerVisual .focusModeToggle .modeIcon.modeScheduler,
 body.stickyVisual .focusModeToggle .modeIcon.modeSticky,
@@ -8335,12 +8335,259 @@ body.deadlinesVisual .todoZone,
 body.deadlinesVisual .todoDock,
 body.deadlinesVisual #noteDock,
 body.deadlinesVisual .noteDock,
-body.deadlinesVisual .notePanel {
+body.deadlinesVisual .notePanel,
+body.notifsVisual .focus,
+body.notifsVisual .controlsZone,
+body.notifsVisual #cycleHint,
+body.notifsVisual .miniClock,
+body.notifsVisual .stickyPin,
+body.notifsVisual #date,
+body.notifsVisual .todoZone,
+body.notifsVisual .todoDock,
+body.notifsVisual #noteDock,
+body.notifsVisual .noteDock,
+body.notifsVisual .notePanel {
   display: none !important
 }
 
 body.deadlinesVisual .deadlinesMode {
   display: flex
+}
+
+/* ---- the notifications page ---------------------------------------------
+ * the floating reminder card's successor: a full screen of what needs
+ * eyes, one calm row per deadline — urgency bar, meta, title, note —
+ * with open/dismiss tucked on the right */
+.notifsMode {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  flex-direction: column;
+  padding: 18px 22px 8px;
+  animation: schedulerIn .5s cubic-bezier(.2, .7, .2, 1)
+}
+
+body.notifsVisual .notifsMode {
+  display: flex
+}
+
+.notifTop {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 16px
+}
+
+.notifKicker {
+  font-size: 12px;
+  letter-spacing: .18em;
+  color: var(--text)
+}
+
+.notifSummary {
+  font-size: 11.5px;
+  color: var(--muted)
+}
+
+.notifTools {
+  margin-left: auto
+}
+
+.notifTools button {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: .04em;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: color .2s, border-color .2s
+}
+
+.notifTools button:hover:not(:disabled) {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--text) 30%, transparent)
+}
+
+.notifTools button:disabled {
+  opacity: .4;
+  cursor: default
+}
+
+.notifList {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(560px, 100%);
+  margin: 0 auto;
+  padding: 4px 2px 18px
+}
+
+.notifRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 15px 13px 19px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  animation: notifIn .35s cubic-bezier(.2, .7, .2, 1) both
+}
+
+@keyframes notifIn {
+  from { opacity: 0; transform: translateY(6px) }
+  to { opacity: 1; transform: none }
+}
+
+.notifBar {
+  position: absolute;
+  left: 0;
+  top: 13px;
+  bottom: 13px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--muted)
+}
+
+.notifRow.overdue .notifBar { background: var(--dl-overdue, #e5484d) }
+.notifRow.today .notifBar { background: var(--dl-today, #f2964e) }
+.notifRow.soon .notifBar,
+.notifRow.week .notifBar { background: var(--dl-soon, #d9b03c) }
+
+.notifBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px
+}
+
+.notifMeta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap
+}
+
+.notifUrg {
+  font-size: 10px;
+  letter-spacing: .14em;
+  color: var(--muted)
+}
+
+.notifRow.overdue .notifUrg { color: var(--dl-overdue, #e5484d) }
+.notifRow.today .notifUrg { color: var(--dl-today, #f2964e) }
+.notifRow.soon .notifUrg,
+.notifRow.week .notifUrg { color: var(--dl-soon, #d9b03c) }
+
+.notifWhen {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap
+}
+
+.notifTitle {
+  font-size: 14.5px;
+  line-height: 1.35;
+  overflow-wrap: anywhere
+}
+
+.notifNote {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere
+}
+
+.notifActions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex: none
+}
+
+.notifActions button {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--muted);
+  font: inherit;
+  font-size: 11.5px;
+  letter-spacing: .04em;
+  padding: 5px 11px;
+  cursor: pointer;
+  transition: color .2s, border-color .2s
+}
+
+.notifOpen {
+  border-color: var(--line) !important;
+  color: var(--text) !important
+}
+
+.notifOpen:hover {
+  border-color: color-mix(in srgb, var(--text) 30%, transparent) !important
+}
+
+.notifDismiss:hover {
+  color: var(--text)
+}
+
+.notifEmpty {
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 12.5px;
+  text-align: center;
+  padding: 40px 20px
+}
+
+.notifEmptyMark {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 15px;
+  color: var(--text)
+}
+
+.notifFoot {
+  padding: 4px 2px 8px;
+  font-size: 10.5px;
+  letter-spacing: .05em;
+  color: var(--muted);
+  text-align: center
+}
+
+@media(max-width:700px) {
+  .notifsMode {
+    padding: 14px 14px 6px
+  }
+
+  .notifRow {
+    flex-wrap: wrap;
+    gap: 8px 12px
+  }
+
+  .notifActions {
+    width: 100%;
+    justify-content: flex-end
+  }
 }
 
 .deadlineTop {
@@ -9359,161 +9606,6 @@ button.deadlineMonthHead:hover .deadlineMonthCaret {
   outline-offset: 2px
 }
 
-/* the reminder card — a quiet stack, not a stuffed capsule: a small meta
- * line (label + when), the title, the note, and two calm actions. the
- * left bar carries the urgency so nothing else has to shout */
-.deadlineReminder {
-  position: fixed;
-  left: 50%;
-  top: 22px;
-  transform: translate(-50%, -160%);
-  z-index: 95;
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  max-width: min(440px, calc(100vw - 32px));
-  padding: 13px 15px 13px 19px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--bg) 82%, transparent);
-  backdrop-filter: blur(14px);
-  box-shadow: 0 10px 34px rgba(0, 0, 0, .35);
-  transition: transform .5s cubic-bezier(.2, .7, .2, 1)
-}
-
-.deadlineReminder.show {
-  transform: translate(-50%, 0)
-}
-
-.deadlineReminder::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 13px;
-  bottom: 13px;
-  width: 3px;
-  border-radius: 3px;
-  background: var(--muted)
-}
-
-.deadlineReminder[data-urg="overdue"]::before {
-  background: var(--dl-overdue, #e5484d)
-}
-
-.deadlineReminder[data-urg="today"]::before {
-  background: var(--dl-today, #f2964e)
-}
-
-.deadlineReminder[data-urg="soon"]::before,
-.deadlineReminder[data-urg="week"]::before {
-  background: var(--dl-soon, #d9b03c)
-}
-
-.deadlineReminderBody {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 4px 8px;
-  min-width: 0;
-  flex: 1
-}
-
-/* DOM order is label/title/when/note; the eye wants label + when as one
- * quiet meta line, then the title — flex order draws that without
- * touching the markup */
-.deadlineReminderLabel {
-  order: 1;
-  font-size: 10px;
-  letter-spacing: .2em;
-  color: var(--muted)
-}
-
-.deadlineReminderWhen {
-  order: 2;
-  font-size: 11px;
-  color: var(--muted);
-  white-space: nowrap
-}
-
-.deadlineReminder[data-urg="overdue"] .deadlineReminderWhen {
-  color: var(--dl-overdue, #e5484d)
-}
-
-.deadlineReminder[data-urg="today"] .deadlineReminderWhen {
-  color: var(--dl-today, #f2964e)
-}
-
-.deadlineReminder[data-urg="soon"] .deadlineReminderWhen,
-.deadlineReminder[data-urg="week"] .deadlineReminderWhen {
-  color: var(--dl-soon, #d9b03c)
-}
-
-/* the title owns its line — up to two of them, then a quiet fade */
-.deadlineReminderTitle {
-  order: 3;
-  flex-basis: 100%;
-  font-size: 14.5px;
-  line-height: 1.35;
-  font-weight: 400;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden
-}
-
-/* the note rides under the title, clamped to two lines so a long one
- * never turns the card into a letter */
-.deadlineReminderNote {
-  order: 4;
-  flex-basis: 100%;
-  font-size: 11.5px;
-  line-height: 1.45;
-  color: var(--muted);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  overflow-wrap: anywhere
-}
-
-.deadlineReminderNote:empty {
-  display: none
-}
-
-/* one bordered action is enough; dismiss stays a ghost */
-.deadlineReminderActions {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-  flex: none
-}
-
-.deadlineReminderActions button {
-  background: none;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  color: var(--muted);
-  font: inherit;
-  font-size: 11.5px;
-  letter-spacing: .04em;
-  padding: 5px 11px;
-  cursor: pointer;
-  transition: color .2s, border-color .2s
-}
-
-#deadlineReminderOpen {
-  border-color: var(--line);
-  color: var(--text)
-}
-
-#deadlineReminderOpen:hover {
-  border-color: color-mix(in srgb, var(--text) 30%, transparent)
-}
-
-#deadlineReminderDismiss:hover {
-  color: var(--text)
-}
-
 @media (hover:none), (pointer:coarse) {
   .deadlineHint .hintPointer {
     display: none
@@ -10361,8 +10453,7 @@ body:is(.focusModeVisual, .schedulerVisual, .stickyVisual, .quotesVisual, .deadl
     transition: left .25s cubic-bezier(.2, .7, .2, 1)
   }
 
-  .hydrationReminder,
-  .deadlineReminder {
+  .hydrationReminder {
     transition: margin-left .25s cubic-bezier(.2, .7, .2, 1)
   }
 
@@ -10405,8 +10496,7 @@ body:is(.focusModeVisual, .schedulerVisual, .stickyVisual, .quotesVisual, .deadl
   }
 
   /* centered banners stay centered in the content area */
-  .hydrationReminder,
-  .deadlineReminder {
+  .hydrationReminder {
     margin-left: calc(var(--railW) / 2)
   }
 }
@@ -10659,3 +10749,30 @@ body:is(.focusModeVisual, .schedulerVisual, .stickyVisual, .quotesVisual, .deadl
   }
 }
 
+
+/* the notification count rides the "!" entries as a tiny bubble — the
+ * rail icon and the phone dock entry both wear it */
+.railEntry,
+.dockEntry {
+  position: relative
+}
+
+.railEntry[data-badge]:not([data-badge=""])::after,
+.dockEntry[data-badge]:not([data-badge=""])::after {
+  content: attr(data-badge);
+  position: absolute;
+  top: 2px;
+  right: 3px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--dl-overdue, #e5484d);
+  color: #fff;
+  font-size: 9.5px;
+  font-weight: 500;
+  line-height: 1;
+  pointer-events: none
+}

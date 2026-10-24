@@ -834,7 +834,7 @@ function migrateLightMode(a){
     Object.assign(a,LIGHT_MODE_PRESET,{lightMode:true,lightModeVersion:LIGHT_MODE_VERSION});
   }
 }
-const DEFAULT_SETTINGS={categories:["all"],cycleSeconds:6.5,modeSwitchExpand:"always",modeOrder:["question","focus","scheduler","sticky","quotes","deadlines"],hiddenModes:[],startupMode:"question",startupResume:false,stickyCategories:["general"],stickyPush:110,stickyTilt:1.8,stickyScale:12,stickySpread:100,tidyAnchor:"center-center",hydrationMinutes:DEFAULT_HYDRATION_MINUTES,hydrationSize:DEFAULT_HYDRATION_SIZE,hydrationWave:true,hydrationHoverEnabled:false,hydrationHoverScale:DEFAULT_HYDRATION_HOVER_SCALE,screenScale:DEFAULT_SCREEN_SCALE,animation:true,timerAnimation:true,lowercase:false,schedulerListVisible:true,deadlineRemind:true,deadlineRemindDays:2,appearance:{...DEFAULT_APPEARANCE}};
+const DEFAULT_SETTINGS={categories:["all"],cycleSeconds:6.5,modeSwitchExpand:"always",modeOrder:["question","focus","scheduler","sticky","quotes","deadlines","notifs"],hiddenModes:[],startupMode:"question",startupResume:false,stickyCategories:["general"],stickyPush:110,stickyTilt:1.8,stickyScale:12,stickySpread:100,tidyAnchor:"center-center",hydrationMinutes:DEFAULT_HYDRATION_MINUTES,hydrationSize:DEFAULT_HYDRATION_SIZE,hydrationWave:true,hydrationHoverEnabled:false,hydrationHoverScale:DEFAULT_HYDRATION_HOVER_SCALE,screenScale:DEFAULT_SCREEN_SCALE,animation:true,timerAnimation:true,lowercase:false,schedulerListVisible:true,deadlineRemind:true,deadlineRemindDays:2,appearance:{...DEFAULT_APPEARANCE}};
 let settings=loadSettings();
 
 function loadSettings(){
@@ -846,8 +846,8 @@ function loadSettings(){
     return merged;
   }catch{return {...DEFAULT_SETTINGS,appearance:{...DEFAULT_APPEARANCE}}}
 }
-const MODE_ORDER_CLASSES={question:"modeQuestion",focus:"modeFocus",scheduler:"modeScheduler",sticky:"modeSticky",quotes:"modeQuotes",deadlines:"modeDeadlines"};
-const MODE_ORDER_LABELS={question:"question",focus:"book",scheduler:"scheduler",sticky:"remember wall",quotes:"quiet feed",deadlines:"deadline wall"};
+const MODE_ORDER_CLASSES={question:"modeQuestion",focus:"modeFocus",scheduler:"modeScheduler",sticky:"modeSticky",quotes:"modeQuotes",deadlines:"modeDeadlines",notifs:"modeNotifs"};
+const MODE_ORDER_LABELS={question:"question",focus:"book",scheduler:"scheduler",sticky:"remember wall",quotes:"quiet feed",deadlines:"deadline wall",notifs:"notifications"};
 function normalizedModeOrder(){
   const valid=Object.keys(MODE_ORDER_CLASSES);
   const saved=Array.isArray(settings.modeOrder)?settings.modeOrder.filter(k=>valid.includes(k)):[];
@@ -883,6 +883,7 @@ function applyStartupMode(){
   else if(mode==="sticky")enterStickyMode();
   else if(mode==="quotes")enterQuotesMode();
   else if(mode==="deadlines")enterDeadlinesMode();
+  else if(mode==="notifs")enterNotifsMode();
 }
 function toggleModeHidden(key){
   const all=normalizedModeOrder();
@@ -913,7 +914,7 @@ function applyModeOrder(){
 // ---- the left rail (desktop) and bottom dock (phone) --------------------
 // the pill only fits a few glyphs; six labeled screens deserve a directory.
 // the rail lives outside main#app so the layout shift never pushes it.
-const MODE_ORDER_GLYPHS={question:"?",focus:"#",scheduler:"%",sticky:"@",quotes:"❝",deadlines:"▦"};
+const MODE_ORDER_GLYPHS={question:"?",focus:"#",scheduler:"%",sticky:"@",quotes:"❝",deadlines:"▦",notifs:"!"};
 function enterModeByKey(key){
   if(key==="question")enterQuestionMode();
   else if(key==="focus")enterFocusMode();
@@ -921,6 +922,7 @@ function enterModeByKey(key){
   else if(key==="sticky")enterStickyMode();
   else if(key==="quotes")enterQuotesMode();
   else if(key==="deadlines")enterDeadlinesMode();
+  else if(key==="notifs")enterNotifsMode();
 }
 // the flyout: a label chip that floats beside the rail at the hovered or
 // focused icon — instant, styled, and carrying the live status line. the
@@ -1048,6 +1050,7 @@ function renderModeRail(){
     settingsBtn.onclick=()=>{ $("settingsPanel").classList.contains("open")?closeSettings():openSettings(); };
     rail.append(settingsBtn);
     markActiveModeRail();
+    updateNotifBadge();
   }
   if(dock){
     dock.textContent="";
@@ -1693,6 +1696,7 @@ function updateModeUI(){
   document.body.classList.toggle("stickyVisual",currentMode==="sticky");
   document.body.classList.toggle("quotesVisual",currentMode==="quotes");
   document.body.classList.toggle("deadlinesVisual",currentMode==="deadlines");
+  document.body.classList.toggle("notifsVisual",currentMode==="notifs");
   const sched=$("scheduler");
   if(sched)sched.setAttribute("aria-hidden",String(currentMode!=="scheduler"));
   const stickyEl=$("sticky");
@@ -1701,12 +1705,15 @@ function updateModeUI(){
   if(quotesEl)quotesEl.setAttribute("aria-hidden",String(currentMode!=="quotes"));
   const deadlinesEl=$("deadlines");
   if(deadlinesEl)deadlinesEl.setAttribute("aria-hidden",String(currentMode!=="deadlines"));
+  const notifsEl=$("notifs");
+  if(notifsEl)notifsEl.setAttribute("aria-hidden",String(currentMode!=="notifs"));
   const bookEl=$("bookStudio");
   if(bookEl)bookEl.setAttribute("aria-hidden",String(currentMode!=="focus"));
   if(currentMode==="scheduler")renderScheduler();
   if(currentMode==="sticky")renderStickies();
   if(currentMode==="quotes")renderQuotesFeed();
   if(currentMode==="deadlines")renderDeadlines();
+  if(currentMode==="notifs")renderNotifs();
   if(currentMode==="focus")renderBookStudio();
   updateFocusModePreview();
   updateTimerUI();
@@ -1721,6 +1728,7 @@ function toggleModeMenu(e){
     if(icon.classList.contains("modeSticky")){enterStickyMode();return;}
     if(icon.classList.contains("modeQuotes")){enterQuotesMode();return;}
     if(icon.classList.contains("modeDeadlines")){enterDeadlinesMode();return;}
+    if(icon.classList.contains("modeNotifs")){enterNotifsMode();return;}
   }
   cycleMode(1);
 }
@@ -4159,52 +4167,169 @@ function deleteDeadlineFromEditor(){
   closeDeadlineEditor();
   renderDeadlines();
 }
-// ---- reminders: a card on the shoulder + a soft chime ----
-let activeDeadlineReminderId=null;
+// ---- notifications: a page of what needs eyes, plus badge + chime ----
+// the floating card retired — reminders live on their own screen now
+// (the "!" entry on the rail / dock). the count rides the entry as a
+// badge, and the soft chime still taps the shoulder when something new
+// lands. dismissing is per deadline, per day: it politely returns tomorrow
+let notifItems=[],notifSeenIds=new Set();
 function deadlineDismissedMap(){
   try{return JSON.parse(localStorage.getItem("oneQuestionDeadlineDismissed")||"{}")}catch{return{}}
 }
-// dismissed per deadline, per day — it politely returns tomorrow
-function dismissDeadlineReminder(){
-  if(activeDeadlineReminderId){
-    const map=deadlineDismissedMap();
-    map[`${activeDeadlineReminderId}:${todayKey()}`]=1;
-    try{localStorage.setItem("oneQuestionDeadlineDismissed",JSON.stringify(map))}catch{}
-  }
-  hideDeadlineReminderCard();
+function dismissNotifToday(id){
+  if(!id)return;
+  const map=deadlineDismissedMap();
+  map[`${id}:${todayKey()}`]=1;
+  try{localStorage.setItem("oneQuestionDeadlineDismissed",JSON.stringify(map))}catch{}
+  tickDeadlineReminders();
 }
-function hideDeadlineReminderCard(){
-  activeDeadlineReminderId=null;
-  const el=$("deadlineReminder");
-  if(el){el.classList.remove("show");el.setAttribute("aria-hidden","true")}
-}
-function tickDeadlineReminders(){
-  const el=$("deadlineReminder");
-  if(!el)return;
-  if(settings.deadlineRemind===false){if(activeDeadlineReminderId)hideDeadlineReminderCard();return}
+function buildNotifItems(){
   const warnDays=Math.max(0,Number(settings.deadlineRemindDays)||0);
   const dismissed=deadlineDismissedMap();
-  let best=null;
+  const items=[];
   deadlineWalk(deadlines,n=>{
     if(n.done||!n.date)return;
     const left=deadlineDaysLeft(n);
     if(left===null||left>warnDays)return;
     if(dismissed[`${n.id}:${todayKey()}`])return;
-    if(!best||deadlineNextKey(n)<deadlineNextKey(best))best=n;
+    items.push({id:n.id,node:n,title:n.title||"(untitled)",note:n.note||"",urg:deadlineUrgency(n)||"later",when:deadlineCountdown(n)});
   });
-  if(!best){if(activeDeadlineReminderId)hideDeadlineReminderCard();return}
-  if(activeDeadlineReminderId!==best.id){
-    activeDeadlineReminderId=best.id;
-    $("deadlineReminderTitle").textContent=best.title;
-    $("deadlineReminderWhen").textContent=deadlineCountdown(best);
-    const noteEl=$("deadlineReminderNote");
-    if(noteEl)noteEl.textContent=best.note||"";
-    // the card wears its urgency: the left bar and the when line take
-    // the deadline wall's colors, so the notif reads at a glance
-    el.dataset.urg=deadlineUrgency(best)||"";
-    el.classList.add("show");
-    el.setAttribute("aria-hidden","false");
-    playDeadlineChime();
+  items.sort((a,b)=>{
+    const ka=deadlineNextKey(a.node),kb=deadlineNextKey(b.node);
+    return ka<kb?-1:ka>kb?1:0;
+  });
+  return items;
+}
+function countDismissedToday(){
+  const warnDays=Math.max(0,Number(settings.deadlineRemindDays)||0);
+  const map=deadlineDismissedMap();
+  let n=0;
+  deadlineWalk(deadlines,node=>{
+    if(node.done||!node.date)return;
+    const left=deadlineDaysLeft(node);
+    if(left===null||left>warnDays)return;
+    if(map[`${node.id}:${todayKey()}`])n++;
+  });
+  return n;
+}
+function tickDeadlineReminders(){
+  notifItems=settings.deadlineRemind===false?[]:buildNotifItems();
+  // one soft chime per session for each deadline as it arrives — a page
+  // can be quiet about it, the tap on the shoulder shouldn't
+  let fresh=false;
+  for(const it of notifItems){
+    if(!notifSeenIds.has(it.id)){notifSeenIds.add(it.id);fresh=true}
+  }
+  if(fresh&&notifItems.length)playDeadlineChime();
+  updateNotifBadge();
+  if(currentMode==="notifs")renderNotifs();
+}
+// the badge is the entry's business end: a count bubble on the rail and
+// dock "!" entries, and the live status line beside the rail name
+function updateNotifBadge(){
+  const n=notifItems.length;
+  document.querySelectorAll('#modeRail .railEntry[data-mode="notifs"], #modeDock .dockEntry[data-mode="notifs"]').forEach(btn=>{
+    btn.dataset.badge=n?String(n):"";
+  });
+  const entry=document.querySelector('#modeRail .railEntry[data-mode="notifs"] .railStatus');
+  if(entry)entry.textContent=n?`${n} due`:"clear";
+}
+const NOTIF_URG_LABEL={overdue:"overdue",today:"today",soon:"soon",week:"this week",later:"coming"};
+function enterNotifsMode(){
+  clearTimeout(cycleTimer);closeCategoryMenu();
+  currentMode="notifs";cyclePaused=false;isAnswering=false;
+  document.body.classList.remove("focusModeVisual");
+  tickDeadlineReminders();
+  updateModeUI();updateFocusUI();
+  setCycleStatus("notifications",false);
+  answerEl.blur();
+}
+function renderNotifs(){
+  const list=$("notifList");
+  if(!list)return;
+  const summary=$("notifSummary"),clearBtn=$("notifClear");
+  list.textContent="";
+  if(settings.deadlineRemind===false){
+    if(summary)summary.textContent="reminders are off";
+    if(clearBtn)clearBtn.disabled=true;
+    const empty=document.createElement("div");
+    empty.className="notifEmpty";
+    empty.innerHTML=`<span class="notifEmptyMark">✓</span><span>deadline reminders are off — settings → reminders brings them back</span>`;
+    list.append(empty);
+    return;
+  }
+  const items=notifItems;
+  if(summary){
+    const over=items.filter(i=>i.urg==="overdue").length;
+    summary.textContent=items.length?`${items.length} to see${over?` · ${over} overdue`:""}`:"all clear";
+  }
+  if(clearBtn){
+    clearBtn.disabled=!items.length;
+    clearBtn.onclick=()=>{for(const it of items)dismissNotifToday(it.id)};
+  }
+  if(!items.length){
+    const empty=document.createElement("div");
+    empty.className="notifEmpty";
+    empty.innerHTML=`<span class="notifEmptyMark">✓</span><span>nothing needs eyes — the deadlines are quiet</span>`;
+    list.append(empty);
+    return;
+  }
+  for(const it of items){
+    const row=document.createElement("div");
+    row.className=`notifRow ${it.urg}`;
+    const bar=document.createElement("span");
+    bar.className="notifBar";
+    bar.setAttribute("aria-hidden","true");
+    const body=document.createElement("div");
+    body.className="notifBody";
+    const meta=document.createElement("div");
+    meta.className="notifMeta";
+    const urg=document.createElement("span");
+    urg.className="notifUrg";
+    urg.textContent=NOTIF_URG_LABEL[it.urg]||"";
+    const when=document.createElement("span");
+    when.className="notifWhen";
+    when.textContent=it.when;
+    meta.append(urg,when);
+    const title=document.createElement("div");
+    title.className="notifTitle";
+    title.textContent=it.title;
+    body.append(meta,title);
+    if(it.note){
+      const note=document.createElement("div");
+      note.className="notifNote";
+      note.textContent=it.note;
+      body.append(note);
+    }
+    const actions=document.createElement("div");
+    actions.className="notifActions";
+    const open=document.createElement("button");
+    open.type="button";
+    open.className="notifOpen";
+    open.textContent="open";
+    open.addEventListener("click",()=>{
+      enterDeadlinesMode();
+      const node=deadlineFind(it.id);
+      if(node&&node.date){
+        openDeadlineCard(it.id);
+        $("deadlineWall")?.querySelector(`.deadlineMonth[data-ym="${node.date.slice(0,7)}"]`)?.scrollIntoView({behavior:"smooth",block:"start"});
+      }
+    });
+    const dismiss=document.createElement("button");
+    dismiss.type="button";
+    dismiss.className="notifDismiss";
+    dismiss.textContent="dismiss";
+    dismiss.addEventListener("click",()=>dismissNotifToday(it.id));
+    actions.append(open,dismiss);
+    row.append(bar,body,actions);
+    list.append(row);
+  }
+  const hidden=countDismissedToday();
+  if(hidden){
+    const foot=document.createElement("div");
+    foot.className="notifFoot";
+    foot.textContent=`${hidden} dismissed for today — back tomorrow`;
+    list.append(foot);
   }
 }
 // a gentler cousin of the scheduler alarm: two soft sine bells instead of
@@ -4256,16 +4381,6 @@ function initDeadlinesMode(){
   });
   $("deadlineEditor")?.addEventListener("click",e=>{if(e.target===$("deadlineEditor"))closeDeadlineEditor()});
   $("deadlineTitleInput")?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();commitDeadlineEditor()}});
-  $("deadlineReminderDismiss")?.addEventListener("click",dismissDeadlineReminder);
-  $("deadlineReminderOpen")?.addEventListener("click",()=>{
-    const node=activeDeadlineReminderId?deadlineFind(activeDeadlineReminderId):null;
-    hideDeadlineReminderCard();
-    enterDeadlinesMode();
-    if(node&&node.date){
-      openDeadlineCard(node.id);
-      $("deadlineWall")?.querySelector(`.deadlineMonth[data-ym="${node.date.slice(0,7)}"]`)?.scrollIntoView({behavior:"smooth",block:"start"});
-    }
-  });
   setInterval(tickDeadlineReminders,15000);
   tickDeadlineReminders();
 }

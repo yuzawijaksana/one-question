@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>One Question</title>
-  <link rel="stylesheet" href="style.css?v=2.57">
+  <link rel="stylesheet" href="style.css?v=2.58">
 <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/icon-192.png">
 <meta name="theme-color" content="#000000">
@@ -416,18 +416,16 @@
       </button>
     </div>
 
-    <div id="deadlineReminder" class="deadlineReminder" aria-live="polite" aria-hidden="true">
-      <div class="deadlineReminderBody">
-        <span class="deadlineReminderLabel">deadline</span>
-        <span id="deadlineReminderTitle" class="deadlineReminderTitle"></span>
-        <span id="deadlineReminderWhen" class="deadlineReminderWhen"></span>
-        <span id="deadlineReminderNote" class="deadlineReminderNote"></span>
+    <section id="notifs" class="notifsMode" aria-hidden="true">
+      <div class="notifTop">
+        <span class="notifKicker">notifications</span>
+        <span id="notifSummary" class="notifSummary" aria-live="polite"></span>
+        <span class="notifTools" role="toolbar" aria-label="Notification tools">
+          <button id="notifClear" type="button" title="dismiss everything for today">dismiss all</button>
+        </span>
       </div>
-      <div class="deadlineReminderActions">
-        <button id="deadlineReminderOpen" type="button">open</button>
-        <button id="deadlineReminderDismiss" type="button">dismiss</button>
-      </div>
-    </div>
+      <div id="notifList" class="notifList" aria-label="notifications"></div>
+    </section>
 
     <button id="themeToggle" class="settingsFab themeToggleFab" aria-label="Toggle light mode" title="light / dark mode">☀</button>
     <button id="settings" class="settingsFab" aria-label="Open settings" title="Settings">⚙</button>
@@ -809,7 +807,7 @@
   </main>
   <nav id="modeRail" aria-label="screens"></nav>
   <nav id="modeDock" aria-label="screens"></nav>
-  <script src="app.js?v=2.57"></script>
+  <script src="app.js?v=2.58"></script>
 <script>
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("/sw.js").catch(()=>{});
