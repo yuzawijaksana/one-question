@@ -1,7 +1,7 @@
 {
   "format": "one-question-zen-backup",
   "version": "2.21.3",
-  "exportedAt": "2026-10-22T02:24:27Z",
+  "exportedAt": "2026-10-24T05:00:13Z",
   "data": {
     "questions": [
       [
@@ -198,15 +198,13 @@
       "cycleSeconds": 6.5,
       "modeSwitchExpand": "always",
       "modeOrder": [
-        "sticky",
         "question",
-        "deadlines",
-        "quotes",
+        "focus",
         "scheduler",
-        "focus"
+        "sticky"
       ],
       "hiddenModes": [],
-      "startupMode": "deadlines",
+      "startupMode": "question",
       "startupResume": false,
       "stickyCategories": [
         "general"
@@ -256,6 +254,13 @@
     },
     "history": [
       {
+        "question": "If today had a theme, what would it be?",
+        "category": "fun",
+        "answer": "i dont know you tell me",
+        "date": "2026-10-22T13:00:12.440Z",
+        "answeredAt": "2026-10-22T13:00:12.440Z"
+      },
+      {
         "question": "What are you about to spend time on, and is it worth it?",
         "category": "attention",
         "answer": "Doing my skripsi",
@@ -285,18 +290,18 @@
       }
     ],
     "recent": [
-      4,
+      7,
+      9,
       33,
-      6,
-      35,
-      18,
-      28,
-      25,
       29,
-      19,
-      14,
-      39,
-      41
+      2,
+      8,
+      24,
+      26,
+      30,
+      15,
+      16,
+      4
     ],
     "todos": [],
     "note": "Bimbingan - 7 Sept 2026 s/d 9 Jan 2027\n\nTA\n1. Keunikan Gamenya (Judul)\n  + Data Pendukung(ini digunakan untuk memvalidasi argumen terhadap keunikan sebuah game\n\n",
@@ -376,23 +381,14 @@
     ],
     "stickies": [
       {
-        "id": "2243d733-96aa-49c5-94eb-315d8afe4a66",
-        "text": "pudding telur (kukus /w mangkok kecil)",
-        "created": 1792471971368,
-        "done": false,
-        "cat": "general",
-        "x": 6,
-        "y": 8
-      },
-      {
         "id": "22f379cc-b095-48a9-95dc-efecef1440f1",
         "text": "silence - akiyoshi rikako",
         "created": 1790086231973,
         "done": false,
         "cat": "book",
-        "x": 43,
-        "y": 37,
-        "z": "65"
+        "x": null,
+        "y": null,
+        "z": "24"
       },
       {
         "id": "de79007c-cde8-4cd5-bf02-3bf5748fc121",
@@ -400,9 +396,9 @@
         "created": 1790086198918,
         "done": false,
         "cat": "book",
-        "x": 22,
-        "y": 14,
-        "z": "67"
+        "x": null,
+        "y": null,
+        "z": "18"
       },
       {
         "id": "ff46289a-c71d-407d-ba27-c32abe602215",
@@ -410,9 +406,9 @@
         "created": 1790086092926,
         "done": false,
         "cat": "film",
-        "x": 59,
-        "y": 43,
-        "z": "19"
+        "x": null,
+        "y": null,
+        "z": "13"
       },
       {
         "id": "29c686fb-3c1b-48ff-ae70-555d00903484",
@@ -420,9 +416,9 @@
         "created": 1790004800440,
         "done": false,
         "cat": "book",
-        "x": 38,
-        "y": 20,
-        "z": "68"
+        "x": null,
+        "y": null,
+        "z": "33"
       },
       {
         "id": "9b876e1b-b032-4ede-9bc1-ddd91c8f6dc4",
@@ -430,9 +426,9 @@
         "created": 1790004780554,
         "done": false,
         "cat": "book",
-        "x": 17,
-        "y": 49,
-        "z": "39"
+        "x": null,
+        "y": null,
+        "z": "28"
       },
       {
         "id": "c270681e-f50e-4d8b-95f5-cccd9670fae0",
@@ -440,9 +436,9 @@
         "created": 1790004768030,
         "done": false,
         "cat": "book",
-        "x": 54,
-        "y": 26,
-        "z": "66"
+        "x": null,
+        "y": null,
+        "z": "16"
       },
       {
         "id": "84948df2-974b-451d-8318-32d5bba9980c",
@@ -450,9 +446,9 @@
         "created": 1790004750032,
         "done": false,
         "cat": "book",
-        "x": 33,
-        "y": 55,
-        "z": "20"
+        "x": null,
+        "y": null,
+        "z": "23"
       },
       {
         "id": "c10f0ff7-3ff0-49a8-ac80-446fe23a32ab",
@@ -460,9 +456,9 @@
         "created": 1789816515228,
         "done": false,
         "cat": "friend",
-        "x": 12,
-        "y": 32,
-        "z": "12"
+        "x": null,
+        "y": null,
+        "z": "15"
       },
       {
         "id": "2eca497c-70a8-487e-8d64-80b19c8f29f0",
@@ -470,8 +466,8 @@
         "created": 1789816364531,
         "done": false,
         "cat": "friend",
-        "x": 49,
-        "y": 9,
+        "x": null,
+        "y": null,
         "z": "17"
       },
       {
@@ -480,8 +476,8 @@
         "created": 1789816362131,
         "done": false,
         "cat": "friend",
-        "x": 28,
-        "y": 38,
+        "x": null,
+        "y": null,
         "z": "15"
       },
       {
@@ -490,9 +486,9 @@
         "created": 1789816337074,
         "done": false,
         "cat": "skill",
-        "x": 7,
-        "y": 15,
-        "z": "20"
+        "x": null,
+        "y": null,
+        "z": "25"
       },
       {
         "id": "6ea96866-780b-4eec-b236-1868b48d62f5",
@@ -500,9 +496,9 @@
         "created": 1789816315707,
         "done": false,
         "cat": "skill",
-        "x": 44,
-        "y": 44,
-        "z": "21"
+        "x": null,
+        "y": null,
+        "z": "18"
       },
       {
         "id": "77bdee44-8458-4137-81cb-222ab5ec9ac1",
@@ -510,9 +506,9 @@
         "created": 1789815892883,
         "done": false,
         "cat": "friend",
-        "x": 23,
-        "y": 21,
-        "z": "24"
+        "x": null,
+        "y": null,
+        "z": "16"
       },
       {
         "id": "6dd5e394-4218-46cb-8a42-374ea20d82e0",
@@ -520,8 +516,8 @@
         "created": 1789815885007,
         "done": false,
         "cat": "friend",
-        "x": 60,
-        "y": 50,
+        "x": null,
+        "y": null,
         "z": "19"
       },
       {
@@ -530,8 +526,8 @@
         "created": 1789814800974,
         "done": false,
         "cat": "friend",
-        "x": 39,
-        "y": 27,
+        "x": null,
+        "y": null,
         "z": "16"
       },
       {
@@ -540,8 +536,8 @@
         "created": 1789814786389,
         "done": false,
         "cat": "friend",
-        "x": 18,
-        "y": 56,
+        "x": null,
+        "y": null,
         "z": "19"
       },
       {
@@ -550,9 +546,9 @@
         "created": 1789804934229,
         "done": false,
         "cat": "assignment",
-        "x": 55,
-        "y": 33,
-        "z": "23"
+        "x": null,
+        "y": null,
+        "z": "28"
       },
       {
         "id": "3eae8be6-1583-4a1a-b46e-d046b7660d37",
@@ -560,9 +556,9 @@
         "created": 1789804390454,
         "done": false,
         "cat": "skill",
-        "x": 34,
-        "y": 10,
-        "z": "17"
+        "x": null,
+        "y": null,
+        "z": "26"
       }
     ],
     "book": {
@@ -643,23 +639,12 @@
     ],
     "deadlines": [
       {
-        "id": "613d42f3-feb7-483d-b2d9-b75d0c665806",
-        "title": "Ketemu Quokka",
-        "date": "2026-11-01",
-        "time": "",
-        "note": "",
-        "importance": "low",
-        "done": false,
-        "collapsed": false,
-        "children": []
-      },
-      {
         "id": "02c566ad-71f8-4fd7-8ce1-b725cc4a85e7",
         "title": "Tugas Akhir",
         "date": "2027-02-20",
         "time": "",
         "note": "",
-        "importance": "high",
+        "importance": "red",
         "done": false,
         "collapsed": false,
         "children": [
@@ -669,7 +654,7 @@
             "date": "2026-10-20",
             "time": "",
             "note": "",
-            "importance": "low",
+            "importance": "none",
             "done": true,
             "collapsed": false,
             "children": [
@@ -679,72 +664,17 @@
                 "date": "2026-10-21",
                 "time": "",
                 "note": "PR : Cari dan Baca 10 jurnal/laporan/skripsi yang relevan dengan GDLC,Unity,Pertarungan,etc.",
-                "importance": "high",
+                "importance": "red",
                 "done": false,
-                "collapsed": true,
+                "collapsed": false,
                 "children": [
-                  {
-                    "id": "42699d0a-6479-4c1b-b994-53d84fb4249e",
-                    "title": "Jurnal 1",
-                    "date": "2026-10-21",
-                    "time": "",
-                    "note": "",
-                    "importance": "low",
-                    "done": false,
-                    "collapsed": false,
-                    "children": []
-                  },
-                  {
-                    "id": "a3f8ddf9-12ea-4d9b-8917-3439b4594064",
-                    "title": "Jurnal 2",
-                    "date": "2026-10-21",
-                    "time": "",
-                    "note": "",
-                    "importance": "low",
-                    "done": false,
-                    "collapsed": false,
-                    "children": []
-                  },
-                  {
-                    "id": "32eb6976-4e80-4d96-aa61-7dec6e4c8af6",
-                    "title": "Jurnal 3",
-                    "date": "2026-10-21",
-                    "time": "",
-                    "note": "",
-                    "importance": "low",
-                    "done": false,
-                    "collapsed": false,
-                    "children": []
-                  },
-                  {
-                    "id": "35be1e76-7124-4d33-811c-429e7b862fc5",
-                    "title": "Jurnal 4",
-                    "date": "2026-10-21",
-                    "time": "",
-                    "note": "",
-                    "importance": "low",
-                    "done": false,
-                    "collapsed": false,
-                    "children": []
-                  },
-                  {
-                    "id": "884ee86c-ed71-4238-b86d-7cdc002c9f32",
-                    "title": "Jurnal 5",
-                    "date": "2026-10-21",
-                    "time": "",
-                    "note": "",
-                    "importance": "low",
-                    "done": false,
-                    "collapsed": false,
-                    "children": []
-                  },
                   {
                     "id": "3c615e4d-6331-459f-80d7-566243beae3f",
                     "title": "Jurnal 6",
                     "date": "2026-10-21",
                     "time": "",
                     "note": "",
-                    "importance": "low",
+                    "importance": "none",
                     "done": false,
                     "collapsed": false,
                     "children": []
@@ -755,7 +685,7 @@
                     "date": "2026-10-21",
                     "time": "",
                     "note": "",
-                    "importance": "low",
+                    "importance": "none",
                     "done": false,
                     "collapsed": false,
                     "children": []
@@ -766,7 +696,7 @@
                     "date": "2026-10-21",
                     "time": "",
                     "note": "",
-                    "importance": "low",
+                    "importance": "none",
                     "done": false,
                     "collapsed": false,
                     "children": []
@@ -777,7 +707,7 @@
                     "date": "2026-10-21",
                     "time": "",
                     "note": "",
-                    "importance": "low",
+                    "importance": "none",
                     "done": false,
                     "collapsed": false,
                     "children": []
@@ -788,7 +718,62 @@
                     "date": "2026-10-21",
                     "time": "",
                     "note": "",
-                    "importance": "low",
+                    "importance": "none",
+                    "done": false,
+                    "collapsed": false,
+                    "children": []
+                  },
+                  {
+                    "id": "42699d0a-6479-4c1b-b994-53d84fb4249e",
+                    "title": "Jurnal 1",
+                    "date": "2026-10-21",
+                    "time": "",
+                    "note": "",
+                    "importance": "none",
+                    "done": false,
+                    "collapsed": false,
+                    "children": []
+                  },
+                  {
+                    "id": "a3f8ddf9-12ea-4d9b-8917-3439b4594064",
+                    "title": "Jurnal 2",
+                    "date": "2026-10-21",
+                    "time": "",
+                    "note": "",
+                    "importance": "none",
+                    "done": false,
+                    "collapsed": false,
+                    "children": []
+                  },
+                  {
+                    "id": "32eb6976-4e80-4d96-aa61-7dec6e4c8af6",
+                    "title": "Jurnal 3",
+                    "date": "2026-10-21",
+                    "time": "",
+                    "note": "",
+                    "importance": "none",
+                    "done": false,
+                    "collapsed": false,
+                    "children": []
+                  },
+                  {
+                    "id": "35be1e76-7124-4d33-811c-429e7b862fc5",
+                    "title": "Jurnal 4",
+                    "date": "2026-10-21",
+                    "time": "",
+                    "note": "",
+                    "importance": "none",
+                    "done": false,
+                    "collapsed": false,
+                    "children": []
+                  },
+                  {
+                    "id": "884ee86c-ed71-4238-b86d-7cdc002c9f32",
+                    "title": "Jurnal 5",
+                    "date": "2026-10-21",
+                    "time": "",
+                    "note": "",
+                    "importance": "none",
                     "done": false,
                     "collapsed": false,
                     "children": []
@@ -803,8 +788,42 @@
             "date": "2026-10-17",
             "time": "",
             "note": "- Fokus laporan jadi penelitian = Tujuan S1 \n- Kalau bikin aplikasi = selesai = D3\n\nInput: Perhatiin garis merah antara latar belakang masalah dengan rumusan masalah, tujuan penelitian, batasan masalah, manfaat penelitian.\nAnalysis: dosen bilang kalau yang dipermasalahin itu bagian latar belakang masalah karena engga faktor pendukung + daftar pustakanya dikit bangeeet\nAnswer: minta bantu kalau bingung (taiga, or someone else)\n\nInput : apa yang di bahas di latar belakang masalah diperjelas lagi di kajian pustaka. (benang merah dari latar belakang)\nAnalysis:\nAnswer:\n\nInput: menambah kuisioner di bagian akhir metodologi penelitian.\nAnalysis: \nAnswer: \n\nInput: sama buka gemini lagi kemarin soal cara penulisan dan apa aja yang dibahas (bareng sama dosen) \nAnalysis: \nAnswer: ",
-            "importance": "low",
+            "importance": "none",
             "done": true,
+            "collapsed": false,
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "613d42f3-feb7-483d-b2d9-b75d0c665806",
+        "title": "Ketemu Quokka",
+        "date": "2026-11-01",
+        "time": "",
+        "note": "",
+        "importance": "none",
+        "done": false,
+        "collapsed": false,
+        "children": []
+      },
+      {
+        "id": "e9dda7d5-0533-404d-a353-d50a926a6e0f",
+        "title": "Kiriyama (Side Quest)",
+        "date": "2026-12-31",
+        "time": "23:59",
+        "note": "",
+        "importance": "gold",
+        "done": false,
+        "collapsed": false,
+        "children": [
+          {
+            "id": "d315367a-e935-462a-8996-b36c926a3693",
+            "title": "Kiriyama (Vocal Coaching)",
+            "date": "2026-10-23",
+            "time": "20:00",
+            "note": "",
+            "importance": "green",
+            "done": false,
             "collapsed": false,
             "children": []
           }
