@@ -195,9 +195,18 @@ def self_update_from_git():
         if path and path not in protected:
             dirty.append(path)
     if dirty:
-        listed = ", ".join(dirty[:5]) + (" …" if len(dirty) > 5 else "")
-        raise RuntimeError(
-            f"update skipped: uncommitted changes in {listed} — commit or stash first")
+        code_dirty = [p for p in dirty if p not in UPDATE_RUNTIME_FILES]
+        if code_dirty:
+            listed = ", ".join(code_dirty[:5]) + (" …" if len(code_dirty) > 5 else "")
+            raise RuntimeError(
+                f"update skipped: uncommitted changes in {listed} — commit or stash first")
+        # only runtime data is dirty: stash it, update, then restore — the
+        # PC's state file changes constantly (auto-push) and must never
+        # block an update the way uncommitted code edits do
+        _git(["stash", "push", "--", *dirty])
+        _stash_restore = True
+    else:
+        _stash_restore = False
     stamp = time.strftime("%Y%m%d-%H%M%S")
     backup_dir = ROOT.parent / "one-question-update-backups" / f"{stamp}-{before}"
     saved = []
@@ -226,6 +235,13 @@ def self_update_from_git():
                 shutil.copy2(dst, src)
             except Exception as exc:
                 print(f"[update] restore failed for {src.name}: {exc}", flush=True)
+        # bring back stashed runtime-data edits (update was allowed because
+        # only runtime files were dirty)
+        try:
+            if _stash_restore and _git(["stash", "list"]).strip():
+                _git(["stash", "pop"])
+        except Exception as exc:
+            print(f"[update] stash restore skipped: {exc}", flush=True)
 
 
 def installed_version():
