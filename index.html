@@ -855,7 +855,7 @@ function renderDial(now,mn,sched){
     }
   }
   // hands: hour (thick), minute (thin), second (accent)
-  const aH=rad((minuteFrac-720)*0.25),aM=rad((minuteFrac%60)*6),aS=rad(sec*6);
+  const aH=rad((minuteFrac-720)*0.25),aM=rad((minuteFrac%60)*6-180),aS=rad(sec*6-180);
   const hand=(a,r1,r2,w,col)=>{
     ctx.beginPath();
     ctx.moveTo(cx+r1*Math.sin(a),cy-r1*Math.cos(a));
