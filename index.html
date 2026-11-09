@@ -1293,9 +1293,14 @@ function loadSet(){
   }
   $("setLoc").value=s.city??(s.lat!=null?`${s.lat}, ${s.lon}`:"");
   if(s.city)$("locHint").textContent="📍 "+s.city;
-  // font scale (persisted per-device, like the widget's set-ui.sh)
-  const sc=+(localStorage.getItem("oqScale")||100);
+  // screen scale (whole app zoom) — default 125%
+  const sc=+(localStorage.getItem("oqScale")||125);
   $("setScale").value=sc;$("setScaleVal").textContent=sc+"%";
+  applyScale(sc);
+  // text size (font only)
+  const fs=+(localStorage.getItem("oqFont")||100);
+  $("setFont").value=fs;$("setFontVal").textContent=fs+"%";
+  document.documentElement.style.fontSize=(fs/100*16)+"px";
   // sections: hide/show mirrors the widget's secHide
   const hide=(localStorage.getItem("oqHide")||"").split("|").filter(Boolean);
   const defs=[["quotes","quiet feed"],["stickies","remember"],["sched","day circle"],["deadlines","deadlines"],["journal","journal"],["guide","daily guide"]];
@@ -1532,9 +1537,9 @@ async function checkUpdate(){
     updData=d;
     $("updTxt").textContent="update available";
     const items=(d.changes||[]).slice(0,5);
-    $("updLog").textContent="changes:"
-      +(items.length?"\n"+items.map(c=>"· "+(typeof c=="object"?c.subject:c)).join("\n"):"\n· (no details)")
-      +(d.ahead>0?"\n⚠ server has "+d.ahead+" unpushed commit"+(d.ahead===1?"":"s"):"");
+    $("updLog").innerHTML="changes:"
+      +(items.length?items.map(c=>"· "+esc(typeof c=="object"?c.subject:c)).join("<br>"):"<br>· (no details)")
+      +(d.ahead>0?"<br>⚠ server has "+d.ahead+" unpushed commit"+(d.ahead===1?"":"s"):"");
     $("updAct").textContent=d.ahead>0?"push first":"update";
     $("updPill").classList.add("show");
     updShown=true;
