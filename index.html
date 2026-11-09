@@ -710,6 +710,9 @@ function renderMenu(){
   // compose: day circle line first, sholat card under it
   $("menuStatus").innerHTML=(act?`<span style="color:${esc(act.color||"var(--green)")}">● ${esc(act.label)} · ends ${pad(Math.floor(act.end/60))}:${pad(act.end%60)}</span>`:"")
     +(sholatHtml?`<div id="menuSholat">${sholatHtml}</div>`:"");
+  // remove any previous floating card first (renderMenu regenerates it);
+  // prevents duplicates stacking when navigating between views
+  document.querySelectorAll("body > #menuSholat").forEach(x=>x.remove());
   const sd=$("menuSholat");
   if(sd){
     // escape the zoomed #app: fixed positioning inside a zoomed ancestor
@@ -1159,19 +1162,20 @@ $("dlAdd").onclick=()=>modal(`<h3>+ add deadline</h3>
 
 /* ═══════ JOURNAL ═══════ */
 function renderJournal(){
-  const j=get("oneQuestionJournal");
+  // the widget reads journal chapters from oneQuestionBook.chapters — same source here
+  const j=get("oneQuestionBook").chapters||[];
   $("jCount").textContent=j.length+" chapters";
   $("jList").innerHTML=j.map(c=>`
     <div class="row" data-jid="${c.id}" style="cursor:pointer;">
       <span class="grow"><span style="font-size:14px;">${esc(c.title||"untitled")}</span>
         ${c.category?`<span class="t-label" style="display:block;margin-top:2px;">#${esc(c.category)}</span>`:""}</span>
       <button class="del" data-jdel="${c.id}">✕</button></div>`).join("")
-    ||'<div class="t-label center">empty — write the first chapter</div>';
+    ||'<div class="t-label center" style="line-height:1.7;">no journal yet<br><span style="opacity:.6;">+ new chapter di bawah, tap kartunya buat nulis</span></div>';
   $("jList").onclick=e=>{
     const del=e.target.closest("[data-jdel]");
     if(del){
-      const c=get("oneQuestionJournal").find(x=>x.id===del.dataset.jdel);
-      confirmDel(c.title||"untitled",()=>{set("oneQuestionJournal",get("oneQuestionJournal").filter(x=>x.id!==del.dataset.jdel));});
+      const c=get("oneQuestionBook").chapters.find(x=>x.id===del.dataset.jdel);
+      confirmDel(c.title||"untitled",()=>{set("oneQuestionBook",{...get("oneQuestionBook"),chapters:get("oneQuestionBook").chapters.filter(x=>x.id!==del.dataset.jdel)});});
       return;
     }
     const row=e.target.closest("[data-jid]");
@@ -1179,27 +1183,32 @@ function renderJournal(){
   };
 }
 function openJournal(id){
-  const c=get("oneQuestionJournal").find(x=>x.id===id);
+  const c=get("oneQuestionBook").chapters.find(x=>x.id===id);
   if(!c)return;
+  const body=c.html??c.text??"";
   modal(`<h3>${esc(c.title||"untitled")}</h3>
     <input id="mJT" value="${esc(c.title||"")}" placeholder="title"><div style="height:8px"></div>
     <input id="mJC" value="${esc(c.category||"")}" placeholder="category"><div style="height:10px"></div>
-    <textarea id="mJB" rows="10" style="font-size:14px;line-height:1.7;">${esc(c.text||"")}</textarea>
+    <textarea id="mJB" rows="10" style="font-size:14px;line-height:1.7;">${esc(c.text||stripHtml(body))}</textarea>
     <div class="modal-actions"><button data-close>cancel</button><button class="primary" id="mSaveJ">save</button></div>`,
     ()=>{$("mSaveJ").onclick=()=>{
-      c.title=$("mJT").value.trim();c.category=$("mJC").value.trim();c.text=$("mJB").value;
-      set("oneQuestionJournal",get("oneQuestionJournal"));closeModal();toast("✓ saved");
+      c.title=$("mJT").value.trim();c.category=$("mJC").value.trim();
+      c.text=$("mJB").value;c.html="<p>"+esc($("mJB").value).replace(/\n\n/g,"</p><p>").replace(/\n/g,"<br>")+"</p>";
+      set("oneQuestionBook",{...get("oneQuestionBook"),chapters:get("oneQuestionBook").chapters});
+      closeModal();toast("✓ saved");
     };});
 }
+function stripHtml(h){const d=document.createElement("div");d.innerHTML=h||"";return d.textContent||"";}
 $("jAdd").onclick=()=>modal(`<h3>+ new chapter</h3>
   <input id="mJT" placeholder="title"><div style="height:10px"></div>
   <input id="mJC" placeholder="category">
   <div class="modal-actions"><button data-close>cancel</button><button class="primary" id="mSave">add</button></div>`,
   ()=>{$("mSave").onclick=()=>{
     const t=$("mJT").value.trim();if(!t)return;
-    const j=get("oneQuestionJournal");
-    j.push({id:uid(),title:t,category:$("mJC").value.trim()||"journal",text:"",date:new Date().toISOString().slice(0,10)});
-    set("oneQuestionJournal",j);closeModal();toast("added");
+    const b=get("oneQuestionBook");
+    b.chapters=b.chapters||[];
+    b.chapters.push({id:uid(),title:t,category:$("mJC").value.trim()||"journal",text:"",html:"",date:new Date().toISOString().slice(0,10)});
+    set("oneQuestionBook",b);closeModal();toast("added");
   };});
 
 /* ═══════ DAILY GUIDE ═══════ */
