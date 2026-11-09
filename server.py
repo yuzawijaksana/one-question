@@ -159,7 +159,8 @@ UPDATE_RUNTIME_FILES = [
 
 def _git(args, timeout=120):
     proc = subprocess.run(
-        ["git", *args], cwd=ROOT, capture_output=True, text=True, timeout=timeout
+        ["git", *args], cwd=ROOT, capture_output=True, text=True, timeout=timeout,
+        creationflags=_NO_WINDOW
     )
     if proc.returncode != 0:
         raise RuntimeError(f"git {' '.join(args)}: {proc.stderr.strip() or proc.stdout.strip()}")
