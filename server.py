@@ -188,7 +188,9 @@ def self_update_from_git():
     # refuse and name them so a day's work is never silently lost
     protected = set(UPDATE_RUNTIME_FILES)
     dirty = []
-    for line in _git(["status", "--porcelain", "--untracked-files=no"]).splitlines():
+    for line in _git(["status", "--porcelain", "-z", "--untracked-files=no"]).split("\x00"):
+        if not line:
+            continue
         path = line[3:].split(" -> ")[-1].strip().strip('"')
         if path and path not in protected:
             dirty.append(path)
