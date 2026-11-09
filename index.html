@@ -450,7 +450,8 @@ input[type=range]::-webkit-slider-thumb{
     <div class="top">
       <button class="back-bottom" data-go="menu">‹ back</button>
       <div class="tt"><div class="t-title">settings</div><div class="t-label">one question · owl (test update) web</div></div></div>
-    <div class="row"><span class="syncdot" id="syncDot2" style="position:static;"></span><span class="t-label" id="syncTxt2" style="flex:1;">connecting…</span></div>
+    <div class="row"><span class="syncdot" id="syncDot2" style="position:static;"></span><span class="t-label" id="syncTxt2" style="flex:1;">connecting…</span>
+      <button class="set-ghost" id="setReset" style="flex-shrink:0;">[ reset all ]</button></div>
 
     <div class="pc-two" style="flex-wrap:wrap;">
     <div style="flex:1;min-width:380px;">
@@ -1454,6 +1455,33 @@ $("wallDim").addEventListener("input",()=>{
   $("wallDimVal").textContent=($("wallDim").value)+"%";
   applyWall();
 })();
+/* defaults for every resettable setting */
+const SET_DEFAULTS={
+  scale:125, font:100, anim:1, wallDim:60, sholatPos:"left", status:"on"
+};
+$("setReset").onclick=()=>{
+  modal(`<h3>reset all settings?</h3>
+    <div class="t-label" style="font-size:13px;color:var(--fg);">screen scale, text size, animation, wallpaper, sholat position &amp; section names go back to defaults. data (quotes, journal, deadlines…) is untouched.</div>
+    <div class="modal-actions"><button data-close>cancel</button><button class="primary" id="mYes">reset</button></div>`,
+    ()=>{$("mYes").onclick=()=>{closeModal();
+    localStorage.setItem("oqScale",SET_DEFAULTS.scale);
+    localStorage.setItem("oqFont",SET_DEFAULTS.font);
+    localStorage.setItem("oqAnim",SET_DEFAULTS.anim);
+    localStorage.setItem("oqWallDim",SET_DEFAULTS.wallDim);
+    localStorage.setItem("oqSholatPos",SET_DEFAULTS.sholatPos);
+    localStorage.setItem("oqStatus",SET_DEFAULTS.status);
+    localStorage.removeItem("oqTitles");   // section names → defaults
+    localStorage.removeItem("oqHide");     // hidden sections → all shown
+    localStorage.removeItem("oqOrder");    // section order → default
+    localStorage.removeItem("oqWall");     // wallpaper → none
+    localStorage.removeItem("oqWx");       // let weather refresh
+    applyScale(SET_DEFAULTS.scale);
+    applyAnim();
+    applyWall();
+    loadSet();
+    renderMenu();renderAll();
+    toast("settings reset to defaults");};});
+};
 $("setSaveLoc").onclick=async()=>{
   const q=$("setLoc").value.trim();
   if(!q){toast("type a city first");return;}
