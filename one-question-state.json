@@ -913,58 +913,14 @@
       ]
     },
     "oneQuestionSholat": {
-      "updatedAt": 1794235903115,
+      "updatedAt": 1794261880320,
       "value": {
         "lat": -6.2088,
         "lon": 106.8456,
         "city": "jakarta (default)",
-        "date": "2026-11-09",
-        "times": {
-          "subuh": [
-            4,
-            4
-          ],
-          "dzuhur": [
-            11,
-            36
-          ],
-          "ashar": [
-            14,
-            57
-          ],
-          "maghrib": [
-            17,
-            48
-          ],
-          "isya": [
-            19,
-            0
-          ]
-        },
-        "bounds": {
-          "subuh": [
-            5,
-            25
-          ],
-          "dzuhur": [
-            14,
-            57
-          ],
-          "ashar": [
-            17,
-            48
-          ],
-          "maghrib": [
-            19,
-            0
-          ],
-          "isya": [
-            23,
-            59
-          ]
-        }
+        "date": ""
       }
     }
   },
-  "updatedAt": 1794241721103
+  "updatedAt": 1794261820324
 }
