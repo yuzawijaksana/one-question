@@ -1,9 +1,19 @@
+/* Monocraft — the launcher's pixel font, bundled so the web matches the widget */
+@font-face {
+  font-family: "Monocraft";
+  src: url("fonts/Monocraft.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap
+}
+
 :root {
-  --bg: #10100f;
-  --text: #ebe8e0;
-  --muted: #77736b;
-  --line: rgba(235, 232, 224, .16);
-  --accent: #aaa69d;
+  /* vantablack — the launcher's theme: pure monochrome, like the owl widget */
+  --bg: #000000;
+  --text: #ececec;
+  --muted: #7a7a7a;
+  --line: rgba(236, 236, 236, .12);
+  --accent: #8d8d8d;
   --appearance-overlay: color-mix(in srgb, var(--bg) 3%, transparent);
   --parallax-text-x: 0px;
   --parallax-text-y: 0px;
@@ -11,15 +21,15 @@
   --parallax-bg-y: 0px;
   --parallax-bg-scale: 1.08;
   /* type scale — the only sizes text should use (display sizes stay literal) */
-  --fs-2xs: 9px;
-  --fs-xs: 10px;
-  --fs-sm: 11px;
-  --fs-md: 12px;
-  --fs-base: 13px;
-  --fs-lg: 14px;
-  --fs-xl: 16px;
-  --fs-2xl: 18px;
-  --fs-3xl: 20px
+  --fs-2xs: 10px;
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-md: 13px;
+  --fs-base: 14px;
+  --fs-lg: 15px;
+  --fs-xl: 17px;
+  --fs-2xl: 19px;
+  --fs-3xl: 22px
 }
 
 * {
@@ -37,7 +47,7 @@ body {
   overflow: hidden;
   background: var(--bg);
   color: var(--text);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Monocraft", ui-monospace, "Cascadia Mono", Consolas, monospace;
   font-weight: var(--user-font-weight, 400)
 }
 
@@ -2684,7 +2694,7 @@ body.lowercase [contenteditable] {
   pointer-events: none;
   height: 38px;
   font-size: 14px;
-  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-family: "Monocraft", ui-monospace, "Cascadia Mono", Consolas, monospace;
   line-height: 1;
   letter-spacing: 0 !important;
   text-transform: none !important;
@@ -5724,7 +5734,7 @@ body.stickyVisual .stickyMode .stickyHint {
   cursor: pointer
 }
 
-.stickyPin:hover /* the queued notes behind the front card — real cards, one per note */
+/* the queued notes behind the front card — real cards, one per note */
 @keyframes pinDealOut {
   to {
     transform: translateX(150%) rotate(calc(var(--tilt, 0deg) + 14deg));
@@ -7707,7 +7717,7 @@ body.quotesVisual .stickyPin {
   display: block;
   margin-top: 24px;
   color: var(--muted);
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: inherit;
   font-size: var(--fs-md);
   letter-spacing: .22em
 }
@@ -7873,6 +7883,69 @@ body.quotesVisual .stickyPin {
   .quotesHint .hintPointer {
     display: none
   }
+}
+
+/* ---- new-sticky modal: text + category --------------------------------- */
+.stickyCreate .appDialogCard {
+  width: min(420px, calc(100vw - 48px))
+}
+
+.stickyCreateText {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+  background: rgba(235, 232, 224, .05);
+  border: 1px solid rgba(235, 232, 224, .14);
+  border-radius: 8px;
+  outline: none;
+  resize: none
+}
+
+.stickyCreateText:focus {
+  border-color: rgba(235, 232, 224, .3)
+}
+
+.stickyCreateCatLabel {
+  margin-top: 14px;
+  font-size: 9px;
+  letter-spacing: .22em;
+  text-transform: lowercase;
+  color: var(--muted)
+}
+
+.stickyCreateCats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px
+}
+
+.stickyCreateCats .stickyChipEdit {
+  opacity: .55
+}
+
+.stickyCreateCats .stickyChipEdit:hover {
+  opacity: 1
+}
+
+/* remember pile showing an empty category pick — keeps the picker reachable */
+.stickyPinEmpty {
+  display: block;
+  align-items: flex-end;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .3)
 }
 
 /* ---- remember deck: the phone view of the wall --------------------------
@@ -10775,4 +10848,141 @@ body:is(.focusModeVisual, .schedulerVisual, .stickyVisual, .quotesVisual, .deadl
   font-weight: 500;
   line-height: 1;
   pointer-events: none
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   owl skin (v2.59) — match the phone's omalauncher widget:
+   vantablack monochrome, Monocraft pixel font, flat square surfaces
+   ════════════════════════════════════════════════════════════════════ */
+
+/* no glows, no blobs — the widget has none */
+.ambient,
+.customBackgroundOverlay {
+  display: none !important
+}
+
+/* the widget look: 1px hairlines, flat fills */
+::selection {
+  background: #1a1a1a;
+  color: #ffffff
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px
+}
+
+::-webkit-scrollbar-track {
+  background: transparent
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1a1a1a;
+  border-radius: 0
+}
+
+/* square off buttons, chips, tabs, toggles (owl pills are ~8px rects) */
+button,
+.stepBtn,
+.dataButton,
+.textButton,
+.backgroundUploadButton,
+.settingsTab,
+.appearancePreset,
+.questionEditorTab,
+.syncNowBtn,
+.hydrationButton,
+.closeButton,
+.colorSetting,
+.switch,
+.calendarNav,
+.railEntry,
+.dockEntry,
+.appDialogOk,
+.appDialogCancel,
+.stickyChip,
+.stickyChipAdd,
+.stickyBtn,
+.stickyPad,
+.stickyCatChip,
+.stickyPinEmpty,
+.stickyCreateCat,
+.stickyCreateClose,
+.stickyCreateDone,
+.topbar button {
+  border-radius: 6px;
+  background: rgba(236, 236, 236, .05);
+  border: 1px solid rgba(236, 236, 236, .12);
+  color: var(--text)
+}
+
+button:hover,
+.stepBtn:hover,
+.settingsTab:hover,
+.appearancePreset:hover,
+.syncNowBtn:hover,
+.railEntry:hover,
+.dockEntry:hover {
+  background: rgba(236, 236, 236, .1)
+}
+
+button:active {
+  background: rgba(236, 236, 236, .16)
+}
+
+/* flat cards & modals (owl card = dark fill + hairline border) */
+.appDialogCard,
+.calendarPanel,
+#notePanel,
+#settingsPanel,
+#historyPanel,
+.syncUpdateCard,
+#modeDock,
+.stickyCreateCard,
+.stickyFloat {
+  border-radius: 12px;
+  border: 1px solid rgba(236, 236, 236, .14);
+  background: #0d0d0d
+}
+
+.appDialog {
+  background: rgba(0, 0, 0, .72)
+}
+
+/* inputs: flat boxes with hairlines, pixel font inherited */
+input,
+textarea,
+select {
+  font-family: inherit;
+  background: rgba(236, 236, 236, .04);
+  border: 1px solid rgba(236, 236, 236, .12);
+  border-radius: 6px;
+  color: var(--text)
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 1px solid rgba(236, 236, 236, .5);
+  outline-offset: 1px
+}
+
+/* the box-shadow kill above removes the old focus ring; keep a visible one */
+button:focus-visible,
+[tabindex]:focus-visible {
+  outline: 1px solid rgba(236, 236, 236, .5);
+  outline-offset: 1px
+}
+
+/* topbar, rail, dock: transparent chrome over the black */
+.topbar,
+#modeRail {
+  background: transparent;
+  border-color: rgba(236, 236, 236, .1)
+}
+
+.railEntry.active,
+.dockEntry.active {
+  background: rgba(236, 236, 236, .16);
+  color: #ffffff
 }

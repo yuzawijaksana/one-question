@@ -788,10 +788,10 @@ let historyIndex=0,historyReturnMode="question";
 let viewedQuestions=[],viewedPosition=-1;
 
 const DEFAULT_APPEARANCE={
-  backgroundColor:"#10100f",
-  textColor:"#ebe8e0",
-  accentColor:"#aaa69d",
-  overlayColor:"#10100f",
+  backgroundColor:"#000000",
+  textColor:"#ececec",
+  accentColor:"#8d8d8d",
+  overlayColor:"#000000",
   overlayOpacity:30,
   backgroundOpacity:35,
   backgroundImage:"",
@@ -834,7 +834,18 @@ function migrateLightMode(a){
     Object.assign(a,LIGHT_MODE_PRESET,{lightMode:true,lightModeVersion:LIGHT_MODE_VERSION});
   }
 }
-const DEFAULT_SETTINGS={categories:["all"],cycleSeconds:6.5,modeSwitchExpand:"always",modeOrder:["question","focus","scheduler","sticky","quotes","deadlines","notifs"],hiddenModes:[],startupMode:"question",startupResume:false,stickyCategories:["general"],stickyPush:110,stickyTilt:1.8,stickyScale:12,stickySpread:100,tidyAnchor:"center-center",hydrationMinutes:DEFAULT_HYDRATION_MINUTES,hydrationSize:DEFAULT_HYDRATION_SIZE,hydrationWave:true,hydrationHoverEnabled:false,hydrationHoverScale:DEFAULT_HYDRATION_HOVER_SCALE,screenScale:DEFAULT_SCREEN_SCALE,animation:true,timerAnimation:true,lowercase:false,schedulerListVisible:true,deadlineRemind:true,deadlineRemindDays:2,appearance:{...DEFAULT_APPEARANCE}};
+// owl skin (v2.59): the vantablack reskin must land on devices that already
+// saved the old warm-dark appearance — re-apply midnight once, the same trick
+// as the light-mode migration (dark mode only; light mode is its own look).
+// literal snapshot, not APPEARANCE_PRESETS — loadSettings runs before that const
+const OWL_SKIN_VERSION=1;
+const OWL_SKIN_MIDNIGHT={backgroundColor:"#000000",textColor:"#ececec",accentColor:"#8d8d8d",overlayColor:"#000000",overlayOpacity:30,backgroundOpacity:35,blur:0,grayscale:0,saturation:100,brightness:100,contrast:100,sepia:0,parallaxText:10,parallaxBackground:18,parallaxScale:108};
+function migrateOwlSkin(a){
+  if(a&&!a.lightMode&&(Number(a.owlSkinVersion)||0)<OWL_SKIN_VERSION){
+    Object.assign(a,OWL_SKIN_MIDNIGHT,{owlSkinVersion:OWL_SKIN_VERSION});
+  }
+}
+const DEFAULT_SETTINGS={categories:["all"],cycleSeconds:6.5,modeSwitchExpand:"always",modeOrder:["question","focus","scheduler","sticky","quotes","deadlines","notifs"],hiddenModes:[],startupMode:"question",startupResume:false,stickyCategories:["general"],stickyPinCat:"all",stickyPush:110,stickyTilt:1.8,stickyScale:12,stickySpread:100,tidyAnchor:"center-center",hydrationMinutes:DEFAULT_HYDRATION_MINUTES,hydrationSize:DEFAULT_HYDRATION_SIZE,hydrationWave:true,hydrationHoverEnabled:false,hydrationHoverScale:DEFAULT_HYDRATION_HOVER_SCALE,screenScale:DEFAULT_SCREEN_SCALE,animation:true,timerAnimation:true,lowercase:false,schedulerListVisible:true,deadlineRemind:true,deadlineRemindDays:2,appearance:{...DEFAULT_APPEARANCE}};
 let settings=loadSettings();
 
 function loadSettings(){
@@ -843,6 +854,7 @@ function loadSettings(){
     const categories=Array.isArray(saved.categories)&&saved.categories.length?saved.categories:["all"];
     const merged={...DEFAULT_SETTINGS,...saved,categories,appearance:{...DEFAULT_APPEARANCE,...(saved.appearance||{})}};
     migrateLightMode(merged.appearance);
+    migrateOwlSkin(merged.appearance);
     return merged;
   }catch{return {...DEFAULT_SETTINGS,appearance:{...DEFAULT_APPEARANCE}}}
 }
@@ -2351,7 +2363,7 @@ document.addEventListener("pointerdown",()=>{
 },{once:true,passive:true});
 
 const APPEARANCE_PRESETS={
-  midnight:{backgroundColor:"#10100f",textColor:"#ebe8e0",accentColor:"#aaa69d",overlayColor:"#10100f",overlayOpacity:30,backgroundOpacity:35,blur:0,grayscale:0,saturation:100,brightness:100,contrast:100,sepia:0,parallaxText:10,parallaxBackground:18,parallaxScale:108},
+  midnight:{backgroundColor:"#000000",textColor:"#ececec",accentColor:"#8d8d8d",overlayColor:"#000000",overlayOpacity:30,backgroundOpacity:35,blur:0,grayscale:0,saturation:100,brightness:100,contrast:100,sepia:0,parallaxText:10,parallaxBackground:18,parallaxScale:108},
   paper:{backgroundColor:"#e7e1d5",textColor:"#24231f",accentColor:"#706b61",overlayColor:"#f2ede3",overlayOpacity:16,backgroundOpacity:20,blur:0,grayscale:0,saturation:80,brightness:104,contrast:94,sepia:8},
   forest:{backgroundColor:"#0d1511",textColor:"#e4eee6",accentColor:"#91ad9b",overlayColor:"#08100b",overlayOpacity:35,backgroundOpacity:32,blur:1,grayscale:8,saturation:92,brightness:92,contrast:108,sepia:0},
   ocean:{backgroundColor:"#0d1318",textColor:"#e6edf2",accentColor:"#91aabd",overlayColor:"#071017",overlayOpacity:38,backgroundOpacity:34,blur:1,grayscale:6,saturation:92,brightness:94,contrast:106,sepia:0},
@@ -2373,7 +2385,7 @@ function applyAppearance(){
   const root=document.documentElement;
   root.style.setProperty("--bg",a.backgroundColor);
   root.style.setProperty("--text",a.textColor);
-  root.style.setProperty("--muted",a.accentColor);
+  root.style.setProperty("--muted",hexToRgba(a.textColor,.45));
   root.style.setProperty("--line",hexToRgba(a.textColor,.16));
   root.style.setProperty("--accent",a.accentColor);
   root.style.setProperty("--user-font-weight",Math.max(300,Math.min(700,Number(a.fontWeight)||400)));
@@ -2540,6 +2552,7 @@ async function importBackup(file){
     focusQuestions=importedFocus;
     settings={...DEFAULT_SETTINGS,...d.settings,categories:Array.isArray(d.settings.categories)&&d.settings.categories.length?d.settings.categories:["all"],appearance:{...DEFAULT_APPEARANCE,...(d.settings.appearance||{})}};
     migrateLightMode(settings.appearance);
+    migrateOwlSkin(settings.appearance);
     saveQuestionBank();
     saveFocusQuestions();
     saveSettings();
@@ -3224,6 +3237,7 @@ function initSchedulerMode(){
     const pin=$("stickyPin");
     if(currentMode==="sticky"||!stickies.length){if(currentMode!=="sticky")enterStickyMode();return;}
     if(pin.dataset.busy)return;
+    if(!pinOrderIds.length){pickStickyPinCat();return;}
     pin.dataset.busy="1";
     setTimeout(()=>{delete pin.dataset.busy;},240);
     const list=pin.querySelectorAll(".stickyPinCard");
@@ -3269,79 +3283,36 @@ function initSchedulerMode(){
       }
     });
   });
-  // note pad: drag a blank note off the stack, type inline where you drop it  // note pad: drag a blank note off the stack, type inline where you drop it
-  const stickyListEl=$("stickyList");
-  $("stickyPad")?.addEventListener("pointerdown",e=>{
-    e.preventDefault();
-    const list=stickyListEl;
-    if(!list)return;
-    const lw=list.offsetWidth,lh=list.offsetHeight;
-    const frame=()=>{
-      const r=list.getBoundingClientRect();
-      return {r,z:r.width/(lw||1)||1};
-    };
-    const toLX=ev=>{const {r,z}=frame();return (ev.clientX-r.left)/z;};
-    const toLY=ev=>{const {r,z}=frame();return (ev.clientY-r.top)/z;};
-    // give the draft its own identity so its tilt/size survive the commit
-    const draftId=uuid();
-    const draftS={id:draftId,text:""};
-    const draft=document.createElement("div");
-    draft.className="stickyDraft";
-    draft.style.setProperty("--tilt",`${stickyTilt(draftS)}deg`);
-    draft.innerHTML=`<textarea class="stickyDraftInput" rows="1" placeholder="type here…" autocomplete="off" aria-label="New note"></textarea><div class="stickyDraftMirror" aria-hidden="true"></div><div class="stickyDraftHint">keep (enter) · cancel (click anywhere)</div>`;
-    list.append(draft);
-    const scaleMax=Math.round(300*stickyScaleFactor(draftS));
-    const input=draft.querySelector(".stickyDraftInput");
-    const mirror=draft.querySelector(".stickyDraftMirror");
-    const w0=150;
-    let lx=Math.max(0,Math.min(lw-w0,toLX(e)-w0/2));
-    let ly=Math.max(0,Math.min(lh-70,toLY(e)-35));
-    draft.style.left=`${lx}px`;
-    draft.style.top=`${ly}px`;
-    const sync=()=>{
-      draftS.text=input.value||"";
-      draft.style.setProperty("--tilt",`${stickyTilt(draftS)}deg`);
-      mirror.textContent=input.value||input.placeholder;
-      mirror.style.width="max-content";
-      const natural=mirror.offsetWidth+34;
-      draft.style.width=`${Math.max(w0,Math.min(scaleMax,natural))}px`;
-      // measure the height from the textarea itself so wrapping always matches
-      input.style.height="auto";
-      input.style.height=`${Math.max(22,input.scrollHeight)}px`;
-      draft.style.minHeight=`${Math.max(70,input.scrollHeight+46)}px`;
-      lx=Math.max(0,Math.min(lw-parseInt(draft.style.width),lx));
-    };
-    input.addEventListener("input",sync);
-    try{draft.setPointerCapture(e.pointerId);}catch{}
-    const move=ev=>{
-      const w=parseInt(draft.style.width)||w0;
-      lx=Math.max(0,Math.min(lw-w,toLX(ev)-w/2));
-      ly=Math.max(0,Math.min(lh-70,toLY(ev)-35));
-      draft.style.left=`${lx}px`;
-      draft.style.top=`${ly}px`;
-    };
-    const up=()=>{
-      draft.removeEventListener("pointermove",move);
-      draft.removeEventListener("pointerup",up);
-      draft.removeEventListener("pointercancel",up);
-      draft.classList.add("placing");
-      const commit=()=>{
-        const text=String(input.value||"").trim();
-        draft.remove();
-        if(text)addSticky(text,Math.round(lx/lw*1000)/10,Math.round(ly/lh*1000)/10,draftId);
+  // hold the remember pile (right-click on desktop) to pick which category
+  // the cycle walks through instead of dealing every note
+  {
+    const pinEl=$("stickyPin");
+    if(pinEl){
+      let pressTimer=null;
+      const fire=()=>{
+        clearTimeout(pressTimer);pressTimer=null;
+        pinEl.dataset.busy="1";
+        setTimeout(()=>{delete pinEl.dataset.busy;},400);
+        pickStickyPinCat();
       };
-      input.addEventListener("keydown",ev=>{
-        if(ev.key==="Enter"){ev.preventDefault();commit();}
-        else if(ev.key==="Escape"){ev.preventDefault();draft.remove();}
+      pinEl.addEventListener("pointerdown",()=>{
+        clearTimeout(pressTimer);
+        pressTimer=setTimeout(fire,550);
       });
-      input.addEventListener("blur",()=>{if(!draft.isConnected)return;if(input.value.trim())commit();else draft.remove();});
-      sync();
-      setTimeout(()=>input.focus(),40);
-    };
-    draft.addEventListener("pointermove",move);
-    draft.addEventListener("pointerup",up);
-    draft.addEventListener("pointercancel",up);
-  });
+      const cancel=()=>{clearTimeout(pressTimer);pressTimer=null;};
+      pinEl.addEventListener("pointerup",cancel);
+      pinEl.addEventListener("pointercancel",cancel);
+      pinEl.addEventListener("pointerleave",cancel);
+      pinEl.addEventListener("pointermove",e=>{
+        if((Math.abs(e.movementX||0)+Math.abs(e.movementY||0))>8)cancel();
+      });
+      pinEl.addEventListener("contextmenu",e=>{e.preventDefault();fire();});
+    }
+  }
+  // note pad: a plain button — click it and the new-sticky modal opens
+  // (the old drag-a-blank-note gesture was finicky and easy to miss)
+  const stickyListEl=$("stickyList");
+  $("stickyPad")?.addEventListener("click",()=>{openStickyCreate();});
   // ghost card: a faint blank note trailing the cursor over blank wall;
   // click an empty spot to start typing a card right there
   if(stickyListEl&&!window.__stickyGhostEl){
@@ -3360,44 +3331,12 @@ function initSchedulerMode(){
     const spawnDraft=(gx,gy)=>{
       ghost.classList.remove("visible");shown=false;
       const list=stickyListEl;
-      const draftId=uuid();
-      const draftS={id:draftId,text:""};
-      const draft=document.createElement("div");
-      draft.className="stickyDraft placing";
-      draft.style.setProperty("--tilt",`${stickyTilt(draftS)}deg`);
-      draft.innerHTML=`<textarea class="stickyDraftInput" rows="1" placeholder="type here…" autocomplete="off" aria-label="New note"></textarea><div class="stickyDraftMirror" aria-hidden="true"></div><div class="stickyDraftHint">keep (enter) · cancel (click anywhere)</div>`;
       const lw=list.offsetWidth,lh=list.offsetHeight;
-      const lx=Math.max(0,Math.min(lw-150,gx-105));
-      const ly=Math.max(0,Math.min(lh-70,gy-48));
-      draft.style.left=`${lx}px`;
-      draft.style.top=`${ly}px`;
-      list.append(draft);
-      const input=draft.querySelector(".stickyDraftInput");
-      const mirror=draft.querySelector(".stickyDraftMirror");
-      const sync=()=>{
-        draftS.text=input.value||"";
-        draft.style.setProperty("--tilt",`${stickyTilt(draftS)}deg`);
-        mirror.textContent=input.value||input.placeholder;
-        mirror.style.width="max-content";
-        const natural=mirror.offsetWidth+34;
-        draft.style.width=`${Math.max(150,Math.min(Math.round(300*stickyScaleFactor(draftS)),natural))}px`;
-        input.style.height="auto";
-        input.style.height=`${Math.max(22,input.scrollHeight)}px`;
-        draft.style.minHeight=`${Math.max(70,input.scrollHeight+46)}px`;
-      };
-      const commit=()=>{
-        const text=String(input.value||"").trim();
-        draft.remove();
-        if(text)addSticky(text,Math.round(lx/lw*1000)/10,Math.round(ly/lh*1000)/10,draftId);
-      };
-      input.addEventListener("input",sync);
-      input.addEventListener("keydown",ev=>{
-        if(ev.key==="Enter"){ev.preventDefault();commit();}
-        else if(ev.key==="Escape"){ev.preventDefault();draft.remove();}
+      // remember the spot in wall percentages so the modal pins the note here
+      openStickyCreate({
+        x:Math.round(gx/lw*1000)/10,
+        y:Math.round(gy/lh*1000)/10
       });
-      input.addEventListener("blur",()=>{if(!draft.isConnected)return;if(input.value.trim())commit();else draft.remove();});
-      sync();
-      setTimeout(()=>input.focus(),40);
     };
     window.__spawnStickyDraft=spawnDraft;
     // the ghost only appears where it would sit clear of every existing card
@@ -3408,14 +3347,12 @@ function initSchedulerMode(){
       }
       return true;
     };
-    // clicking blank while a draft is open dismisses that draft first —
-    // the same click must not spawn a second one
-    let draftDismiss=false;
-    stickyListEl.addEventListener("pointerdown",()=>{draftDismiss=!!document.querySelector(".stickyDraft");});
+    // clicking blank wall opens the new-sticky modal pinned to that spot —
+    // anything interactive (cards, chips, buttons) keeps its own click
+    const blankSpot=e=>currentMode==="sticky"&&!e.target.closest(".stickyFloat,.stickyChip,button,.stickyCatBar");
     stickyListEl.addEventListener("pointermove",e=>{
-      const blank=e.target===stickyListEl&&currentMode==="sticky"&&!document.querySelector(".stickyDraft");
       let ok=false;
-      if(blank){
+      if(blankSpot(e)){
         const p=gPoint(e);
         if(ghostClearAt(p.x,p.y)){
           ghost.style.left=`${p.x-52}px`;
@@ -3427,8 +3364,7 @@ function initSchedulerMode(){
     });
     stickyListEl.addEventListener("pointerleave",()=>{shown=false;ghost.classList.remove("visible");});
     stickyListEl.addEventListener("click",e=>{
-      if(e.target!==stickyListEl||currentMode!=="sticky")return;
-      if(draftDismiss){draftDismiss=false;return;}
+      if(currentMode!=="sticky"||!blankSpot(e))return;
       const p=gPoint(e);
       spawnDraft(p.x,p.y);
     });
@@ -4384,7 +4320,7 @@ function initDeadlinesMode(){
   setInterval(tickDeadlineReminders,15000);
   tickDeadlineReminders();
 }
-// ---- remember wall (sticky notes) mode --------------------------------
+// ---- remember wall (sticky notes) mode -----------------------------------------------
 const STICKY_KEY="oneQuestionStickies";
 const stickies=(()=>{
   try{
@@ -4463,6 +4399,7 @@ function appDialog({message,inputLabel=null,initialValue="",okText="ok",cancelTe
   });
 }
 let stickyCatEditorEl=null;
+let stickyCatEditorOnClose=null; // e.g. the new-sticky modal refreshes its chips
 function openStickyCatEditor(){
   if(!stickyCatEditorEl){
     stickyCatEditorEl=document.createElement("div");
@@ -4477,6 +4414,7 @@ function openStickyCatEditor(){
     stickyCatEditorEl.classList.remove("open");
     document.removeEventListener("keydown",onKey,true);
     renderStickies();
+    if(stickyCatEditorOnClose){const cb=stickyCatEditorOnClose;stickyCatEditorOnClose=null;cb();}
   };
   const render=()=>{
     list.textContent="";
@@ -4537,6 +4475,9 @@ let stickyPinIndex=0;
 let pinOrderIds=[];
 let pinOrderSig="";
 let stickyZ=10;
+function pinCat(){
+  return String(settings.stickyPinCat||"all");
+}
 function defaultStickyPos(i){
   return {x:6+(i*37)%58,y:8+(i*29)%52};
 }
@@ -4667,6 +4608,13 @@ function renderStickies(){
   editChip.title="add or remove categories";
   editChip.onclick=()=>openStickyCatEditor();
   bar.append(editChip);
+  const addChip=document.createElement("button");
+  addChip.type="button";
+  addChip.className="stickyChip stickyChipAdd";
+  addChip.textContent="+ add";
+  addChip.title="new sticky note";
+  addChip.onclick=()=>openStickyCreate({initialCat:stickyFilter!=="all"?stickyFilter:null});
+  bar.append(addChip);
 let tidyWallRef=null;
   const tidyChip=document.createElement("button");
   tidyChip.type="button";
@@ -4961,15 +4909,88 @@ let tidyWallRef=null;
   if(window.__stickyGhostEl)list.append(window.__stickyGhostEl);
   renderStickyDeck();
 }
-function addSticky(text,xPct,yPct,keepId){
+function addSticky(text,xPct,yPct,keepId,cat){
   const clean=String(text||"").trim();
   if(!clean)return false;
-  const s={id:String(keepId||uuid()),text:clean,created:Date.now(),done:false,cat:stickyFilter!=="all"?stickyFilter:stickyCats()[0]};
+  const cats=stickyCats();
+  const chosen=typeof cat==="string"&&cats.includes(cat)?cat:(stickyFilter!=="all"&&cats.includes(stickyFilter)?stickyFilter:cats[0]);
+  const s={id:String(keepId||uuid()),text:clean,created:Date.now(),done:false,cat:chosen};
   if(typeof xPct==="number")s.x=xPct;
   if(typeof yPct==="number")s.y=yPct;
   stickies.unshift(s);
   saveStickies();renderStickies();renderStickyPin();
   return true;
+}
+// ---- new-sticky modal: text + category, the one way notes are created ----
+// every add path (wall click, note pad, deck) opens this so placement keeps
+// working and the category is an explicit pick instead of an afterthought.
+let stickyCreateEl=null;
+function openStickyCreate({x=null,y=null,initialCat=null,onDone=null}={}){
+  if(!stickyCreateEl){
+    stickyCreateEl=document.createElement("div");
+    stickyCreateEl.className="appDialog stickyCreate";
+    stickyCreateEl.innerHTML=`<div class="appDialogCard"><div class="appDialogMessage">new sticky</div><textarea class="stickyCreateText" rows="3" placeholder="what should you remember?…" autocomplete="off"></textarea><div class="stickyCreateCatLabel">category</div><div class="stickyCreateCats"></div><div class="appDialogActions"><button type="button" class="appDialogCancel">cancel</button><button type="button" class="appDialogOk">pin it</button></div></div>`;
+    document.body.append(stickyCreateEl);
+  }
+  const card=stickyCreateEl.querySelector(".appDialogCard");
+  const textEl=stickyCreateEl.querySelector(".stickyCreateText");
+  const catRow=stickyCreateEl.querySelector(".stickyCreateCats");
+  const ok=stickyCreateEl.querySelector(".appDialogOk");
+  const cancel=stickyCreateEl.querySelector(".appDialogCancel");
+  let onKey=null;
+  let pickedCat=initialCat&&stickyCats().includes(initialCat)?initialCat:(stickyFilter!=="all"&&stickyCats().includes(stickyFilter)?stickyFilter:stickyCats()[0]);
+  const renderCats=()=>{
+    catRow.textContent="";
+    stickyCats().forEach(c=>{
+      const chip=document.createElement("button");
+      chip.type="button";
+      chip.className="stickyChip"+(pickedCat===c?" active":"");
+      chip.textContent=c;
+      chip.onclick=()=>{pickedCat=c;renderCats();textEl.focus();};
+      catRow.append(chip);
+    });
+    const editChip=document.createElement("button");
+    editChip.type="button";
+    editChip.className="stickyChip stickyChipEdit";
+    editChip.textContent="edit";
+    editChip.title="add or remove categories";
+    editChip.onclick=()=>{
+      // the category editor stacks on top; the modal keeps its typed draft
+      stickyCatEditorOnClose=()=>{
+        if(!stickyCats().includes(pickedCat))pickedCat=stickyCats()[0];
+        renderCats();
+        setTimeout(()=>textEl.focus(),50);
+      };
+      openStickyCatEditor();
+    };
+    catRow.append(editChip);
+  };
+  const close=(save=true)=>{
+    const text=String(textEl.value||"").trim();
+    stickyCreateEl.classList.remove("open");
+    ok.onclick=cancel.onclick=stickyCreateEl.onclick=textEl.onkeydown=null;
+    document.removeEventListener("keydown",onKey,true);
+    if(save&&text){
+      if(stickyFilter!=="all"&&pickedCat!==stickyFilter)stickyFilter=pickedCat;
+      addSticky(text,x,y,null,pickedCat);
+    }
+    if(onDone)onDone(save&&!!text);
+  };
+  ok.onclick=()=>close(true);
+  cancel.onclick=()=>close(false);
+  stickyCreateEl.onclick=e=>{if(e.target===stickyCreateEl)close(false);};
+  textEl.onkeydown=e=>{
+    if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();close(true);}
+    else if(e.key==="Escape"){e.preventDefault();close(false);}
+  };
+  onKey=e=>{
+    if(e.key==="Escape"){e.preventDefault();e.stopPropagation();close(false);}
+  };
+  document.addEventListener("keydown",onKey,true);
+  textEl.value="";
+  renderCats();
+  stickyCreateEl.classList.add("open");
+  setTimeout(()=>textEl.focus(),50);
 }
 // ---- remember deck: the phone view of the wall --------------------------
 // the wall's free drag doesn't work on a small screen, so mobile deals the
@@ -5107,12 +5128,12 @@ function attachStickyDeckDrag(card,s){
 function initStickyDeck(){
   const deck=$("stickyDeck");
   if(!deck)return;
-  $("stickyDeckAdd")?.addEventListener("click",async()=>{
-    const text=await appDialog({message:"new note:",inputLabel:"what should you remember?…",okText:"add"});
-    if(text==null)return;
-    if(!addSticky(text))return;
-    stickyDeckId=stickies[0].id;
-    renderStickyDeck();
+  $("stickyDeckAdd")?.addEventListener("click",()=>{
+    openStickyCreate({onDone:saved=>{
+      if(!saved||!stickies.length)return;
+      stickyDeckId=stickies[0].id;
+      renderStickyDeck();
+    }});
   });
   deck.querySelectorAll(".stickyDeckActions button").forEach(btn=>{
     btn.addEventListener("click",async()=>{
@@ -5142,9 +5163,10 @@ function initStickyDeck(){
 }
 function syncPinOrder(){
   // urutan tumpukan diacak; kartu lama pertahankan posisinya, kartu baru
-  // disisipkan di posisi acak sehingga tiap kartu rotasinya beda sendiri
-  const ids=stickies.map(s=>s.id);
-  const sig=ids.join("|");
+  // disisipkan di posisi acak sehingga tiap kartu rotasinya beda sendiri.
+  // tumpukan hanya memutar satu kategori (atau semuanya) — hold pin untuk ganti
+  const ids=stickies.filter(s=>pinCat()==="all"||stickyCatOf(s)===pinCat()).map(s=>s.id);
+  const sig=pinCat()+"|"+ids.join("|");
   if(sig===pinOrderSig)return;
   const set=new Set(ids);
   pinOrderIds=pinOrderIds.filter(id=>set.has(id));
@@ -5153,12 +5175,35 @@ function syncPinOrder(){
   });
   pinOrderSig=sig;
 }
+// hold the remember pile (or right-click it) to pick what it cycles through
+async function pickStickyPinCat(){
+  const options=["all",...stickyCats()];
+  const picked=await appDialog({message:"remember pile cycles:",choices:options,cancelText:"cancel"});
+  if(!picked||picked===pinCat())return;
+  settings.stickyPinCat=picked;
+  saveSettings();
+  stickyPinIndex=0;
+  pinOrderSig=""; // rebuild the shuffled queue for the new pool
+  syncPinOrder();
+  renderStickyPin();
+}
 function renderStickyPin(){
   const pin=$("stickyPin");
   if(!pin)return;
   syncPinOrder();
-  pin.classList.toggle("hasNotes",pinOrderIds.length>0);
-  if(!pinOrderIds.length){pin.innerHTML="";pin.title="remember wall";return;}
+  pin.classList.toggle("hasNotes",pinOrderIds.length>0||pinCat()!=="all");
+  if(!pinOrderIds.length){
+    pin.innerHTML="";
+    if(pinCat()!=="all"){
+      // pile stays visible on an empty pick so its category can be changed again
+      const el=document.createElement("span");
+      el.className="stickyPinCard front stickyPinEmpty";
+      el.textContent=`nothing in "${pinCat()}"`;
+      pin.append(el);
+      pin.title=`remember — nothing in "${pinCat()}" · hold to pick another category`;
+    }else pin.title="remember wall";
+    return;
+  }
   if(stickyPinIndex>=pinOrderIds.length)stickyPinIndex%=pinOrderIds.length;
   pin.querySelectorAll(".stickyPinCard").forEach(el=>el.remove());
   pinCardsData().forEach(({note,depth})=>{
@@ -5169,7 +5214,7 @@ function renderStickyPin(){
     }
     pin.append(el);
   });
-  pin.title=`remember (${stickies.length}) — click for the next note`;
+  pin.title=`remember (${pinOrderIds.length}${pinCat()==="all"?"":" · "+pinCat()}) — click next · hold to pick category`;
 }
 function makePinCard(note,depth){
   const el=document.createElement("span");

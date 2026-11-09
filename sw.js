@@ -1,5 +1,5 @@
-const CACHE = "onequestion-v2";
-const ASSETS = ["/", "/index.html", "/style.css", "/app.js", "/icon-192.png", "/icon-512.png"];
+const CACHE = "onequestion-v3";
+const ASSETS = ["/", "/index.html", "/style.css", "/app.js", "/fonts/Monocraft.ttf", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));

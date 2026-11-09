@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>One Question</title>
-  <link rel="stylesheet" href="style.css?v=2.58">
+  <link rel="stylesheet" href="style.css?v=2.59">
 <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/icon-192.png">
 <meta name="theme-color" content="#000000">
@@ -51,7 +51,7 @@
 
     <section id="sticky" class="stickyMode" aria-hidden="true">
       <div class="stickyKicker">remember wall</div>
-      <div id="stickyPad" class="stickyPad" title="drag a blank note onto the wall">
+      <div id="stickyPad" class="stickyPad" title="new sticky note">
         <span>new card</span>
       </div>
       <div id="stickyList" class="stickyList" aria-label="Remember notes"></div>
@@ -68,7 +68,7 @@
         </div>
         <div class="stickyDeckHint">swipe → remembered · swipe ← for later</div>
       </div>
-      <div class="stickyHint">drag a note from the pad · ✓ handled · ✎ edit · × delete · # move category</div>
+      <div class="stickyHint">click a blank spot · pad or + add for a new note · ✓ handled · ✎ edit · × delete · # move category</div>
     </section>
 
     <section id="quotes" class="quotesMode" aria-hidden="true">
@@ -807,7 +807,7 @@
   </main>
   <nav id="modeRail" aria-label="screens"></nav>
   <nav id="modeDock" aria-label="screens"></nav>
-  <script src="app.js?v=2.58"></script>
+  <script src="app.js?v=2.59"></script>
 <script>
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("/sw.js").catch(()=>{});
