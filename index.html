@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>one question · owl</title>
-<link rel="icon" href="/icon-192.png">
+<link rel="icon" href="icon-192.png">
 <meta name="theme-color" content="#000000">
 <style>
 /* ─────────────────────────────────────────────────────────
@@ -13,7 +13,7 @@
    ───────────────────────────────────────────────────────── */
 @font-face{
   font-family:"Monocraft";
-  src:url("/one/fonts/Monocraft.ttf") format("truetype");
+  src:url("fonts/Monocraft.ttf") format("truetype");
   font-display:swap;
 }
 :root{
@@ -546,7 +546,17 @@ input[type=range]::-webkit-slider-thumb{
 /* ═══════════════ owl web — one file, no build step ═══════════════
    reads/writes the same /api/state as the phone widget + old web app */
 
-const API="/one/api/state";
+let API_BASE=null; // resolved on boot: same-origin api (PC) or /one/api (VPS)
+const API_FALLBACK="/one/api/state";
+async function resolveAPI(){
+  if(API_BASE)return API_BASE+"/state";
+  try{
+    const r=await fetch("api/state",{cache:"no-store"});
+    if(r.ok){API_BASE="api";return API_BASE+"/state";}
+  }catch(e){}
+  API_BASE="/one/api";return API_BASE+"/state";
+}
+function apiURL(path){return (API_BASE||"api")+path;}
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const pad=(n,w=2)=>String(n).padStart(w,"0");
@@ -558,7 +568,7 @@ let syncTimer=null,uiState={qt:0,st:0,cat:"all",g:null,sc:"acts"};
 
 async function pull(){
   try{
-    const r=await fetch(API,{cache:"no-store"});
+    const r=await fetch(await resolveAPI(),{cache:"no-store"});
     if(!r.ok)throw 0;
     const d=await r.json();
     KEYS={};for(const[k,v]of Object.entries(d.keys||{}))KEYS[k]=v.value;
@@ -570,7 +580,7 @@ async function push(){
   for(const[k,v]of Object.entries(MUT))changes[k]={value:v,updatedAt:Date.now()};
   if(!Object.keys(changes).length)return true;
   try{
-    const r=await fetch(API,{method:"PUT",headers:{"Content-Type":"application/json"},
+    const r=await fetch(await resolveAPI(),{method:"PUT",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({changes})});
     if(!r.ok)throw 0;
     for(const k in MUT)KEYS[k]=MUT[k];
@@ -1516,7 +1526,7 @@ setInterval(()=>{if(cur==="sched"){const n=new Date();renderDial(n,n.getHours()*
 let updShown=false;
 async function checkUpdate(){
   try{
-    const r=await fetch("/one/api/update/status",{cache:"no-store"});
+    const r=await fetch(apiURL("/update/status"),{cache:"no-store"});
     const d=await r.json();
     if(!d.ok||d.behind<=0){$("updPill").classList.remove("show");updShown=false;return;}
     $("updTxt").textContent="update available · "+d.behind+" commit"+(d.behind===1?"":"s")+" behind";
@@ -1536,7 +1546,7 @@ $("updAct").addEventListener("click",async()=>{
   if(ahead){toast("push the repo from the server first");return;}
   $("updAct").textContent="updating…";
   try{
-    const r=await fetch("/one/api/update",{method:"POST"});
+    const r=await fetch(apiURL("/update"),{method:"POST"});
     const d=await r.json().catch(()=>null);
     if(r.ok&&(!d||d.error===undefined||d.updated!==false)){
       $("updAct").textContent="restarting…";
