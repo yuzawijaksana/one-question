@@ -1,7 +1,7 @@
 {
   "format": "one-question-zen-backup",
   "version": "2.21.3",
-  "exportedAt": "2026-11-09T13:01:11Z",
+  "exportedAt": "2026-11-09T14:51:43Z",
   "data": {
     "questions": [
       [
@@ -484,16 +484,6 @@
       }
     ],
     "stickies": [
-      {
-        "id": "1d9f572f-e322-4edd-adad-7d7d986dc7ac",
-        "text": "test",
-        "created": 1794205593991,
-        "done": false,
-        "cat": "general",
-        "x": null,
-        "y": null,
-        "z": "10"
-      },
       {
         "id": "9573ce75-e5f7-4256-88bf-63dd5183bea1",
         "text": "kalau mau nyatet yang cepet pake keyboard, jangan nulis nanti banyak yang ketinggalan",

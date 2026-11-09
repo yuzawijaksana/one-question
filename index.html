@@ -30,6 +30,10 @@
   --card-hover:rgba(236,236,236,.09);
 }
 *{margin:0;padding:0;box-sizing:border-box;}
+/* kill scrollbars: the entrance animation momentarily overflows and flashes one */
+html{scrollbar-width:none;}
+body::-webkit-scrollbar,html::-webkit-scrollbar{display:none;}
+body{-ms-overflow-style:none;}
 html,body{height:100%;}
 body{
   background:var(--bg);
@@ -47,7 +51,7 @@ button{
 }
 input,textarea{
   font-family:inherit;color:var(--fg);background:var(--card);
-  border:1px solid var(--line-strong);border-radius:8px;
+  border:1px solid var(--line-strong);
   padding:10px 12px;font-size:15px;width:100%;outline:none;
   text-transform:lowercase;font-weight:300;
 }
@@ -61,12 +65,12 @@ img{display:block;}
   padding:20px 18px 60px;
   opacity:0;transform:translateY(14px);
 }
-.view.on{display:block;animation:fin 260ms cubic-bezier(.22,.9,.3,1) forwards;}
+.view.on{display:block;animation:fin var(--anim,260ms) cubic-bezier(.22,.9,.3,1) forwards;}
 @keyframes fin{to{opacity:1;transform:none;}}
 /* ── flash on section open ── */
 #flash{
   position:fixed;inset:0;background:var(--fg);opacity:0;
-  pointer-events:none;z-index:90;transition:opacity 320ms ease-out;
+  pointer-events:none;z-index:90;transition:opacity var(--flash,320ms) ease-out;
 }
 #flash.lit{opacity:.14;transition:none;}
 /* ── type scale ── */
@@ -78,24 +82,24 @@ img{display:block;}
 #v-menu{padding-top:70px;text-align:center;}
 #menuClock{font-size:64px;font-weight:300;letter-spacing:2px;line-height:1;}
 #menuSub{margin-top:10px;font-size:13px;color:var(--fg);}
-#menuWx{margin-top:6px;font-size:13px;color:var(--fg);}
-#menuStatus{margin-top:18px;font-size:13px;min-height:18px;}
+/* sholat reminder floats — never inside the content flow */
 #menuSholat{
-  margin:14px auto 0;max-width:300px;padding:12px 10px;border-radius:14px;
+  position:fixed;z-index:80;font-size:13px;color:var(--gold);
+  max-width:300px;padding:12px 10px;
   background:rgba(245,197,66,.06);border:1px solid rgba(245,197,66,.28);
-  font-size:13px;color:var(--gold);
 }
-#menuSholat .t{color:rgba(236,236,236,.5);font-size:11.5px;margin-top:3px;}
-#menuSholat .done{
-  display:inline-block;margin-top:8px;padding:9px 12px;border-radius:8px;
-  background:rgba(236,236,236,.12);border:1px solid rgba(236,236,236,.7);
-  color:var(--fg);font-size:12px;
-}
-#menuList{margin-top:46px;text-align:left;}
+#menuSholat.pos-left{top:50%;left:18px;transform:translateY(-50%);}
+#menuSholat.pos-center{top:18px;left:50%;transform:translateX(-50%);}
+#menuSholat.pos-right{top:50%;right:18px;transform:translateY(-50%);}
+#menuSholat.pos-topleft{top:18px;left:18px;}
+#menuSholat.pos-topright{top:18px;right:18px;}
+#menuSholat.pos-bottomleft{bottom:64px;left:18px;}
+#menuSholat.pos-bottomright{bottom:64px;right:18px;}
+#menuStatus{margin-top:18px;font-size:13px;min-height:18px;}
+#menuList{margin-top:70px;text-align:center;}
 .menu-row{
-  display:flex;align-items:center;gap:14px;
+  display:flex;align-items:center;justify-content:center;gap:14px;
   padding:15px 13px;font-size:18px;color:var(--fg);
-  border-bottom:1px solid var(--line);
 }
 .menu-row:active{background:var(--card);}
 .menu-row .count{margin-left:auto;color:var(--muted);font-size:12px;}
@@ -110,16 +114,71 @@ img{display:block;}
 .top .tt{flex:1;min-width:0;}
 .top .tt .t-title{line-height:1.15;}
 .top .tt .t-label{margin-top:3px;}
+/* back button: inline at the TOP, left of the title */
+.back-bottom{
+  padding:6px 12px;color:var(--muted);font-size:13px;flex-shrink:0;
+  display:none;border:1px solid var(--line-strong);
+  background:none;
+}
+.back-bottom:active{color:var(--fg);border-color:rgba(141,141,141,.5);}
+.view.on .back-bottom{display:inline-block;}
+/* "+ add something" pinned at the bottom, above the back pill */
+.add-bottom{
+  position:fixed;bottom:64px;left:50%;transform:translateX(-50%);
+  z-index:70;display:none;
+  padding:10px 20px;
+  background:rgba(10,10,10,.9);border:1px solid rgba(141,141,141,.4);
+  color:var(--accent);font-size:13px;
+}
+.add-bottom:active{color:var(--fg);}
+.view.on .add-bottom{display:block;}
+/* ── settings: owl-phone-style grouped rows ── */
+.set-sec{
+  font-size:11.5px;color:var(--accent);letter-spacing:.5px;
+  margin:22px 0 8px;
+}
+.set-sec:first-of-type{margin-top:8px;}
+.set-group{
+  background:var(--card);border:1px solid var(--line);
+  padding:4px 14px;
+}
+.set-row{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 0;border-bottom:1px solid rgba(236,236,236,.05);
+}
+.set-row:last-of-type{border-bottom:none;}
+.set-btn{
+  padding:8px 14px;font-size:12px;flex-shrink:0;
+  background:rgba(141,141,141,.18);border:1px solid rgba(141,141,141,.5);
+  color:var(--accent);
+}
+.set-btn:active{color:var(--fg);}
+/* owl-style ghost buttons: bare symbol, no border/stroke */
+.set-ghost{
+  background:none;border:none;padding:6px 4px;
+  color:var(--accent);font-size:13px;font-family:inherit;
+  text-transform:none;font-weight:300;cursor:pointer;
+}
+.set-ghost:active{color:var(--fg);}
+.set-hint{font-size:11.5px;color:var(--muted);padding:8px 0 10px;line-height:1.5;}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;height:3px;
+  background:rgba(236,236,236,.15);margin:10px 0 14px;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+  background:var(--accent);cursor:pointer;
+}
 /* ── cards ── */
 .card{
   background:var(--card);border:1px solid var(--line);
-  border-radius:16px;padding:24px 20px;
+  padding:24px 20px;
 }
 .card.tap:active{background:var(--card-hover);}
 /* ── pills ── */
 .pills{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px;}
 .pill{
-  padding:7px 10px;border-radius:8px;font-size:12px;color:var(--muted);
+  padding:7px 10px;font-size:12px;color:var(--muted);
   background:rgba(236,236,236,.05);
 }
 .pill.on{
@@ -151,12 +210,12 @@ img{display:block;}
 .dl-date.gold{color:var(--gold);}
 .dl-date.acc{color:var(--accent);}
 .dl-note{
-  margin-top:10px;padding:10px 12px;border-radius:10px;
+  margin-top:10px;padding:10px 12px;
   background:rgba(236,236,236,.04);font-size:13px;color:rgba(236,236,236,.85);
   white-space:pre-wrap;word-break:break-word;
 }
 .checkbox{
-  width:20px;height:20px;border-radius:6px;flex-shrink:0;
+  width:20px;height:20px;flex-shrink:0;
   border:1px solid rgba(236,236,236,.4);cursor:pointer;
   display:inline-flex;align-items:center;justify-content:center;
 }
@@ -169,16 +228,30 @@ img{display:block;}
 .sched-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .sched-block{
   border-left:3px solid var(--accent);padding:10px 12px;margin-bottom:8px;
-  background:rgba(236,236,236,.03);border-radius:0 10px 10px 0;
+  background:rgba(236,236,236,.03);
 }
 .sched-block.active{background:rgba(236,236,236,.07);}
 .sched-block .t2{font-size:11.5px;color:var(--muted);margin-top:3px;}
 .tabs{display:flex;gap:8px;margin-bottom:14px;}
 .tabs button{
-  padding:8px 14px;border-radius:8px;font-size:12px;color:var(--muted);
+  padding:8px 14px;font-size:12px;color:var(--muted);
   background:rgba(236,236,236,.05);
 }
 .tabs button.on{color:var(--accent);background:rgba(141,141,141,.18);border:1px solid rgba(141,141,141,.5);}
+.sholat-row{
+  display:flex;align-items:center;gap:10px;padding:12px 10px;margin-bottom:6px;
+  background:rgba(236,236,236,.05);
+}
+.sholat-row.active{
+  background:rgba(245,197,66,.1);border:1px solid rgba(245,197,66,.45);
+}
+/* owl-style tab: bare bracket text, no box */
+#v-sched .tabs{background:none;border:none;}
+#v-sched .tabs button{background:none;border:none;padding:8px 4px;color:var(--muted);}
+#v-sched .tabs button.on{color:var(--accent);}
+/* hairline under each day-circle list row */
+.rowline{height:1px;background:rgba(236,236,236,.05);margin:2px 0;}
+.sched-row.sc-active{background:rgba(236,236,236,.04);}
 /* ── guide steps ── */
 .gstep{
   display:flex;align-items:flex-start;gap:12px;padding:10px 4px;
@@ -187,7 +260,7 @@ img{display:block;}
 .gstep .txt{flex:1;font-size:14px;line-height:1.5;padding-top:1px;}
 .gchoices{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
 .gchoice{
-  font-size:11px;color:var(--muted);padding:5px 8px;border-radius:7px;
+  font-size:11px;color:var(--muted);padding:5px 8px;
   background:rgba(236,236,236,.05);
 }
 .gchoice.picked{color:var(--accent);background:rgba(141,141,141,.18);}
@@ -202,20 +275,20 @@ img{display:block;}
 }
 .modal.open{display:flex;}
 .modal-box{
-  background:#0a0a0a;border:1px solid var(--line-strong);border-radius:16px;
+  background:#0a0a0a;border:1px solid var(--line-strong);
   width:100%;max-width:420px;padding:20px;max-height:82vh;overflow-y:auto;
 }
 .modal-box h3{font-size:16px;font-weight:300;margin-bottom:14px;color:var(--fg);}
 .modal-actions{display:flex;gap:10px;margin-top:16px;}
 .modal-actions button{
-  flex:1;padding:12px;border-radius:10px;font-size:14px;
+  flex:1;padding:12px;font-size:14px;
   background:var(--card);border:1px solid var(--line-strong);
 }
 .modal-actions button.primary{background:rgba(141,141,141,.25);border-color:rgba(141,141,141,.5);}
 /* ── toast ── */
 #toast{
   position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
-  background:#111;border:1px solid var(--line-strong);border-radius:10px;
+  background:#111;border:1px solid var(--line-strong);
   padding:10px 16px;font-size:12.5px;color:var(--fg);opacity:0;
   transition:all 240ms;z-index:140;pointer-events:none;white-space:nowrap;
 }
@@ -225,13 +298,27 @@ img{display:block;}
   position:fixed;top:10px;right:12px;z-index:60;font-size:11px;color:var(--muted);
 }
 #syncpill .syncdot{width:6px;height:6px;}
-@media(min-width:700px){
-  #app{max-width:560px;border-left:1px solid var(--line);border-right:1px solid var(--line);}
-  #menuClock{font-size:80px;}
+/* ═══════ PC: two-column, everything fits the viewport ═══════ */
+@media(min-width:900px){
+  #app{max-width:none;width:100%;min-height:100vh;padding:0 48px;}
+  .view{min-height:100vh;padding:40px 0 100px;max-width:1280px;margin:0 auto;}
+  #menuClock{font-size:100px;}
+  /* day circle: dial left, list right */
+  .pc-two{display:flex;gap:48px;align-items:flex-start;}
+  .pc-two > .pc-dial{flex:0 0 auto;}
+  .pc-two > .pc-list{flex:1;min-width:0;max-height:calc(100vh - 220px);overflow-y:auto;scrollbar-width:none;}
+  .pc-list::-webkit-scrollbar{display:none;}
+  /* quotes: card left, nothing else — keep centered but bigger */
+  #v-quotes .card{max-width:640px;margin:0 auto;}
+  /* menu: two-column info + list */
+  #v-menu{padding-top:60px;}
+  #menuList{margin-top:90px;}
+  .menu-row{font-size:20px;padding:17px 13px;}
 }
 </style>
 </head>
 <body>
+<div id="wallLayer" style="position:fixed;inset:0;z-index:-1;background-size:cover;background-position:center;display:none;"></div>
 <div id="flash"></div>
 <div id="syncpill"><span class="syncdot bad" id="syncDot"></span><span id="syncTxt">connecting…</span></div>
 <div id="app">
@@ -240,15 +327,14 @@ img{display:block;}
   <div class="view on" id="v-menu">
     <div id="menuClock">--:--</div>
     <div id="menuSub"></div>
-    <div id="menuWx"></div>
     <div id="menuStatus"></div>
-    <div id="menuSholat" style="display:none"></div>
     <div id="menuList"></div>
   </div>
 
   <!-- ═══════ QUOTES ═══════ -->
   <div class="view" id="v-quotes">
-    <div class="top"><button class="back" data-go="menu">‹ back</button>
+    <div class="top">
+      <button class="back-bottom" data-go="menu">‹ back</button>
       <div class="tt"><div class="t-title">quiet feed</div><div class="t-label" id="qtCount"></div></div></div>
     <div class="spacer"></div>
     <div class="card tap" id="qtCard" style="text-align:left;">
@@ -263,12 +349,13 @@ img{display:block;}
       <button id="qtPrev">↑</button><button id="qtNext">↓</button>
     </div>
     <div class="spacer"></div>
-    <button class="addrow" id="qtAdd" style="width:100%;">+ add quote</button>
+    <button class="add-bottom" id="qtAdd">+ add quote</button>
   </div>
 
   <!-- ═══════ REMEMBER (stickies) ═══════ -->
   <div class="view" id="v-stickies">
-    <div class="top"><button class="back" data-go="menu">‹ back</button>
+    <div class="top">
+      <button class="back-bottom" data-go="menu">‹ back</button>
       <div class="tt"><div class="t-title">remember wall</div><div class="t-label" id="stCount"></div></div></div>
     <div class="pills" id="stPills"></div>
     <div class="spacer"></div>
@@ -282,61 +369,135 @@ img{display:block;}
     </div>
     <div class="navrow"><button id="stPrev">↑</button><button id="stNext">↓</button></div>
     <div class="spacer"></div>
-    <button class="addrow" id="stAdd" style="width:100%;">+ add sticky</button>
+    <button class="add-bottom" id="stAdd">+ add sticky</button>
   </div>
 
   <!-- ═══════ DAY CIRCLE (schedule) ═══════ -->
   <div class="view" id="v-sched">
-    <div class="top"><button class="back" data-go="menu">‹ back</button>
+    <div class="top">
+      <button class="back-bottom" data-go="menu">‹ back</button>
       <div class="tt"><div class="t-title">day circle</div><div class="t-label" id="scCount"></div></div></div>
-    <div class="tabs">
-      <button id="scTabActs" class="on">acts</button>
-      <button id="scTabSholat">sholat</button>
+    <div class="tabs" style="justify-content:flex-end;margin-top:18px;">
+      <button id="scTabActs" class="on">[ aktivitas ]</button>
+      <button id="scTabSholat">[ sholat ]</button>
     </div>
-    <div id="scActs"></div>
-    <div id="scSholat" style="display:none;"></div>
-    <button class="addrow" id="scAdd" style="width:100%;">+ add block</button>
+    <div class="pc-two">
+      <div class="pc-dial"><div id="scDial" style="text-align:center;"></div></div>
+      <div class="pc-list">
+        <div id="scActs"></div>
+        <div id="scSholat" style="display:none;"></div>
+      </div>
+    </div>
+    <button class="add-bottom" id="scAdd">+ add block</button>
   </div>
 
   <!-- ═══════ DEADLINES ═══════ -->
   <div class="view" id="v-deadlines">
-    <div class="top"><button class="back" data-go="menu">‹ back</button>
+    <div class="top">
+      <button class="back-bottom" data-go="menu">‹ back</button>
       <div class="tt"><div class="t-title">deadlines</div><div class="t-label" id="dlCount"></div></div></div>
     <div id="dlList"></div>
-    <button class="addrow" id="dlAdd" style="width:100%;">+ add deadline</button>
+    <button class="add-bottom" id="dlAdd">+ add deadline</button>
   </div>
 
   <!-- ═══════ JOURNAL ═══════ -->
   <div class="view" id="v-journal">
-    <div class="top"><button class="back" data-go="menu">‹ back</button>
+    <div class="top">
+      <button class="back-bottom" data-go="menu">‹ back</button>
       <div class="tt"><div class="t-title">journal</div><div class="t-label" id="jCount"></div></div></div>
     <div id="jList"></div>
-    <button class="addrow" id="jAdd" style="width:100%;">+ new chapter</button>
+    <button class="add-bottom" id="jAdd">+ new chapter</button>
   </div>
 
   <!-- ═══════ DAILY GUIDE ═══════ -->
   <div class="view" id="v-guide">
-    <div class="top"><button class="back" data-go="menu">‹ back</button>
+    <div class="top">
+      <button class="back-bottom" data-go="menu">‹ back</button>
       <div class="tt"><div class="t-title">daily guide</div><div class="t-label" id="gCount"></div></div></div>
     <div id="gList"></div>
-    <button class="addrow" id="gAdd" style="width:100%;">+ new guide</button>
+    <button class="add-bottom" id="gAdd">+ new guide</button>
   </div>
 
   <!-- ═══════ SETTINGS ═══════ -->
   <div class="view" id="v-settings">
-    <div class="top"><button class="back" data-go="menu">‹ back</button>
+    <div class="top">
+      <button class="back-bottom" data-go="menu">‹ back</button>
       <div class="tt"><div class="t-title">settings</div><div class="t-label">one question · owl web</div></div></div>
     <div class="row"><span class="syncdot" id="syncDot2" style="position:static;"></span><span class="t-label" id="syncTxt2" style="flex:1;">connecting…</span></div>
-    <div class="card" style="margin-top:14px;">
-      <div class="t-label" style="margin-bottom:10px;">sholat location</div>
-      <div style="display:flex;gap:8px;">
-        <input id="setLat" placeholder="latitude" inputmode="decimal">
-        <input id="setLon" placeholder="longitude" inputmode="decimal">
+
+    <div class="pc-two" style="flex-wrap:wrap;">
+    <div style="flex:1;min-width:380px;">
+    <div class="set-sec">location</div>
+    <div class="set-group">
+      <div class="set-row">
+        <input id="setLoc" placeholder="city name (e.g. bandung)" style="border:none;background:none;padding:0;">
+        <button class="set-btn" id="setSaveLoc">save</button>
       </div>
-      <button class="addrow" id="setSaveLoc" style="width:100%;">save location</button>
+      <div class="set-hint" id="locHint">used for the sholat card &amp; day circle</div>
     </div>
-    <div class="card" style="margin-top:14px;">
-      <div class="t-label">the old web app lives at <a href="/one/" style="color:var(--accent);text-decoration:underline;">/one/</a> · this owl build reads and writes the same server data</div>
+
+    <div class="set-sec">font size</div>
+    <div class="set-group">
+      <div class="set-row">
+        <span style="flex:1;font-size:14px;">scale</span>
+        <span class="t-label" id="setScaleVal">100%</span>
+      </div>
+      <input type="range" id="setScale" min="80" max="160" step="5" value="100" style="width:100%;padding:0;border:none;background:none;">
+    </div>
+
+    <div class="set-sec">animation</div>
+    <div class="set-group">
+      <div class="set-row">
+        <span style="flex:1;font-size:14px;">speed</span>
+        <span class="t-label" id="animVal">1×</span>
+      </div>
+      <input type="range" id="setAnim" min="0" max="3" step="0.25" value="1">
+      <div class="set-hint">0× = instant (no animation) · higher = slower</div>
+    </div>
+
+    <div class="set-sec">sections</div>
+    <div class="set-group" id="setSections"></div>
+
+    </div>
+    <div style="flex:1;min-width:380px;">
+    <div class="set-sec">sholat reminder</div>
+    <div class="set-group">
+      <div class="set-row" style="flex-wrap:wrap;gap:6px 14px;">
+        <span style="flex:1;font-size:14px;">position</span>
+        <button class="set-ghost" data-pos="left">[ left ]</button>
+        <button class="set-ghost" data-pos="center">[ center ]</button>
+        <button class="set-ghost" data-pos="right">[ right ]</button>
+        <button class="set-ghost" data-pos="topleft">[ top-left ]</button>
+        <button class="set-ghost" data-pos="topright">[ top-right ]</button>
+        <button class="set-ghost" data-pos="bottomleft">[ bottom-left ]</button>
+        <button class="set-ghost" data-pos="bottomright">[ bottom-right ]</button>
+      </div>
+    </div>
+
+    <div class="set-sec">appearance</div>
+    <div class="set-group">
+      <div class="set-row">
+        <span style="flex:1;font-size:14px;">wallpaper</span>
+        <button class="set-ghost" id="setWall">[ pilih ]</button>
+      </div>
+      <input type="file" id="wallFile" accept="image/*" style="display:none;">
+      <div class="set-row">
+        <span style="flex:1;font-size:14px;">dim</span>
+        <span class="t-label" id="wallDimVal">60%</span>
+      </div>
+      <input type="range" id="wallDim" min="0" max="100" step="1" value="60">
+      <div class="set-hint">wallpaper muncul di menu dengan gelap sesuai dim</div>
+      <div class="set-row">
+        <span style="flex:1;font-size:14px;">status on menu</span>
+        <button class="set-ghost" id="setStatus">[ on ]</button>
+      </div>
+    </div>
+
+    </div>
+    </div>
+    <div class="set-sec">about</div>
+    <div class="set-group">
+      <div class="set-hint">owl web · reads and writes the same server data as the phone widget · the old build lives at <a href="/one/legacy/index.html" style="color:var(--accent);text-decoration:underline;">/legacy</a></div>
     </div>
   </div>
 </div>
@@ -396,7 +557,7 @@ function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("show")
   clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),2200);}
 
 /* ── accessors ── */
-const get=k=>MUT[k]!==undefined?MUT[k]:(KEYS[k]!==undefined?KEYS[k]:[]);
+const get=k=>MUT[k]!==undefined?MUT[k]:(KEYS[k]!==undefined?KEYS[k]:k==="oneQuestionSholat"?{}:[]);
 const uid=()=>Math.random().toString(36).slice(2,10);
 
 /* ── navigation ── */
@@ -434,42 +595,67 @@ function renderMenu(){
   const n=new Date();
   $("menuClock").textContent=pad(n.getHours())+":"+pad(n.getMinutes());
   $("menuSub").textContent=n.toLocaleDateString("en",{weekday:"short",month:"short",day:"numeric"});
-  $("menuList").innerHTML=SECTIONS.map(([v,l,c])=>
-    `<div class="menu-row" data-go="${v}">${l}<span class="count">${typeof c=="function"?c():c}</span></div>`).join("");
+  $("menuList").innerHTML=SECTIONS.map(([v,l])=>
+    `<div class="menu-row" data-go="${v}">${l}</div>`).join("");
+  // menu order: oqOrder first (in order), then any never-ordered ones
+  const order=secOrder();
+  if(order.length){
+    const list=[...document.querySelectorAll("#menuList .menu-row")];
+    list.sort((a,b)=>{
+      const ia=order.indexOf(a.getAttribute("data-go")),ib=order.indexOf(b.getAttribute("data-go"));
+      return (ia<0?99:ia)-(ib<0?99:ib);
+    });
+    list.forEach(el=>$("menuList").append(el));
+  }
+  if(typeof applyHide==="function")applyHide();
+  // status-on-menu toggle state
+  $("menuStatus").style.display=(localStorage.getItem("oqStatus")||"on")==="on"?"":"none";
   // day circle status
   const sched=get("oneQuestionSchedule");
   const mn=n.getHours()*60+n.getMinutes();
   const act=sched.find(b=>mn>=b.start&&mn<b.end);
-  $("menuStatus").innerHTML=act
-    ?`<span style="color:${esc(act.color||"var(--green)")}">● ${esc(act.label)} · ends ${pad(Math.floor(act.end/60))}:${pad(act.end%60)}</span>`
-    :"";
-  renderSholat(n);
-  renderWx();
-}
-/* sholat: computed from coords in settings (no external API needed offline) */
-function renderSholat(n){
-  const box=$("menuSholat");
-  const s=get("oneQuestionSholat");
   const today=n.toISOString().slice(0,10);
-  if(!s||s.date!==today||!s.times){box.style.display="none";return;}
-  const mn=n.getHours()*60+n.getMinutes();
-  const T=s.times,B=s.bounds||{};
-  const list=[["subuh",T.subuh,B.subuh||T.dzuhur],["dzuhur",T.dzuhur,B.dzuhur||T.ashar],
-    ["ashar",T.ashar,B.ashar||T.maghrib],["maghrib",T.maghrib,B.maghrib||T.isya],
-    ["isya",T.isya,[T.isya[0],T.isya[1]+15]]];
-  const act=list.find(([k,t,e])=>mn>=t[0]*60+t[1]&&mn<e[0]*60+e[1]);
-  const next=list.find(([k,t])=>t[0]*60+t[1]>mn)||list[0];
-  const show=act||next;
-  const fmt=t=>pad(t[0])+":"+pad(t[1]);
-  const doneKey=(s.done||{})[show[0]]===today;
-  if(act&&!doneKey){
-    box.style.display="block";
-    box.innerHTML=`${act[0]} · ${fmt(act[1])} - ${fmt(act[2])}<div class="t">${act[1][0]*60+act[1][1]>mn?"in progress":"ends"} window</div>
-      <button class="done" id="shDone">✓ sudah sholat</button>`;
-    $("shDone").onclick=()=>{markSholat(act[0]);};
+  // sholat reminder card (owl menu port): active prayer → gold card + ✓ sudah sholat;
+  // otherwise next prayer, plain
+  const sh=get("oneQuestionSholat");
+  let sholatHtml="";
+  if(sh&&sh.times){
+    const list=sholatList(sh);
+    const fmt=t=>pad(t[0])+":"+pad(t[1]);
+    const pAct=list.find(([k,t,e])=>mn>=t[0]*60+t[1]&&mn<e[0]*60+e[1]);
+    const pNext=list.find(([k,t])=>t[0]*60+t[1]>mn)||list[0];
+    const show=pAct||pNext;
+    const done=(sh.done||{})[show[0]]===today;
+    if(pAct&&!done){
+      sholatHtml=`<div>${show[0]}<div class="t" style="margin-top:3px;">${fmt(show[1])} - ${fmt(show[2])}</div>
+        <button class="done" data-sholat="${show[0]}">✓ sudah sholat</button></div>`;
+    }else{
+      sholatHtml=`<div style="padding:10px 12px;">${show[0]}<div class="t">${fmt(show[1])} - ${fmt(show[2])}</div></div>`;
+    }
+    window.__sholatGold=pAct!=null&&!done;
   }else{
-    box.style.display="block";
-    box.innerHTML=`${show[0]}<div class="t">${fmt(show[1])} - ${fmt(show[2])}</div>`;
+    window.__sholatGold=false;
+  }
+  // compose: day circle line first, sholat card under it
+  $("menuStatus").innerHTML=(act?`<span style="color:${esc(act.color||"var(--green)")}">● ${esc(act.label)} · ends ${pad(Math.floor(act.end/60))}:${pad(act.end%60)}</span>`:"")
+    +(sholatHtml?`<div id="menuSholat">${sholatHtml}</div>`:"");
+  const sd=$("menuSholat");
+  if(sd){
+    sd.classList.add("pos-"+(localStorage.getItem("oqSholatPos")||"bottomleft"));
+    // gold styling ONLY while the prayer window is active and not done yet
+    const gold=window.__sholatGold===true;
+    sd.style.maxWidth="220px";sd.style.padding="10px 12px";
+    sd.style.background=gold?"rgba(245,197,66,.06)":"rgba(236,236,236,.03)";
+    sd.style.border="1px solid "+(gold?"rgba(245,197,66,.28)":"rgba(236,236,236,.1)");
+    sd.style.color=gold?"var(--gold)":"var(--fg)";
+    sd.querySelector(".t")?.style.setProperty("color","rgba(236,236,236,.5)");
+    sd.style.lineHeight="1.3";sd.style.fontSize="14px";
+    // owl-style ✓ button: white text, boxed (fg .12 bg + fg .7 border)
+    const db=sd.querySelector(".done");
+    if(db){
+      db.style.cssText="font-size:12px;color:var(--fg);padding:7px 10px;margin-top:8px;width:100%;background:rgba(236,236,236,.12);border:1px solid rgba(236,236,236,.7);cursor:pointer;";
+    }
+    db?.addEventListener("click",function(){markSholat(this.dataset.sholat);renderMenu();});
   }
 }
 function markSholat(key){
@@ -478,15 +664,7 @@ function markSholat(key){
   s.done=s.done||{};s.done[key]=today;
   set("oneQuestionSholat",s);toast("✓ "+key);
 }
-/* weather: wttr.in, cached */
-let wxT=null;
-function renderWx(){
-  if(wxT){$("menuWx").textContent=wxT;return;}
-  $("menuWx").textContent="…";
-  fetch("https://wttr.in/?format=%c+&temp_C").then(r=>r.text()).then(t=>{
-    wxT=t.trim().replace(/\+/g,"")+"°c";$("menuWx").textContent=wxT;
-  }).catch(()=>{$("menuWx").textContent="";});
-}
+
 
 /* ═══════ QUOTES ═══════ */
 let qtI=0;
@@ -573,19 +751,108 @@ $("stAdd").onclick=()=>modal(`<h3>+ add sticky</h3>
   };});
 
 /* ═══════ DAY CIRCLE ═══════ */
+/* ── 24h dial: noon at top, midnight at bottom (owl port) ── */
+let dialTimer=null;
+function renderDial(now,mn,sched){
+  const host=$("scDial");
+  const D=Math.min(300,window.innerWidth-90);
+  const sh=get("oneQuestionSholat");
+  const sholat=sholatList(sh);
+  host.innerHTML=`<canvas id="dialCv" width="${D*2}" height="${D*2}" style="width:${D}px;height:${D}px;"></canvas>
+    <div id="dialCnt" style="font-size:22px;margin-top:8px;"></div>
+    <div id="dialCur" style="font-size:14px;margin-top:4px;"></div>
+    <div id="dialNxt" class="t-small" style="margin-top:4px;"></div>`;
+  const cv=$("dialCv"),ctx=cv.getContext("2d");
+  const k=D/380,cx=cv.width/2,cy=cv.height/2;
+  const rOut=170*k*2,rIn=118*k*2;
+  const sec=now.getSeconds();
+  const minuteFrac=mn+sec/60;
+  const act=sched.find(b=>mn>=b.start&&mn<b.end);
+  const next=sched.find(b=>b.start>mn);
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const rad=a=>a*Math.PI/180;
+  const wedge=(start,end,color,alpha)=>{ // minutes → pie slice (noon=0deg top)
+    const a0=rad((start-720)*0.25),sw=Math.min((end-start)*0.25,360)*Math.PI/180;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,rOut,a0-Math.PI/2,a0-Math.PI/2+sw);
+    ctx.closePath();ctx.fillStyle=color;ctx.globalAlpha=alpha;ctx.fill();ctx.globalAlpha=1;
+  };
+  if(uiState.sc!=="sholat"){
+    for(const b of sched)wedge(b.start,b.end,b.color||"rgba(236,236,236,.4)",(mn>=b.start&&mn<b.end)?1:.5);
+  }else{
+    for(const[label,t,e]of sholat){
+      const done=(sh.done||{})[label]===new Date().toISOString().slice(0,10);
+      wedge(t[0]*60+t[1],e[0]*60+e[1],done?"#787774":"#f5c542",(mn>=t[0]*60+t[1]&&mn<e[0]*60+e[1]&&!done)?1:.4);
+    }
+  }
+  // hub
+  ctx.beginPath();ctx.arc(cx,cy,rIn,0,7);ctx.fillStyle="#000";ctx.fill();
+  // outer ring
+  ctx.beginPath();ctx.arc(cx,cy,rOut+9*k*2,0,7);ctx.strokeStyle="rgba(236,236,236,.16)";ctx.lineWidth=2*2;ctx.stroke();
+  // 24 ticks
+  for(let i=0;i<24;i++){
+    const major=i%6===0,a=rad(i*15);
+    const r1=rOut-(major?18:10)*k*2,r2=rOut-2*k*2;
+    ctx.beginPath();
+    ctx.moveTo(cx+r1*Math.sin(a),cy-r1*Math.cos(a));
+    ctx.lineTo(cx+r2*Math.sin(a),cy-r2*Math.cos(a));
+    ctx.strokeStyle=major?"rgba(236,236,236,.8)":"rgba(236,236,236,.3)";
+    ctx.lineWidth=major?2:1;ctx.stroke();
+  }
+  // 00/06/12/18 labels (00 at bottom)
+  ctx.fillStyle="rgba(236,236,236,.65)";ctx.font=`${12*k*2}px Monocraft,monospace`;
+  ctx.textAlign="center";ctx.textBaseline="middle";
+  for(const h of[0,6,12,18]){
+    const ang=rad(h*60*.25);
+    const rl=rOut-32*k*2;
+    ctx.fillText(pad(h),cx+rl*Math.sin(ang),cy-rl*Math.cos(ang));
+  }
+  // sholat names on hub edge (sholat view)
+  if(uiState.sc==="sholat"){
+    ctx.fillStyle="#f5c542";ctx.font=`${10*k*2}px Monocraft,monospace`;
+    for(const[label,t,e]of sholat){
+      const aP=rad(((t[0]*60+t[1]+e[0]*60+e[1])/2-720)*0.25);
+      const rp=rIn-8*k*2;
+      ctx.fillText(label,cx+rp*Math.sin(aP),cy-rp*Math.cos(aP));
+    }
+  }
+  // hands: hour (thick), minute (thin), second (accent)
+  const aH=rad((minuteFrac-720)*0.25),aM=rad((minuteFrac%60)*6),aS=rad(sec*6);
+  const hand=(a,r1,r2,w,col)=>{
+    ctx.beginPath();
+    ctx.moveTo(cx+r1*Math.sin(a),cy-r1*Math.cos(a));
+    ctx.lineTo(cx+r2*Math.sin(a),cy-r2*Math.cos(a));
+    ctx.strokeStyle=col;ctx.lineWidth=w;ctx.lineCap="round";ctx.stroke();
+  };
+  hand(aH,92*k*2,132*k*2,4*2,"#ececec");
+  hand(aM,92*k*2,162*k*2,2*2,"#ececec");
+  hand(aS,80*k*2,172*k*2,1*2,"#8d8d8d");
+  ctx.beginPath();ctx.arc(cx,cy,5*k*2,0,7);ctx.fillStyle="#8d8d8d";ctx.fill();
+  ctx.strokeStyle="#000";ctx.lineWidth=2*2;ctx.stroke();
+  // hub text
+  const minsLeft=act?Math.max(0,act.end-minuteFrac):(next?Math.max(0,next.start-minuteFrac):0);
+  $("dialCnt").textContent=(act||next)?pad(Math.floor(minsLeft/60))+":"+pad(Math.floor(minsLeft)%60):pad(now.getHours())+":"+pad(now.getMinutes());
+  $("dialCur").textContent=act?act.label:"free time";
+  $("dialCur").style.color=act?(act.color||"#8d8d8d"):"rgba(236,236,236,.5)";
+  $("dialNxt").textContent=act?`ends ${pad(Math.floor(act.end/60))}:${pad(act.end%60)}`
+    :next?`next ${next.label} ${pad(Math.floor(next.start/60))}:${pad(next.start%60)}`:"nothing planned";
+}
 function renderSched(){
   const s=get("oneQuestionSchedule");
   $("scCount").textContent=s.length+" blocks";
   const n=new Date(),mn=n.getHours()*60+n.getMinutes();
   const sortd=[...s].sort((a,b)=>a.start-b.start);
+  renderDial(n,mn,s);
   $("scActs").innerHTML=sortd.map(b=>{
     const act=mn>=b.start&&mn<b.end;
-    return `<div class="sched-block${act?" active":""}" style="border-left-color:${esc(b.color||"#8d8d8d")}">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <div style="flex:1;">${esc(b.label)}</div>
-        <button class="del" data-dl="${b.start}-${b.label}" style="font-size:11px;">✕</button></div>
-      <div class="t2">${pad(Math.floor(b.start/60))}:${pad(b.start%60)} – ${pad(Math.floor(b.end/60))}:${pad(b.end%60)}${act?" · now":""}</div>
-    </div>`;}).join("")||'<div class="t-label center">no blocks yet</div>';
+    const ee=String(b.end).padStart(4,"0");
+    const endT=pad(Math.floor(b.end/60))+":"+pad(b.end%60);
+    return `<div class="sched-row${act?" sc-active":""}" style="${act?`border:1px solid ${esc(b.color||"#8d8d8d")};`:""}">
+      <span class="t-small" style="width:44px;flex-shrink:0;">${pad(Math.floor(b.start/60))}:${pad(b.start%60)}</span>
+      <span class="grow${act?"":""}" style="font-size:14px;">${esc(b.label)}</span>
+      <span class="t-small">${endT}</span>
+      <button class="del" data-dl="${b.start}-${b.label}">✕</button>
+    </div>
+    <div class="rowline"></div>`;}).join("")||'<div class="t-label center">no blocks yet</div>';
   $("scActs").onclick=e=>{
     const d=e.target.closest("[data-dl]");if(!d)return;
     const[start,label]=d.dataset.dl.split("-");
@@ -593,10 +860,76 @@ function renderSched(){
     confirmDel(label,()=>{set("oneQuestionSchedule",s2.filter(b=>!(b.start==start&&b.label==label)));});
   };
   const sh=get("oneQuestionSholat");
-  $("scSholat").innerHTML=sh&&sh.times?Object.entries(sh.times).map(([k,t])=>
-    `<div class="row"><span class="grow">${k}</span><span class="t-label">${pad(t[0])}:${pad(t[1])}</span>
-     ${(sh.done||{})[k]===new Date().toISOString().slice(0,10)?'<span style="color:var(--green);font-size:12px;">✓</span>':""}</div>`).join("")
-    :'<div class="t-label center">set coordinates in settings first</div>';
+  if(!sh||!sh.times){
+    $("scSholat").innerHTML='<div class="t-label center">set a city in settings first</div>';
+    return;
+  }
+  const list=sholatList(sh);
+  const fmt=t=>pad(t[0])+":"+pad(t[1]);
+  $("scSholat").innerHTML=list.map(([label,t,e])=>{
+    const pS=t[0]*60+t[1],pE=e[0]*60+e[1];
+    const act=mn>=pS&&mn<pE;
+    const done=(sh.done||{})[label]===new Date().toISOString().slice(0,10);
+    // done → dimmed gray (no gold); active & not done → gold highlight;
+    // new day resets done (the daily key check makes it false again automatically)
+    return `<div class="sholat-row${act&&!done?" active":""}" data-sh="${label}"${done?' style="opacity:.45;"':""}>
+      <div style="flex:1;">
+        <div class="t-small" style="cursor:pointer;" data-edit="${label}">${fmt(t)} - ${fmt(e)} ${done?"✓":""}</div>
+        <div style="font-size:14px;margin-top:2px;${act&&!done?"color:var(--gold);font-weight:700;":done?"color:var(--muted);":""}">${label}</div>
+      </div>
+      <span class="t-small" style="opacity:.5;">${fmt(e)}</span>
+    </div>`;}).join("")
+    +`<div style="text-align:center;margin-top:12px;"><button class="set-ghost" data-go="settings">ubah lokasi</button></div>`;
+  $("scSholat").querySelectorAll("[data-edit]").forEach(el=>{
+    el.onclick=()=>editSholat(el.dataset.edit);
+  });
+}
+/* tap a prayer time → ▲▼ stepper popup (owl port) */
+function editSholat(key){
+  const sh=get("oneQuestionSholat");
+  const t=sh.times[key];
+  let H=t[0],M=t[1];
+  modal(`<div class="t-label" style="text-align:center;margin-bottom:10px;">jam ${key}</div>
+    <div style="display:flex;justify-content:center;align-items:center;gap:18px;font-size:24px;">
+      <div style="text-align:center;"><button class="set-ghost" id="upH" style="font-size:16px;">▲</button>
+        <div>${pad(H)}</div><button class="set-ghost" id="dnH" style="font-size:16px;">▼</button></div>
+      <div>:</div>
+      <div style="text-align:center;"><button class="set-ghost" id="upM" style="font-size:16px;">▲</button>
+        <div>${pad(M)}</div><button class="set-ghost" id="dnM" style="font-size:16px;">▼</button></div>
+    </div>
+    <div class="modal-actions"><button data-close>cancel</button><button class="primary" id="mSave">save</button></div>`,
+    ()=>{
+      const draw=()=>{$("modalBox").children[1].children[0].nextElementSibling.textContent=pad(H);
+        $("modalBox").querySelectorAll("div[style*='text-align:center']")[1].children[1].textContent=pad(H);};
+      $("upH").onclick=()=>{H=(H+1)%24;$("mSave").dataset.h=H;$("mSave").dataset.m=M;refreshStepper(H,M,key);};
+      $("dnH").onclick=()=>{H=(H+23)%24;$("mSave").dataset.h=H;$("mSave").dataset.m=M;refreshStepper(H,M,key);};
+      $("upM").onclick=()=>{M=(M+1)%60;$("mSave").dataset.h=H;$("mSave").dataset.m=M;refreshStepper(H,M,key);};
+      $("dnM").onclick=()=>{M=(M+59)%60;$("mSave").dataset.h=H;$("mSave").dataset.m=M;refreshStepper(H,M,key);};
+      $("mSave").onclick=()=>{sh.times[key]=[H,M];sh.date="";set("oneQuestionSholat",sh);closeModal();};
+    });
+}
+function refreshStepper(H,M,key){
+  // simplest: re-render the whole popup
+  editSholatKeep(H,M,key);
+}
+function editSholatKeep(H,M,key){
+  const sh=get("oneQuestionSholat");
+  modal(`<div class="t-label" style="text-align:center;margin-bottom:10px;">jam ${key}</div>
+    <div style="display:flex;justify-content:center;align-items:center;gap:18px;font-size:24px;">
+      <div style="text-align:center;"><button class="set-ghost" id="upH" style="font-size:16px;">▲</button>
+        <div id="vH">${pad(H)}</div><button class="set-ghost" id="dnH" style="font-size:16px;">▼</button></div>
+      <div>:</div>
+      <div style="text-align:center;"><button class="set-ghost" id="upM" style="font-size:16px;">▲</button>
+        <div id="vM">${pad(M)}</div><button class="set-ghost" id="dnM" style="font-size:16px;">▼</button></div>
+    </div>
+    <div class="modal-actions"><button data-close>cancel</button><button class="primary" id="mSave">save</button></div>`,
+    ()=>{
+      $("upH").onclick=()=>{H=(H+1)%24;$("vH").textContent=pad(H);};
+      $("dnH").onclick=()=>{H=(H+23)%24;$("vH").textContent=pad(H);};
+      $("upM").onclick=()=>{M=(M+1)%60;$("vM").textContent=pad(M);};
+      $("dnM").onclick=()=>{M=(M+59)%60;$("vM").textContent=pad(M);};
+      $("mSave").onclick=()=>{sh.times[key]=[H,M];sh.date="";set("oneQuestionSholat",sh);closeModal();};
+    });
 }
 $("scTabActs").onclick=()=>{uiState.sc="acts";scTabs();};
 $("scTabSholat").onclick=()=>{uiState.sc="sholat";scTabs();};
@@ -901,16 +1234,182 @@ function confirmDel(name,fn){
 /* ═══════ SETTINGS ═══════ */
 function loadSet(){
   const s=get("oneQuestionSholat");
-  $("setLat").value=s.lat??"";$("setLon").value=s.lon??"";
+  // auto-default: jakarta on first ever load (or when coords missing) — still editable later
+  if(s.lat==null||s.lon==null){
+    s.lat=-6.2088;s.lon=106.8456;s.city="jakarta (default)";s.date="";
+    MUT["oneQuestionSholat"]=s;
+    $("setLoc").value=s.city;
+    $("locHint").textContent="📍 default: jakarta — type your city to change";
+    return;
+  }
+  $("setLoc").value=s.city??(s.lat!=null?`${s.lat}, ${s.lon}`:"");
+  if(s.city)$("locHint").textContent="📍 "+s.city;
+  // font scale (persisted per-device, like the widget's set-ui.sh)
+  const sc=+(localStorage.getItem("oqScale")||100);
+  $("setScale").value=sc;$("setScaleVal").textContent=sc+"%";
+  // sections: hide/show mirrors the widget's secHide
+  const hide=(localStorage.getItem("oqHide")||"").split("|").filter(Boolean);
+  const defs=[["quotes","quiet feed"],["stickies","remember"],["sched","day circle"],["deadlines","deadlines"],["journal","journal"],["guide","daily guide"]];
+  $("setSections").innerHTML=defs.map(([id,label])=>{
+    const hid=hide.includes(id);
+    return `<div class="set-row"><span style="flex:1;font-size:14px;${hid?"color:var(--muted);":""}">${label}</span>
+      <button class="set-ghost" data-up="${id}">[ ↑ ]</button>
+      <button class="set-ghost" data-down="${id}">[ ↓ ]</button>
+      <button class="set-ghost" data-sec="${id}">${hid?"show":"hide"}</button></div>`;
+  }).join("");
+  $("setSections").querySelectorAll("[data-up]").forEach(b=>b.onclick=()=>moveSection(b.dataset.up,-1));
+  $("setSections").querySelectorAll("[data-down]").forEach(b=>b.onclick=()=>moveSection(b.dataset.down,1));
+  $("setStatus").onclick=()=>{
+    const cur=localStorage.getItem("oqStatus")||"on";
+    const nv=cur==="on"?"off":"on";
+    localStorage.setItem("oqStatus",nv);
+    $("setStatus").textContent=`[ ${nv} ]`;
+    $("menuStatus").style.display=nv==="on"?"":"none";
+  };
+  $("setStatus").textContent=`[ ${localStorage.getItem("oqStatus")||"on"} ]`;
+  // sholat reminder position
+  const curPos=localStorage.getItem("oqSholatPos")||"bottomleft";
+  $("modalBox")||0;
+  document.querySelectorAll("[data-pos]").forEach(b=>{
+    b.style.color=b.dataset.pos===curPos?"var(--accent)":"var(--muted)";
+    b.onclick=()=>{
+      localStorage.setItem("oqSholatPos",b.dataset.pos);
+      document.querySelectorAll("[data-pos]").forEach(x=>x.style.color=x.dataset.pos===b.dataset.pos?"var(--accent)":"var(--muted)");
+      renderMenu();
+    };
+  });
+  $("setSections").onclick=e=>{
+    const b=e.target.closest("[data-sec]");if(!b)return;
+    const id=b.dataset.sec;
+    let h=(localStorage.getItem("oqHide")||"").split("|").filter(Boolean);
+    h=h.includes(id)?h.filter(x=>x!==id):[...h,id];
+    localStorage.setItem("oqHide",h.join("|"));
+    loadSet();applyHide();renderMenu();
+  };
 }
-$("setSaveLoc").onclick=()=>{
-  const lat=parseFloat($("setLat").value),lon=parseFloat($("setLon").value);
-  if(isNaN(lat)||isNaN(lon)){toast("numbers please");return;}
-  const s=get("oneQuestionSholat");
-  s.lat=lat;s.lon=lon;
-  // quick offline sholat estimate (rough solar calc) — refreshed by real calc later
-  s.date="";set("oneQuestionSholat",s);toast("saved — times refresh on next menu open");
+function secOrder(){
+  return (localStorage.getItem("oqOrder")||"").split("|").filter(Boolean);
+}
+function moveSection(id,dir){
+  let ids=secOrder();
+  const all=SECTIONS.map(x=>x[0]);
+  if(!ids.length)ids=all;
+  const ix=ids.indexOf(id);
+  const nx=ix+dir;
+  if(ix<0||nx<0||nx>=ids.length)return;
+  [ids[ix],ids[nx]]=[ids[nx],ids[ix]];
+  localStorage.setItem("oqOrder",ids.join("|"));
+  loadSet();applyHide();renderMenu();
+}
+function applyHide(){
+  const hide=(localStorage.getItem("oqHide")||"").split("|").filter(Boolean);
+  document.querySelectorAll("#menuList .menu-row").forEach(r=>{
+    const go=r.getAttribute("data-go");
+    r.style.display=hide.includes(go)?"none":"";
+  });
+}
+$("setScale").addEventListener("input",()=>{
+  const v=$("setScale").value;
+  $("setScaleVal").textContent=v+"%";
+  document.documentElement.style.fontSize=(v/100*16)+"px";
+});
+$("setScale").addEventListener("change",()=>{
+  localStorage.setItem("oqScale",$("setScale").value);
+  toast("font scale saved");
+});
+/* animation speed: 0× instant, 1× normal, up to 3× slower (per device) */
+function applyAnim(){
+  const v=+(localStorage.getItem("oqAnim")||1);
+  $("setAnim").value=v;$("animVal").textContent=v+"×";
+  const root=document.documentElement;
+  if(v<=0){root.style.setProperty("--anim","0ms");root.style.setProperty("--flash","0ms");}
+  else{root.style.setProperty("--anim",Math.round(260*v)+"ms");root.style.setProperty("--flash",Math.round(320*v)+"ms");}
+}
+$("setAnim").addEventListener("input",()=>{
+  const v=$("setAnim").value;
+  $("animVal").textContent=v+"×";
+  localStorage.setItem("oqAnim",v);
+  applyAnim();
+});
+/* wallpaper: image stored as dataURL in localStorage, dim slider applies live */
+function applyWall(){
+  const img=localStorage.getItem("oqWall"),dim=+(localStorage.getItem("oqWallDim")||60);
+  const L=$("wallLayer");
+  if(!img){L.style.display="none";return;}
+  L.style.display="block";
+  L.style.backgroundImage=`url(${img})`;
+  L.style.opacity=1-dim/100;
+}
+$("setWall").onclick=()=>$("wallFile").click();
+$("wallFile").onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      localStorage.setItem("oqWall",rd.result);
+      applyWall();toast("wallpaper set");
+    }catch(e){toast("image too large for storage");}
+  };
+  rd.readAsDataURL(f);
 };
+$("wallDim").addEventListener("input",()=>{
+  $("wallDimVal").textContent=$("wallDim").value+"%";
+  localStorage.setItem("oqWallDim",$("wallDim").value);
+  applyWall();
+});
+(function initAnim(){applyAnim();})();
+(function initWall(){
+  $("wallDim").value=+(localStorage.getItem("oqWallDim")||60);
+  $("wallDimVal").textContent=($("wallDim").value)+"%";
+  applyWall();
+})();
+$("setSaveLoc").onclick=async()=>{
+  const q=$("setLoc").value.trim();
+  if(!q){toast("type a city first");return;}
+  toast("finding "+q+"…");
+  try{
+    // free geocoder, no key needed
+    const r=await fetch("https://geocoding-api.open-meteo.com/v1/search?count=1&language=en&name="+encodeURIComponent(q));
+    const d=await r.json();
+    const hit=d.results&&d.results[0];
+    if(!hit){toast("city not found");return;}
+    const s=get("oneQuestionSholat");
+    s.lat=hit.latitude;s.lon=hit.longitude;
+    s.city=hit.name+(hit.country?", "+hit.country:"");
+    s.date=""; // invalidate cached times so they recompute for the new coords
+    set("oneQuestionSholat",s);
+    toast("✓ "+s.city+" · "+hit.latitude.toFixed(2)+", "+hit.longitude.toFixed(2));
+  }catch(e){toast("lookup failed — try again");}
+};
+
+function sholatList(sh){
+  if(!sh||!sh.times)return[];
+  const B=sh.bounds||{};
+  return [["subuh",sh.times.subuh,B.subuh||sh.times.dzuhur],["dzuhur",sh.times.dzuhur,B.dzuhur||sh.times.ashar],
+    ["ashar",sh.times.ashar,B.ashar||sh.times.maghrib],["maghrib",sh.times.maghrib,B.maghrib||sh.times.isya],
+    ["isya",sh.times.isya,B.isya||[sh.times.isya[0],Math.min(sh.times.isya[1]+15,59)]]];
+}
+/* sholat times: auto-fetch via aladhan (free, no key) when coords set & date stale.
+   results cached in state (oneQuestionSholat.times + date) — same key the widget reads */
+async function ensureSholat(){
+  const s=get("oneQuestionSholat");
+  const today=new Date().toISOString().slice(0,10);
+  if(s.lat!=null&&s.lon!=null&&s.date!==today){
+    try{
+      const r=await fetch(`https://api.aladhan.com/v1/timings/${today}?latitude=${s.lat}&longitude=${s.lon}&method=20`);
+      const d=await r.json();
+      const t=d.data&&d.data.timings;
+      if(!t)throw 0;
+      const parse=x=>{const[h,m]=x.split(":").map(Number);return[h,m];};
+      s.times={subuh:parse(t.Fajr),dzuhur:parse(t.Dhuhr),ashar:parse(t.Asr),maghrib:parse(t.Maghrib),isya:parse(t.Isha)};
+      s.bounds={subuh:parse(t.Sunrise),dzuhur:parse(t.Asr),ashar:parse(t.Maghrib),maghrib:parse(t.Isha),isya:[23,59]};
+      s.date=today;
+      set("oneQuestionSholat",s);
+      renderAll();
+      setTimeout(pull,400); // devices re-pull the fresh window data
+    }catch(e){/* offline: keep whatever cached times exist */}
+  }
+}
 
 /* ═══════ boot ═══════ */
 function renderAll(){
@@ -919,8 +1418,41 @@ function renderAll(){
   renderJournal();renderGuide();loadSet();scTabs();
 }
 setInterval(()=>{if(cur==="menu")renderMenu();},15000);
-pull();
+/* sholat & block-start reminders: browser notification once per window (owl notify() port) */
+if("Notification" in window && Notification.permission==="default"){
+  document.body.addEventListener("click",function once(){Notification.requestPermission();document.body.removeEventListener("click",once);},{once:true});
+}
+const oqBeeped={};
+setInterval(()=>{
+  const n=new Date(),key=n.toISOString().slice(0,10);
+  const mn=n.getHours()*60+n.getMinutes();
+  const sh=get("oneQuestionSholat");
+  if(sh&&sh.times){
+    const list=sholatList(sh);
+    for(const[label,t]of list){
+      const k=`sh-${label}-${key}`;
+      const start=t[0]*60+t[1];
+      if((sh.done||{})[label]===key)continue; // already prayed — no reminder
+      if(mn===start&&oqBeeped[k]!==true){
+        oqBeeped[k]=true;
+        if("Notification" in window&&Notification.permission==="granted")
+          new Notification("waktu "+label,{"body":pad(t[0])+":"+pad(t[1])+" — yuk sholat"});
+      }
+    }
+  }
+  for(const b of get("oneQuestionSchedule")){
+    const k=`bl-${b.start}-${b.label}`;
+    if(mn===b.start&&oqBeeped[k]!==true){
+      oqBeeped[k]=true;
+      if("Notification" in window&&Notification.permission==="granted")
+        new Notification("day circle",{"body":"mulai: "+b.label});
+    }
+  }
+},15000);
+setInterval(()=>{if(cur==="sched"){const n=new Date();renderDial(n,n.getHours()*60+n.getMinutes(),get("oneQuestionSchedule"));}},1000);
+pull().then(ensureSholat);
 setInterval(pull,30000);
+setInterval(ensureSholat,600000);
 </script>
 </body>
 </html>
