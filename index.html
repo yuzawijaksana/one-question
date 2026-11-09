@@ -637,6 +637,9 @@ function go(v){
   const f=$("flash");f.classList.add("lit");
   requestAnimationFrame(()=>requestAnimationFrame(()=>f.classList.remove("lit")));
   window.scrollTo(0,0);
+  // sholat reminder only lives on the main view
+  const sd=$("menuSholat");
+  if(sd)sd.style.display=(v==="menu"&&(localStorage.getItem("oqStatus")||"on")==="on")?"":"none";
   if(v==="menu")renderMenu();
 }
 document.body.addEventListener("click",e=>{
