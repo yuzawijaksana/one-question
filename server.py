@@ -167,7 +167,7 @@ def _git(args, timeout=120):
     )
     if proc.returncode != 0:
         raise RuntimeError(f"git {' '.join(args)}: {proc.stderr.strip() or proc.stdout.strip()}")
-    return proc.stdout.strip()
+    return proc.stdout.rstrip()
 
 
 def self_update_from_git():
