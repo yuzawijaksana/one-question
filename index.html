@@ -1398,12 +1398,16 @@ function applyHide(){
 $("setScale").addEventListener("input",()=>{
   const v=$("setScale").value;
   $("setScaleVal").textContent=v+"%";
-  document.documentElement.style.fontSize=(v/100*16)+"px";
+  applyScale(v);
 });
 $("setScale").addEventListener("change",()=>{
   localStorage.setItem("oqScale",$("setScale").value);
-  toast("font scale saved");
+  toast("screen scale saved");
 });
+/* screen scale: whole-app zoom (default 125%) */
+function applyScale(sc){
+  document.documentElement.style.zoom = (sc/100);
+}
 /* animation speed: 0× instant, 1× normal, up to 3× slower (per device) */
 function applyAnim(){
   const v=+(localStorage.getItem("oqAnim")||1);
