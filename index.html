@@ -1,818 +1,926 @@
 <!doctype html>
 <html lang="en">
-
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>One Question</title>
-  <link rel="stylesheet" href="style.css?v=2.59">
-<link rel="manifest" href="/manifest.webmanifest">
-  <link rel="icon" href="/icon-192.png">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>one question · owl</title>
+<link rel="icon" href="/icon-192.png">
 <meta name="theme-color" content="#000000">
-<link rel="apple-touch-icon" href="/icon-192.png">
-</head>
-
-<body>
-  <main id="app">
-    <div id="customBackground" class="customBackground" aria-hidden="true"></div>
-    <div id="customBackgroundOverlay" class="customBackgroundOverlay" aria-hidden="true"></div>
-    <div class="ambient ambient-a"></div>
-    <div class="ambient ambient-b"></div>
-    <header class="topbar">
-      <button id="date" class="dateButton" type="button" aria-haspopup="dialog" aria-expanded="false"
-        title="Open calendar"></button>
-      <button id="miniClock" class="miniClock" type="button" title="day circle" aria-label="Open day circle">
-        <svg viewBox="0 0 400 400" aria-hidden="true"></svg>
-        <span id="miniClockTime"></span>
-      </button>
-      <section id="calendarPanel" class="calendarPanel" aria-hidden="true">
-        <div class="calendarHeader">
-          <button id="calendarPrev" type="button" class="calendarNav" aria-label="Previous month">‹</button>
-          <div id="calendarMonth" class="calendarMonth"></div>
-          <button id="calendarNext" type="button" class="calendarNav" aria-label="Next month">›</button>
-        </div>
-        <div class="calendarWeekdays" aria-hidden="true">
-          <span>sun</span><span>mon</span><span>tue</span><span>wed</span><span>thu</span><span>fri</span><span>sat</span>
-        </div>
-        <div id="calendarGrid" class="calendarGrid" role="grid" aria-label="Calendar"></div>
-        <div class="calendarHint">click a date to view or add its todos</div>
-      </section>
-    </header>
-    <div class="modePicker" id="modePicker">
-      <span id="focusRunningBadge" class="focusRunningBadge"><i aria-hidden="true"></i><span
-          id="focusRunningTime"></span></span>
-      <button id="modeToggle" class="focusModeToggle" type="button" aria-label="switch mode" aria-pressed="false"
-          title="switch mode"><span class="modeIcon modeQuestion" aria-hidden="true">?</span><span
-            class="modeIcon modeFocus" aria-hidden="true">#</span><span class="modeIcon modeScheduler"
-              aria-hidden="true">%</span><span class="modeIcon modeSticky"
-                aria-hidden="true">@</span><span class="modeIcon modeQuotes" aria-hidden="true">❝</span><span
-            class="modeIcon modeDeadlines" aria-hidden="true">▦</span></button>
-    </div>
-
-    <section id="sticky" class="stickyMode" aria-hidden="true">
-      <div class="stickyKicker">remember wall</div>
-      <div id="stickyPad" class="stickyPad" title="new sticky note">
-        <span>new card</span>
-      </div>
-      <div id="stickyList" class="stickyList" aria-label="Remember notes"></div>
-      <div id="stickyDeck" class="stickyDeck" aria-hidden="true">
-        <div class="stickyDeckHead">
-          <span id="stickyDeckCount" class="stickyDeckCount"></span>
-          <button id="stickyDeckAdd" type="button" class="stickyDeckAdd">+ add</button>
-        </div>
-        <div id="stickyDeckStack" class="stickyDeckStack"></div>
-        <div class="stickyDeckActions" role="toolbar" aria-label="Card actions">
-          <button type="button" data-act="done">✓</button>
-          <button type="button" data-act="edit">✎</button>
-          <button type="button" data-act="del">×</button>
-        </div>
-        <div class="stickyDeckHint">swipe → remembered · swipe ← for later</div>
-      </div>
-      <div class="stickyHint">click a blank spot · pad or + add for a new note · ✓ handled · ✎ edit · × delete · # move category</div>
-    </section>
-
-    <section id="quotes" class="quotesMode" aria-hidden="true">
-      <div class="quotesTop">
-        <span class="quotesKicker">quiet feed</span>
-        <span id="quoteCount" class="quoteCount"></span>
-        <span id="quoteSession" class="quoteSession" aria-hidden="true"></span>
-        <span class="quotesTools" role="toolbar" aria-label="Quiet feed tools">
-          <button id="quoteShuffle" type="button" title="shuffle the order">⤨ shuffle</button>
-          <button id="quoteAdd" type="button" title="add a quote">+ add</button>
-          <button id="quoteEdit" type="button" title="edit this quote">✎</button>
-          <button id="quoteRemove" type="button" title="remove this quote">×</button>
-        </span>
-      </div>
-      <div id="quoteFeed" class="quoteFeed"></div>
-      <div id="quoteDots" class="quoteDots" aria-hidden="true"></div>
-      <div class="quoteArrows">
-        <button id="quotePrev" type="button" aria-label="previous quote" title="previous quote">↑</button>
-        <button id="quoteNext" type="button" aria-label="next quote" title="next quote">↓</button>
-      </div>
-      <div class="quotesHint"><span class="hintPointer">scroll or space to read · ↑ ↓ switch modes</span><span class="hintTouch">swipe up or down to read · swipe left or right to
-          switch modes</span></div>
-    </section>
-
-    <section id="deadlines" class="deadlinesMode" aria-hidden="true">
-      <div class="deadlineTop">
-        <span class="deadlineKicker">deadline wall</span>
-        <span id="deadlineNext" class="deadlineNext" aria-live="polite"></span>
-        <span class="deadlineTools" role="toolbar" aria-label="Deadline wall tools">
-          <button id="deadlineToday" type="button" title="jump to today">today</button>
-          <button id="deadlineFilter" type="button" title="show / hide finished deadlines">open</button>
-          <button id="deadlineAdd" type="button" title="add a deadline">+ add</button>
-        </span>
-      </div>
-      <div class="deadlineLayout">
-        <aside id="deadlineOutline" class="deadlineOutline" aria-label="Deadline tree"></aside>
-        <div id="deadlineWall" class="deadlineWall" aria-label="Deadline calendar"></div>
-      </div>
-      <div id="deadlineCard" class="deadlineCard" aria-hidden="true"></div>
-      <div id="deadlineEditor" class="deadlineEditor" aria-hidden="true">
-        <div class="deadlineEditorPanel">
-          <div class="deadlineEditorTitle" id="deadlineEditorTitle">deadline</div>
-          <label class="deadlineField"><span>title</span>
-            <input id="deadlineTitleInput" type="text" maxlength="80" autocomplete="off" placeholder="what is due?">
-          </label>
-          <label class="deadlineField"><span>date</span>
-            <input id="deadlineDateInput" type="date">
-          </label>
-          <label class="deadlineField"><span>time <em>(optional)</em></span>
-            <input id="deadlineTimeInput" type="time">
-          </label>
-          <div class="deadlineField"><span>importance</span>
-            <div class="deadlineImportanceSeg" id="deadlineImportanceSeg" role="group" aria-label="importance">
-              <button type="button" data-imp="none" title="blank">○</button>
-              <button type="button" data-imp="grey" title="grey">●</button>
-              <button type="button" data-imp="blue" title="blue">●</button>
-              <button type="button" data-imp="green" title="green">●</button>
-              <button type="button" data-imp="red" title="red">●</button>
-              <button type="button" data-imp="gold" title="gold">●</button>
-            </div>
-          </div>
-          <div class="deadlineEditorActions">
-            <button id="deadlineEditorDelete" type="button" class="danger">delete</button>
-            <button id="deadlineEditorCancel" type="button">cancel</button>
-            <button id="deadlineEditorSave" type="button">save</button>
-          </div>
-        </div>
-      </div>
-      <div class="deadlineHint"><span class="hintPointer">tap a day or a chip to add or open</span><span class="hintTouch">tap a day or a chip · swipe left or right to switch modes</span></div>
-    </section>
-
-    <button id="stickyPin" class="stickyPin" type="button" title="remember wall" aria-label="Open remember wall"></button>
-
-    <section id="bookStudio" class="bookStudio" aria-hidden="true">
-      <header class="bookHeader">
-        <div class="bookTitleWrap">
-          <span class="bookTitleMark" aria-hidden="true">❧</span>
-          <span id="bookTitle" class="bookTitle isBlank" contenteditable="true" role="textbox" aria-label="Book title"
-            spellcheck="false" data-placeholder="name your book…"></span>
-        </div>
-        <div class="bookHeaderActions">
-          <span id="bookSaveStatus" class="bookSaveStatus">saved</span>
-          <button id="bookShelfToggle" class="bookGhostButton shelfOnly" type="button" title="chapters">chapters</button>
-          <button id="bookPreviewToggle" class="bookGhostButton previewOnly" type="button" title="preview">preview</button>
-          <button id="bookReadHeader" class="bookGhostButton" type="button" title="read the book fullscreen">open book
-            ⤢</button>
-          <button id="bookExportPdf" class="bookGhostButton" type="button" title="save the book as a pdf">export pdf
-            ⤣</button>
-        </div>
-      </header>
-      <div class="bookBody">
-        <aside class="bookShelf" aria-label="Chapters">
-          <div class="bookShelfHead">
-            <span class="bookShelfTitle">chapters</span>
-            <button id="bookShelfCollapse" class="bookShelfCollapse" type="button" title="hide chapters"
-              aria-label="toggle the chapters panel">‹</button>
-          </div>
-          <div id="bookChapters" class="bookChapters" role="list"></div>
-          <button id="bookNewChapter" class="bookNewChapter" type="button">+ <span
-              class="bnLabel">new chapter</span></button>
-        </aside>
-        <div class="bookDesk">
-          <div class="bookToolbar" id="bookToolbar" role="toolbar" aria-label="Text formatting">
-            <button type="button" class="tbBtn" data-cmd="bold" title="bold"><b>B</b></button>
-            <button type="button" class="tbBtn" data-cmd="italic" title="italic"><i>I</i></button>
-            <button type="button" class="tbBtn" data-cmd="underline" title="underline"><u>U</u></button>
-            <span class="tbSep" aria-hidden="true"></span>
-            <button type="button" class="tbBtn" data-block="p" title="body text">¶</button>
-            <button type="button" class="tbBtn" data-block="h1" title="heading 1">H1</button>
-            <button type="button" class="tbBtn" data-block="h2" title="heading 2">H2</button>
-            <button type="button" class="tbBtn" data-block="h3" title="heading 3">H3</button>
-            <span class="tbSep" aria-hidden="true"></span>
-            <button type="button" class="tbBtn" data-cmd="justifyLeft" title="align left">
-              <svg viewBox="0 0 14 10" width="14" height="10" aria-hidden="true"><rect x="1" y="1" width="12" height="1.6" rx=".8"/><rect x="1" y="4.2" width="8" height="1.6" rx=".8"/><rect x="1" y="7.4" width="10" height="1.6" rx=".8"/></svg>
-            </button>
-            <button type="button" class="tbBtn" data-cmd="justifyCenter" title="align center">
-              <svg viewBox="0 0 14 10" width="14" height="10" aria-hidden="true"><rect x="1" y="1" width="12" height="1.6" rx=".8"/><rect x="3" y="4.2" width="8" height="1.6" rx=".8"/><rect x="2" y="7.4" width="10" height="1.6" rx=".8"/></svg>
-            </button>
-            <button type="button" class="tbBtn" data-cmd="justifyRight" title="align right">
-              <svg viewBox="0 0 14 10" width="14" height="10" aria-hidden="true"><rect x="1" y="1" width="12" height="1.6" rx=".8"/><rect x="5" y="4.2" width="8" height="1.6" rx=".8"/><rect x="3" y="7.4" width="10" height="1.6" rx=".8"/></svg>
-            </button>
-            <span class="tbSep" aria-hidden="true"></span>
-            <button type="button" class="tbBtn" data-cmd="sceneBreak" title="scene break">⁂</button>
-          </div>
-          <div class="bookPageWrap">
-            <div id="bookPage" class="bookPage">
-              <div class="bookPageKicker"><span id="bookChapterNumber">chapter one</span><span class="bookKickerSep"
-                  aria-hidden="true">·</span><span id="bookCategory" class="bookCategory isBlank" contenteditable="true"
-                  role="textbox" aria-label="Chapter category" spellcheck="false"
-                  data-placeholder="category…"></span></div>
-              <h2 id="bookChapterTitle" class="bookChapterTitle isBlank" contenteditable="true" role="textbox"
-                aria-label="Chapter title" spellcheck="true" data-placeholder="chapter title…"></h2>
-              <div id="bookEditor" class="bookEditor isBlank" contenteditable="true" role="textbox"
-                aria-label="Chapter text" spellcheck="true"
-                data-placeholder="write — the book keeps every word"></div>
-              <div id="bookChapterMeta" class="bookChapterMeta"></div>
-            </div>
-          </div>
-        </div>
-        <aside class="bookPreviewCol" aria-label="Book preview">
-          <div class="bookPreviewHead">
-            <span>preview</span>
-            <div class="bookReaderFont bookFontMini" role="group" aria-label="text size">
-              <button class="bookFontBtn" type="button" data-dir="-1" aria-label="smaller text" title="smaller text">A−</button>
-              <button class="bookFontBtn" type="button" data-dir="1" aria-label="bigger text" title="bigger text">A+</button>
-            </div>
-            <button id="bookRead" class="bookPreviewOpen" type="button" title="read the book fullscreen">open book ⤢</button>
-            <button id="bookPreviewCollapse" class="bookShelfCollapse bookPreviewCollapse" type="button" title="hide preview"
-              aria-label="toggle the preview panel">›</button>
-          </div>
-          <div id="bookPreviewPage" class="bookPreviewPage"></div>
-          <div class="bookPreviewNav">
-            <span id="bookPreviewCount"></span>
-          </div>
-        </aside>
-      </div>
-      <footer class="bookStatusBar">
-        <div id="bookStats" class="bookStats"></div>
-        <div class="bookChapterNav">
-          <button id="bookPrevChapter" type="button">‹ previous</button>
-          <span id="bookChapterPosition"></span>
-          <button id="bookNextChapter" type="button">next ›</button>
-        </div>
-      </footer>
-      <div id="bookFormatPop" class="bookFormatPop" aria-hidden="true">
-        <button type="button" class="tbBtn" data-cmd="bold" title="bold"><b>B</b></button>
-        <button type="button" class="tbBtn" data-cmd="italic" title="italic"><i>I</i></button>
-        <button type="button" class="tbBtn" data-cmd="underline" title="underline"><u>U</u></button>
-        <span class="tbSep" aria-hidden="true"></span>
-        <button type="button" class="tbBtn" data-block="h1" title="heading 1">H1</button>
-        <button type="button" class="tbBtn" data-block="h2" title="heading 2">H2</button>
-        <button type="button" class="tbBtn" data-block="h3" title="heading 3">H3</button>
-        <span class="tbSep" aria-hidden="true"></span>
-        <button type="button" class="tbBtn" data-cmd="justifyCenter" title="align center">
-          <svg viewBox="0 0 14 10" width="14" height="10" aria-hidden="true"><rect x="1" y="1" width="12" height="1.6" rx=".8"/><rect x="3" y="4.2" width="8" height="1.6" rx=".8"/><rect x="2" y="7.4" width="10" height="1.6" rx=".8"/></svg>
-        </button>
-        <button type="button" class="tbBtn" data-cmd="sceneBreak" title="scene break">⁂</button>
-      </div>
-      <div id="bookReader" class="bookReader" aria-hidden="true">
-        <button id="bookReaderClose" class="bookReaderClose" type="button" aria-label="close the book">× close the book</button>
-        <div class="bookReaderFont" role="group" aria-label="text size">
-          <button class="bookFontBtn" type="button" data-dir="-1" aria-label="smaller text" title="smaller text">A−</button>
-          <span id="bookFontLabel" class="bookFontLabel">100%</span>
-          <button class="bookFontBtn" type="button" data-dir="1" aria-label="bigger text" title="bigger text">A+</button>
-        </div>
-        <div class="bookReaderStage">
-          <button id="bookReaderPrev" class="bookReaderArrow" type="button" aria-label="previous page"
-            title="previous page">‹</button>
-          <div id="readerBook" class="readerBook" aria-label="the book, fullscreen"></div>
-          <button id="bookReaderNext" class="bookReaderArrow" type="button" aria-label="next page"
-            title="next page">›</button>
-        </div>
-        <div class="bookReaderHint">click a page or use the arrows to turn · escape to return</div>
-      </div>
-    </section>
-
-    <div id="focusKicker" class="focusKicker" aria-hidden="true">the book</div>
-
-    <section class="focus" id="focus" aria-live="polite">
-      <div id="focusTodoPreview" class="focusTodoPreview" aria-hidden="true"></div>
-      <div class="eyebrowRow">
-        <button id="category" class="categoryButton" aria-haspopup="true" aria-expanded="false">life</button>
-        <div id="categoryMenu" class="categoryMenu" aria-hidden="true"></div>
-      </div>
-      <h1 id="question"></h1>
-      <div id="focusTimerControls" class="focusTimerControls" aria-hidden="true">
-        <button type="button" data-timer="focus" class="timerMode active">focus time</button>
-        <button type="button" data-timer="short" class="timerMode">short break</button>
-        <button type="button" data-timer="long" class="timerMode">long break</button>
-      </div>
-      <div id="focusTimer" class="focusTimer" aria-hidden="true">25:00</div>
-      <div id="focusTimerButtons" class="focusTimerButtons" aria-hidden="true">
-        <button id="focusTimerStart" type="button">start</button>
-        <button id="focusTimerReset" type="button">reset</button>
-        <button id="focusTimerPnp" type="button" aria-label="picture in picture" title="picture in picture">▣</button>
-      </div>
-      <div class="answerRow">
-        <div class="answerWrap">
-          <div id="answer" class="answer" contenteditable="true" data-placeholder="type your answer…" role="textbox"
-            aria-label="Your answer" spellcheck="true"></div>
-          <div class="answerRule"></div>
-        </div>
-        <button id="cycleToggle" class="cycleToggle" aria-label="Pause question cycling" title="Pause question cycling">
-          <span class="pauseIcon" aria-hidden="true"><i></i><i></i></span>
-          <span class="playIcon" aria-hidden="true"></span>
-        </button>
-      </div>
-      <div id="focusModeActions" class="focusModeActions" aria-hidden="true">
-        <button id="focusNotNow">not right now</button>
-      </div>
-      <div class="answerMeta"><span id="answerMetaHint">enter to save · shift + enter for a new line</span><span
-          id="cycleStatus">cycling</span></div>
-    </section>
-
-    <section id="scheduler" class="scheduler" aria-hidden="true">
-      <div id="schedulerKicker" class="schedulerKicker">day circle</div>
-      <div class="schedulerLayout">
-        <div class="schedulerClockWrap">
-        <svg id="schedulerClock" class="schedulerClock" viewBox="0 0 400 400" role="img"
-          aria-label="24 hour schedule circle">
-          <g id="schedulerTicks" aria-hidden="true"></g>
-          <circle class="schedulerBezel" cx="200" cy="200" r="184" aria-hidden="true"></circle>
-          <circle class="schedulerBezelInner" cx="200" cy="200" r="176" aria-hidden="true"></circle>
-          <circle class="schedulerHub" cx="200" cy="200" r="88" aria-hidden="true"></circle>
-          <g id="schedulerWedges" aria-hidden="true"></g>
-          <g id="schedulerDrag" aria-hidden="true"></g>
-          <line id="schedulerHourHand" class="schedulerHourHand" x1="200" y1="200" x2="200" y2="96"
-            aria-hidden="true"></line>
-          <line id="schedulerMinuteHand" class="schedulerMinuteHand" x1="200" y1="200" x2="200" y2="62"
-            aria-hidden="true"></line>
-          <line id="schedulerSecondHand" class="schedulerSecondHand" x1="200" y1="200" x2="200" y2="52"
-            aria-hidden="true"></line>
-          <circle class="schedulerCap" cx="200" cy="200" r="5" aria-hidden="true"></circle>
-        </svg>
-        <div id="schedulerCenter" class="schedulerCenter">
-          <div id="schedulerNowTime" class="schedulerNowTime"></div>
-          <div id="schedulerCurrent" class="schedulerCurrent"></div>
-          <div id="schedulerNext" class="schedulerNext"></div>
-        </div>
-      </div>
-      <aside id="scheduleList" class="scheduleList" aria-label="Schedule list"></aside>
-      </div>
-      <div id="schedulerEditor" class="schedulerEditor" aria-hidden="true">
-        <div class="schedulerTimeInputs">
-          <label>from <input id="schedulerStart" type="time" step="60" aria-label="Block start time"></label>
-          <span aria-hidden="true">→</span>
-          <label>to <input id="schedulerEnd" type="time" step="60" aria-label="Block end time"></label>
-        </div>
-        <div id="schedulerEditorTime" class="schedulerEditorTime"></div>
-        <input id="schedulerLabel" class="schedulerLabelInput" type="text" placeholder="what is this time for?"
-          autocomplete="off" aria-label="Block label">
-        <div id="schedulerColors" class="schedulerColors" aria-label="Block color"></div>
-        <div class="schedulerEditorButtons">
-          <button id="schedulerSave" type="button">save</button>
-          <button id="schedulerDelete" type="button">delete</button>
-          <button id="schedulerCancel" type="button">cancel</button>
-        </div>
-      </div>
-      <div class="schedulerHint">drag on the circle to plan a block of time · click a block to edit it</div>
-      <button id="scheduleListToggle" class="scheduleListToggle" type="button" aria-pressed="true"
-        title="show or hide the schedule list">☰</button>
-    </section>
-
-    <div class="controlsZone" aria-hidden="true">
-      <nav class="centerControls" aria-label="Question controls">
-        <div class="navPair">
-          <button id="previousQuestion">previous</button>
-          <span aria-hidden="true">—</span>
-          <button id="newQuestion">next</button>
-          <span aria-hidden="true">|</span>
-          <button id="history" class="historyControl">history</button>
-        </div>
-      </nav>
-    </div>
-
-    <div class="bottomLeftTools">
-      <button id="noteDock" class="toolIcon" aria-expanded="false" aria-controls="notePanel" title="notepad"
-        aria-label="notepad">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-          <polyline points="14 2 14 8 20 8"></polyline>
-          <line x1="16" y1="13" x2="8" y2="13"></line>
-          <line x1="16" y1="17" x2="8" y2="17"></line>
-          <polyline points="10 9 9 9 8 9"></polyline>
-        </svg>
-      </button>
-    </div>
-
-    <section id="todoFullscreen" class="todoFullscreen" aria-hidden="true">
-      <div class="todoFullscreenInner">
-        <button id="closeTodoFullscreen" class="todoFullscreenBack" type="button">← return to reflection</button>
-        <div class="todoFullscreenKicker">to do</div>
-        <h2>What needs your attention?</h2>
-        <div id="todoFullscreenList" class="todoFullscreenList"></div>
-        <div id="todoFullscreenEmpty" class="todoFullscreenEmpty">nothing here yet.</div>
-        <div class="todoFullscreenComposer">
-          <input id="todoFullscreenInput" class="todoFullscreenInput" type="text" placeholder="add something…"
-            autocomplete="off" aria-label="Add a todo">
-          <button id="todoFullscreenAdd" type="button">add</button>
-        </div>
-        <div class="todoFullscreenHint">enter to add · escape to return</div>
-      </div>
-    </section>
-
-    <section id="notePanel" class="notePanel" aria-hidden="true">
-      <div class="noteHeader"><span class="noteTitle">notepad</span><span id="noteStatus" class="noteStatus">saved</span></div>
-      <textarea id="noteText" placeholder="write anything — it saves as you type…" aria-label="notepad"></textarea>
-    </section>
-
-    <div id="hydrationReminder" class="hydrationReminder" aria-live="polite" aria-hidden="true">
-      <div id="hydrationTooltip" class="hydrationTooltip">
-        <span id="hydrationPercent">0%</span>
-        <span id="hydrationCount">average: not enough data</span>
-      </div>
-      <button id="hydrationDone" class="hydrationButton" type="button" aria-label="Hydrate" title="Hydrate">
-        <span class="hydrationGlass" aria-hidden="true">
-          <svg viewBox="0 0 32 40" role="presentation">
-            <path class="glassOutline" d="M5 4h22l-2.2 31.5a2.5 2.5 0 0 1-2.5 2.3H9.7a2.5 2.5 0 0 1-2.5-2.3L5 4Z" />
-            <path class="glassWater"
-              d="M6.8 7.2h18.4l-1.5 28.3a2.5 2.5 0 0 1-2.5 2.3H11.3a2.5 2.5 0 0 1-2.5-2.3L6.8 7.2Z" />
-            <path class="waterLine" d="M7.2 8.2c2.8-1.4 5.4 1.2 8.3 0 2.8-1.4 5.5 1.3 8.8-.1" />
-          </svg>
-        </span>
-      </button>
-    </div>
-
-    <section id="notifs" class="notifsMode" aria-hidden="true">
-      <div class="notifTop">
-        <span class="notifKicker">notifications</span>
-        <span id="notifSummary" class="notifSummary" aria-live="polite"></span>
-        <span class="notifTools" role="toolbar" aria-label="Notification tools">
-          <button id="notifClear" type="button" title="dismiss everything for today">dismiss all</button>
-        </span>
-      </div>
-      <div id="notifList" class="notifList" aria-label="notifications"></div>
-    </section>
-
-    <button id="themeToggle" class="settingsFab themeToggleFab" aria-label="Toggle light mode" title="light / dark mode">☀</button>
-    <button id="settings" class="settingsFab" aria-label="Open settings" title="Settings">⚙</button>
-
-    <section id="settingsPanel" class="settingsPanel" aria-hidden="true">
-      <div class="settingsInner">
-        <button id="closeSettings" class="closeButton">×</button>
-        <div class="historyKicker">settings</div>
-        <h2>Shape your questions</h2>
-        <nav id="settingsTabs" class="settingsTabs" aria-label="Settings categories" role="tablist">
-          <button type="button" class="settingsTab active" data-settings-tab="questions" role="tab"
-            aria-selected="true">questions</button>
-          <button type="button" class="settingsTab" data-settings-tab="appearance" role="tab"
-            aria-selected="false">appearance</button>
-          <button type="button" class="settingsTab" data-settings-tab="reminders" role="tab"
-            aria-selected="false">reminders</button>
-          <button type="button" class="settingsTab" data-settings-tab="data" role="tab"
-            aria-selected="false">data</button>
-        </nav>
-
-        <section class="settingSection" data-settings-category="questions">
-          <div class="settingTitle">categories</div>
-          <div class="settingHint">Choose what you want to see. Select more than one.</div>
-          <div id="categoryOptions" class="categoryOptions"></div>
-        </section>
-
-        <section class="settingSection questionLibrarySection" data-settings-category="questions">
-          <div class="settingTitle">question library</div>
-          <div class="settingHint">Switch tabs to edit the questions in each category. Changes save as you type.</div>
-          <div id="questionEditorTabs" class="questionEditorTabs" role="tablist" aria-label="Question categories"></div>
-          <div id="questionEditor" class="questionEditor"></div>
-        </section>
-
-        <section class="settingSection" data-settings-category="appearance">
-          <div class="settingTitle">text</div>
-          <label class="settingCheck"><input id="lowercaseEnabled" type="checkbox"><span>lowercase
-              everything</span></label>
-        </section>
-
-        <section class="settingSection appearanceSection" data-settings-category="appearance">
-          <div class="settingTitle">appearance</div>
-          <label class="settingCheck"><input id="lightModeEnabled" type="checkbox"><span>light mode</span></label>
-          <label class="settingCheck"><input id="modeSwitchExpand" type="checkbox"><span>always expand mode
-              switch</span></label>
-
-          <div class="appearanceControl modeOrderControl">
-            <div class="appearanceControlHead"><span>mode switch order</span></div>
-            <div id="modeOrderList" class="modeOrderList" aria-label="Mode switch order"></div>
-            <label class="settingCheck modeResumeCheck"><input id="startupResume" type="checkbox"><span>start where I
-                left off</span></label>
-            <div class="settingHint">Use the arrows to reorder the modes. Tap ◉ to hide a mode — hidden modes leave
-              the switcher and the swipe cycle. Tap ⌂ to pin the screen the app opens on.</div>
-          </div>
-
-          <div class="appearanceControl">
-            <div class="appearanceControlHead"><span>card push sensitivity</span><output id="stickyPushValue"></output>
-            </div>
-            <input id="stickyPush" type="range" min="20" max="220" step="10" value="110"
-              aria-label="Card push sensitivity">
-            <div class="settingHint">How much remember-wall cards may overlap before they push each other away.
-              Lower = pushes sooner.</div>
-          </div>
-
-          <div class="appearanceControl">
-            <div class="appearanceControlHead"><span>card tilt</span><output id="stickyTiltValue"></output></div>
-            <input id="stickyTilt" type="range" min="0" max="6" step="0.3" value="1.8" aria-label="Card tilt">
-          </div>
-
-          <div class="appearanceControl">
-            <div class="appearanceControlHead"><span>card size uniqueness</span><output id="stickyScaleValue"></output>
-            </div>
-            <input id="stickyScale" type="range" min="0" max="40" step="2" value="12" aria-label="Card size uniqueness">
-            <div class="settingHint">How differently sized each card is from the others.</div>
-          </div>
-
-          <div class="appearanceControl">
-            <div class="appearanceControlHead"><span>tidy spread</span></div>
-            <div id="stickySpreadBtns" class="spreadBtns">
-              <button type="button" data-spread="25">tight</button>
-              <button type="button" data-spread="60">close</button>
-              <button type="button" data-spread="100">normal</button>
-              <button type="button" data-spread="160">loose</button>
-              <button type="button" data-spread="250">wide</button>
-            </div>
-            <div class="settingHint">How far apart the cards sit when the wall tidies itself.</div>
-          </div>
-
-          <div class="appearanceControl">
-            <div class="appearanceControlHead"><span>tidy position</span></div>
-            <div id="tidyAnchorBtns" class="tidyAnchorGrid">
-              <button type="button" data-anchor="top-left" aria-label="tidy to top left" title="top left">↖</button>
-              <button type="button" data-anchor="top-center" aria-label="tidy to top center" title="top center">↑</button>
-              <button type="button" data-anchor="top-right" aria-label="tidy to top right" title="top right">↗</button>
-              <button type="button" data-anchor="center-left" aria-label="tidy to center left" title="center left">←</button>
-              <button type="button" data-anchor="center-center" aria-label="tidy to center" title="center">·</button>
-              <button type="button" data-anchor="center-right" aria-label="tidy to center right" title="center right">→</button>
-              <button type="button" data-anchor="bottom-left" aria-label="tidy to bottom left" title="bottom left">↙</button>
-              <button type="button" data-anchor="bottom-center" aria-label="tidy to bottom center" title="bottom center">↓</button>
-              <button type="button" data-anchor="bottom-right" aria-label="tidy to bottom right" title="bottom right">↘</button>
-            </div>
-            <div class="settingHint">Where the cards gather when you hit tidy.</div>
-          </div>
-
-          <div class="settingHint">Make the reflection space yours. Colors and background effects are saved on this
-            device.</div>
-
-          <div class="appearanceControl textSizeControl">
-            <div class="appearanceControlHead"><span>text size</span><output id="textSizeValue">100%</output>
-            </div>
-            <input id="textSize" type="range" min="85" max="130" step="5" value="100" aria-label="Text size">
-          </div>
-
-          <div class="appearanceControl fontWeightControl">
-            <div class="appearanceControlHead"><span>font weight</span><output id="fontWeightValue">400</output>
-            </div>
-            <input id="fontWeight" type="range" min="300" max="700" step="50" value="400" aria-label="Font weight">
-          </div>
-
-          <div class="appearanceControl screenScaleControl">
-            <div class="appearanceControlHead"><span>screen scale</span><output id="screenScaleValue">100%</output>
-            </div>
-            <input id="screenScale" type="range" min="0.8" max="1.2" step="0.05" value="1" aria-label="Screen scale">
-          </div>
-
-          <div class="appearanceGrid">
-            <label class="colorSetting">
-              <span>background color</span>
-              <input id="backgroundColor" type="color" value="#10100f" aria-label="Background color">
-            </label>
-            <label class="colorSetting">
-              <span>text color</span>
-              <input id="textColor" type="color" value="#ebe8e0" aria-label="Text color">
-            </label>
-            <label class="colorSetting">
-              <span>accent color</span>
-              <input id="accentColor" type="color" value="#aaa69d" aria-label="Accent color">
-            </label>
-            <label class="colorSetting">
-              <span>overlay color</span>
-              <input id="overlayColor" type="color" value="#10100f" aria-label="Overlay color">
-            </label>
-          </div>
-
-          <div class="appearancePresets" aria-label="Appearance presets">
-            <button type="button" class="appearancePreset" data-preset="midnight">midnight</button>
-            <button type="button" class="appearancePreset" data-preset="paper">paper</button>
-            <button type="button" class="appearancePreset" data-preset="forest">forest</button>
-            <button type="button" class="appearancePreset" data-preset="ocean">ocean</button>
-            <button type="button" class="appearancePreset" data-preset="rose">rose</button>
-          </div>
-
-          <div class="backgroundPickerRow">
-            <label class="backgroundUploadButton" for="backgroundImage">choose background image</label>
-            <input id="backgroundImage" type="file" accept="image/*" hidden>
-            <button id="removeBackground" type="button" class="textButton">remove image</button>
-          </div>
-          <div id="backgroundFileName" class="backgroundFileName">no custom background</div>
-
-          <div class="appearanceControl">
-            <div class="appearanceControlHead"><span>image opacity</span><output
-                id="backgroundOpacityValue">35%</output></div>
-            <input id="backgroundOpacity" type="range" min="0" max="100" step="0.1"
-              aria-label="Background image opacity">
-          </div>
-          <div class="appearanceControl">
-            <div class="appearanceControlHead"><span>overlay opacity</span><output id="overlayOpacityValue">30%</output>
-            </div>
-            <input id="overlayOpacity" type="range" min="0" max="100" step="1" aria-label="Overlay opacity">
-          </div>
-          <div class="appearanceControl">
-            <div class="appearanceControlHead"><span>blur</span><output id="backgroundBlurValue">0px</output></div>
-            <input id="backgroundBlur" type="range" min="0" max="24" step="1" aria-label="Background blur">
-          </div>
-          <div class="appearanceControl">
-            <div class="appearanceControlHead"><span>greyscale</span><output id="backgroundGrayscaleValue">0%</output>
-            </div>
-            <input id="backgroundGrayscale" type="range" min="0" max="100" step="1" aria-label="Background greyscale">
-          </div>
-          <div class="appearanceControl">
-            <div class="appearanceControlHead"><span>saturation</span><output
-                id="backgroundSaturationValue">100%</output></div>
-            <input id="backgroundSaturation" type="range" min="0" max="180" step="1" aria-label="Background saturation">
-          </div>
-          <div class="appearanceControl">
-            <div class="appearanceControlHead"><span>brightness</span><output
-                id="backgroundBrightnessValue">100%</output></div>
-            <input id="backgroundBrightness" type="range" min="40" max="160" step="1"
-              aria-label="Background brightness">
-          </div>
-          <div class="appearanceControl">
-            <div class="appearanceControlHead"><span>contrast</span><output id="backgroundContrastValue">100%</output>
-            </div>
-            <input id="backgroundContrast" type="range" min="50" max="160" step="1" aria-label="Background contrast">
-          </div>
-          <div class="appearanceControl">
-            <div class="appearanceControlHead"><span>sepia</span><output id="backgroundSepiaValue">0%</output></div>
-            <input id="backgroundSepia" type="range" min="0" max="100" step="1" aria-label="Background sepia">
-          </div>
-
-          <div class="settingSubsection">
-            <div class="settingTitle">hover parallax</div>
-            <div class="settingHint">Move your pointer around the screen to gently shift the text and background. Set
-              each amount independently.</div>
-
-            <div class="appearanceControl">
-              <div class="appearanceControlHead"><span>text movement</span><output id="parallaxTextValue">10px</output>
-              </div>
-              <input id="parallaxText" type="range" min="0" max="40" step="1" aria-label="Text parallax movement">
-            </div>
-            <div class="appearanceControl">
-              <div class="appearanceControlHead"><span>background movement</span><output
-                  id="parallaxBackgroundValue">18px</output></div>
-              <input id="parallaxBackground" type="range" min="0" max="80" step="1"
-                aria-label="Background parallax movement">
-            </div>
-            <div class="appearanceControl">
-              <div class="appearanceControlHead"><span>background scale</span><output
-                  id="parallaxScaleValue">108%</output></div>
-              <input id="parallaxScale" type="range" min="100" max="125" step="1"
-                aria-label="Parallax background scale">
-            </div>
-          </div>
-
-          <button id="resetAppearance" type="button" class="resetAppearance">reset appearance</button>
-        </section>
-
-        <section class="settingSection dataSection" data-settings-category="data">
-          <div class="settingTitle">data & storage</div>
-          <div class="settingHint">Your questions, answers, todos, settings, and background image are stored locally in
-            this extension. Export a backup anytime or import one on another Zen/Firefox profile.</div>
-          <div class="dataActions">
-            <button id="exportData" type="button" class="dataButton">export backup</button>
-            <label for="importData" class="dataButton">import backup</label>
-            <input id="importData" type="file" accept="application/json,.json" hidden>
-          </div>
-          <div id="dataStatus" class="dataStatus" aria-live="polite">storage: browser extension storage</div>
-          <div class="settingSubsection">
-            <div class="settingTitle">sync server</div>
-            <div class="settingHint">Every change is pushed to this server automatically and written to the
-              "settings export" folder. When you open the app from a server's own address (the VPS),
-              it syncs with that server on its own — nothing to type. Only fill this in to sync with a
-              different server, e.g. this PC's address on your network (find it with "ipconfig" — look
-              for IPv4 Address).</div>
-            <input id="syncServer" class="syncServerInput" type="text" autocomplete="off" spellcheck="false"
-              placeholder="http://127.0.0.1:8765" aria-label="Sync server address">
-            <div class="settingTitle" style="margin-top:10px">sync token</div>
-            <div class="settingHint">Optional. If the server requires a key, paste it here — sent as a Bearer token.</div>
-            <input id="syncToken" class="syncServerInput" type="text" autocomplete="off" spellcheck="false"
-              placeholder="(leave empty if none)" aria-label="Sync server token">
-            <button id="syncNowBtn" class="syncNowBtn" type="button">sync now</button>
-            <button id="pushBtn" class="syncNowBtn" type="button">push this device</button>
-            <button id="compareBtn" class="syncNowBtn" type="button">compare &amp; recover</button>
-            <button id="syncCenterBtn" class="syncNowBtn" type="button">sync center</button>
-          </div>
-        </section>
-
-        <section class="settingSection" data-settings-category="questions">
-          <div class="settingTitle">question cycle</div>
-          <div class="settingHint">How long a question stays before the next one appears.</div>
-          <div class="rangeRow">
-            <input id="cycleSeconds" type="range" min="3" max="30" step="0.5" aria-label="Question cycle duration">
-            <span id="cycleSecondsValue">6.5s</span>
-          </div>
-        </section>
-
-        <section class="settingSection" data-settings-category="reminders">
-          <div class="settingTitle">hydration reminder</div>
-          <div class="settingHint">Choose how long to wait after each drink before the reminder returns.</div>
-          <label class="hydrationSetting">
-            <span>remind me after</span>
-            <span class="hydrationDurationInputs">
-              <span class="hydrationInputWrap"><input id="hydrationHours" type="number" min="0" max="24" step="1"
-                  value="1" aria-label="Hydration reminder hours"><span>h</span></span>
-              <span class="hydrationInputWrap"><input id="hydrationMinutesPart" type="number" min="0" max="59" step="1"
-                  value="0" aria-label="Hydration reminder minutes"><span>m</span></span>
-              <span class="hydrationInputWrap"><input id="hydrationSeconds" type="number" min="0" max="59" step="1"
-                  value="0" aria-label="Hydration reminder seconds"><span>s</span></span>
-            </span>
-          </label>
-          <div class="appearanceControl hydrationControl">
-            <div class="appearanceControlHead"><span>icon size</span><output id="hydrationSizeValue">24px</output></div>
-            <input id="hydrationSize" type="range" min="12" max="48" step="1" value="24"
-              aria-label="Hydration icon size">
-          </div>
-          <div class="settingToggleRow hydrationWaveSetting">
-            <div>
-              <div class="settingTitle">water wave</div>
-              <div class="settingHint">Animate the water when you mark a drink.</div>
-            </div>
-            <label class="switch"><input id="hydrationWave" type="checkbox" checked><span></span></label>
-          </div>
-          <div class="settingToggleRow hydrationHoverSetting">
-            <div>
-              <div class="settingTitle">enlarge on hover</div>
-              <div class="settingHint">Make the hydration icon grow when you move over it.</div>
-            </div>
-            <label class="switch"><input id="hydrationHoverEnabled" type="checkbox"><span></span></label>
-          </div>
-          <div class="appearanceControl hydrationControl">
-            <div class="appearanceControlHead"><span>hover size</span><output
-                id="hydrationHoverScaleValue">150%</output></div>
-            <input id="hydrationHoverScale" type="range" min="1.1" max="2.5" step="0.05" value="1.5"
-              aria-label="Hydration icon hover size">
-          </div>
-          <div class="hydrationHistoryPanel">
-            <div class="settingTitle">hydration history</div>
-            <div id="hydrationAverage" class="hydrationAverage">average time: not enough data</div>
-            <div id="hydrationHistory" class="hydrationHistory"></div>
-          </div>
-        </section>
-
-        <section class="settingSection" data-settings-category="reminders">
-          <div class="settingTitle">deadline reminders</div>
-          <div class="settingHint">A reminder card and a soft chime appear while the app is open when a deadline is
-            close.</div>
-          <div class="settingToggleRow">
-            <div>
-              <div class="settingTitle">remind me</div>
-              <div class="settingHint">Turn the deadline reminder card on or off.</div>
-            </div>
-            <label class="switch"><input id="deadlineRemind" type="checkbox" checked><span></span></label>
-          </div>
-          <div class="appearanceControl">
-            <div class="appearanceControlHead"><span>days before the deadline</span><output
-                id="deadlineRemindDaysValue">2</output></div>
-            <input id="deadlineRemindDays" type="range" min="0" max="14" step="1" value="2"
-              aria-label="Deadline reminder days before">
-            <div class="settingHint">How many days ahead of a deadline the reminder starts.</div>
-          </div>
-        </section>
-
-        <section class="settingSection settingToggleRow">
-          <div>
-            <div class="settingTitle">soft animation</div>
-            <div class="settingHint">Fade, blur and gently move between questions.</div>
-          </div>
-          <label class="switch"><input id="animationEnabled" type="checkbox"><span></span></label>
-        </section>
-
-        <section class="settingSection settingToggleRow">
-          <div>
-            <div class="settingTitle">clock animation</div>
-            <div class="settingHint">Roll the focus timer digits as the clock ticks.</div>
-          </div>
-          <label class="switch"><input id="timerAnimationEnabled" type="checkbox" checked><span></span></label>
-        </section>
-
-        <div class="settingsNote">More controls can live here later — without adding clutter to the main screen.</div>
-      </div>
-    </section>
-
-    <section id="historyPanel" class="historyPanel" aria-hidden="true">
-      <div class="historyView">
-        <div class="eyebrowRow historyEyebrow">
-          <span class="historyKicker">history</span>
-          <span id="historyCategory" class="historyCategory"></span>
-        </div>
-        <h1 id="historyQuestion"></h1>
-        <div class="answerRow historyAnswerRow">
-          <div class="answerWrap">
-            <div id="historyAnswer" class="answer historyAnswer"></div>
-            <div class="answerRule"></div>
-          </div>
-        </div>
-        <div class="answerMeta historyMeta">
-          <span id="historyDate"></span>
-          <span id="historyPosition"></span>
-        </div>
-        <div class="historyNav" aria-label="History navigation">
-          <button id="historyPrevious" type="button">previous</button>
-          <span aria-hidden="true">—</span>
-          <button id="historyNext" type="button">next</button>
-          <span aria-hidden="true">—</span>
-          <button id="closeHistory" aria-label="Close history" type="button">close</button>
-        </div>
-      </div>
-    </section>
-    <div id="cycleHint">questions change quietly · move toward an edge</div>
-  </main>
-  <nav id="modeRail" aria-label="screens"></nav>
-  <nav id="modeDock" aria-label="screens"></nav>
-  <script src="app.js?v=2.59"></script>
-<script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/sw.js").catch(()=>{});
+<style>
+/* ─────────────────────────────────────────────────────────
+   owl web — vantablack rebuild, modeled on the oma launcher
+   widget: menu-first, card boxes, pixel type, lowercase all
+   ───────────────────────────────────────────────────────── */
+@font-face{
+  font-family:"Monocraft";
+  src:url("/one/fonts/Monocraft.ttf") format("truetype");
+  font-display:swap;
 }
+:root{
+  --bg:#000000;
+  --fg:#ececec;
+  --muted:#787774;
+  --accent:#8d8d8d;
+  --red:#ff6b6b;
+  --green:#6bd68a;
+  --gold:#f5c542;
+  --line:rgba(236,236,236,.08);
+  --line-strong:rgba(236,236,236,.14);
+  --card:rgba(236,236,236,.045);
+  --card-hover:rgba(236,236,236,.09);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  background:var(--bg);
+  color:var(--fg);
+  font-family:"Monocraft",ui-monospace,monospace;
+  font-weight:300;
+  text-transform:lowercase;
+  -webkit-font-smoothing:none;
+  font-smooth:never;
+  overflow-x:hidden;
+}
+button{
+  font-family:inherit;color:inherit;background:none;border:none;
+  cursor:pointer;text-transform:lowercase;font-weight:300;
+}
+input,textarea{
+  font-family:inherit;color:var(--fg);background:var(--card);
+  border:1px solid var(--line-strong);border-radius:8px;
+  padding:10px 12px;font-size:15px;width:100%;outline:none;
+  text-transform:lowercase;font-weight:300;
+}
+input:focus,textarea:focus{border-color:rgba(141,141,141,.5);}
+::placeholder{color:var(--muted);opacity:.5;}
+a{color:inherit;text-decoration:none;}
+img{display:block;}
+#app{max-width:520px;margin:0 auto;min-height:100vh;position:relative;}
+.view{
+  display:none;min-height:100vh;
+  padding:20px 18px 60px;
+  opacity:0;transform:translateY(14px);
+}
+.view.on{display:block;animation:fin 260ms cubic-bezier(.22,.9,.3,1) forwards;}
+@keyframes fin{to{opacity:1;transform:none;}}
+/* ── flash on section open ── */
+#flash{
+  position:fixed;inset:0;background:var(--fg);opacity:0;
+  pointer-events:none;z-index:90;transition:opacity 320ms ease-out;
+}
+#flash.lit{opacity:.14;transition:none;}
+/* ── type scale ── */
+.t-title{font-size:24px;font-weight:300;letter-spacing:.5px;}
+.t-label{font-size:12px;color:var(--muted);}
+.t-small{font-size:11.5px;color:var(--muted);}
+.t-accent{color:var(--accent);}
+/* ── menu (home) ── */
+#v-menu{padding-top:70px;text-align:center;}
+#menuClock{font-size:64px;font-weight:300;letter-spacing:2px;line-height:1;}
+#menuSub{margin-top:10px;font-size:13px;color:var(--fg);}
+#menuWx{margin-top:6px;font-size:13px;color:var(--fg);}
+#menuStatus{margin-top:18px;font-size:13px;min-height:18px;}
+#menuSholat{
+  margin:14px auto 0;max-width:300px;padding:12px 10px;border-radius:14px;
+  background:rgba(245,197,66,.06);border:1px solid rgba(245,197,66,.28);
+  font-size:13px;color:var(--gold);
+}
+#menuSholat .t{color:rgba(236,236,236,.5);font-size:11.5px;margin-top:3px;}
+#menuSholat .done{
+  display:inline-block;margin-top:8px;padding:9px 12px;border-radius:8px;
+  background:rgba(236,236,236,.12);border:1px solid rgba(236,236,236,.7);
+  color:var(--fg);font-size:12px;
+}
+#menuList{margin-top:46px;text-align:left;}
+.menu-row{
+  display:flex;align-items:center;gap:14px;
+  padding:15px 13px;font-size:18px;color:var(--fg);
+  border-bottom:1px solid var(--line);
+}
+.menu-row:active{background:var(--card);}
+.menu-row .count{margin-left:auto;color:var(--muted);font-size:12px;}
+/* ── section top bar ── */
+.top{
+  display:flex;align-items:center;gap:12px;margin-bottom:18px;
+}
+.back{
+  padding:8px 10px;color:var(--muted);font-size:14px;flex-shrink:0;
+}
+.back:active{color:var(--fg);}
+.top .tt{flex:1;min-width:0;}
+.top .tt .t-title{line-height:1.15;}
+.top .tt .t-label{margin-top:3px;}
+/* ── cards ── */
+.card{
+  background:var(--card);border:1px solid var(--line);
+  border-radius:16px;padding:24px 20px;
+}
+.card.tap:active{background:var(--card-hover);}
+/* ── pills ── */
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px;}
+.pill{
+  padding:7px 10px;border-radius:8px;font-size:12px;color:var(--muted);
+  background:rgba(236,236,236,.05);
+}
+.pill.on{
+  color:var(--accent);background:rgba(141,141,141,.18);
+  border:1px solid rgba(141,141,141,.5);padding:6px 9px;
+}
+/* ── generic rows ── */
+.row{
+  display:flex;align-items:center;gap:10px;padding:10px 4px;
+  border-bottom:1px solid rgba(236,236,236,.05);
+}
+.row .grow{flex:1;min-width:0;}
+.row .del{color:rgba(255,107,107,.5);padding:6px 8px;flex-shrink:0;}
+.row .del:active{color:var(--red);}
+.addrow{
+  margin-top:14px;color:var(--accent);font-size:14px;padding:10px 4px;
+  text-align:center;
+}
+.addrow:active{color:var(--fg);}
+.center{text-align:center;}
+.spacer{height:22px;}
+/* ── nav arrows (quotes) ── */
+.navrow{display:flex;justify-content:center;gap:20px;margin-top:16px;}
+.navrow button{padding:10px 18px;color:var(--muted);font-size:16px;}
+.navrow button:active{color:var(--fg);}
+/* ── deadline urgency ── */
+.dl-date{font-size:26px;}
+.dl-date.red{color:var(--red);}
+.dl-date.gold{color:var(--gold);}
+.dl-date.acc{color:var(--accent);}
+.dl-note{
+  margin-top:10px;padding:10px 12px;border-radius:10px;
+  background:rgba(236,236,236,.04);font-size:13px;color:rgba(236,236,236,.85);
+  white-space:pre-wrap;word-break:break-word;
+}
+.checkbox{
+  width:20px;height:20px;border-radius:6px;flex-shrink:0;
+  border:1px solid rgba(236,236,236,.4);cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.checkbox.on{background:rgba(141,141,141,.85);border-color:transparent;}
+.checkbox .tick{color:#000;font-size:13px;display:none;}
+.checkbox.on .tick{display:block;}
+.done-text{color:rgba(120,119,116,.5);text-decoration:line-through;}
+/* ── day circle blocks ── */
+.sched-row{display:flex;align-items:center;gap:10px;padding:10px 4px;}
+.sched-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.sched-block{
+  border-left:3px solid var(--accent);padding:10px 12px;margin-bottom:8px;
+  background:rgba(236,236,236,.03);border-radius:0 10px 10px 0;
+}
+.sched-block.active{background:rgba(236,236,236,.07);}
+.sched-block .t2{font-size:11.5px;color:var(--muted);margin-top:3px;}
+.tabs{display:flex;gap:8px;margin-bottom:14px;}
+.tabs button{
+  padding:8px 14px;border-radius:8px;font-size:12px;color:var(--muted);
+  background:rgba(236,236,236,.05);
+}
+.tabs button.on{color:var(--accent);background:rgba(141,141,141,.18);border:1px solid rgba(141,141,141,.5);}
+/* ── guide steps ── */
+.gstep{
+  display:flex;align-items:flex-start;gap:12px;padding:10px 4px;
+  border-bottom:1px solid rgba(236,236,236,.05);
+}
+.gstep .txt{flex:1;font-size:14px;line-height:1.5;padding-top:1px;}
+.gchoices{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+.gchoice{
+  font-size:11px;color:var(--muted);padding:5px 8px;border-radius:7px;
+  background:rgba(236,236,236,.05);
+}
+.gchoice.picked{color:var(--accent);background:rgba(141,141,141,.18);}
+/* ── sync dot ── */
+.syncdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;}
+.syncdot.ok{background:var(--green);}
+.syncdot.bad{background:var(--red);}
+/* ── modal ── */
+.modal{
+  position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:120;
+  display:none;align-items:center;justify-content:center;padding:20px;
+}
+.modal.open{display:flex;}
+.modal-box{
+  background:#0a0a0a;border:1px solid var(--line-strong);border-radius:16px;
+  width:100%;max-width:420px;padding:20px;max-height:82vh;overflow-y:auto;
+}
+.modal-box h3{font-size:16px;font-weight:300;margin-bottom:14px;color:var(--fg);}
+.modal-actions{display:flex;gap:10px;margin-top:16px;}
+.modal-actions button{
+  flex:1;padding:12px;border-radius:10px;font-size:14px;
+  background:var(--card);border:1px solid var(--line-strong);
+}
+.modal-actions button.primary{background:rgba(141,141,141,.25);border-color:rgba(141,141,141,.5);}
+/* ── toast ── */
+#toast{
+  position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+  background:#111;border:1px solid var(--line-strong);border-radius:10px;
+  padding:10px 16px;font-size:12.5px;color:var(--fg);opacity:0;
+  transition:all 240ms;z-index:140;pointer-events:none;white-space:nowrap;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+/* ── sync pill ── */
+#syncpill{
+  position:fixed;top:10px;right:12px;z-index:60;font-size:11px;color:var(--muted);
+}
+#syncpill .syncdot{width:6px;height:6px;}
+@media(min-width:700px){
+  #app{max-width:560px;border-left:1px solid var(--line);border-right:1px solid var(--line);}
+  #menuClock{font-size:80px;}
+}
+</style>
+</head>
+<body>
+<div id="flash"></div>
+<div id="syncpill"><span class="syncdot bad" id="syncDot"></span><span id="syncTxt">connecting…</span></div>
+<div id="app">
+
+  <!-- ═══════ MENU ═══════ -->
+  <div class="view on" id="v-menu">
+    <div id="menuClock">--:--</div>
+    <div id="menuSub"></div>
+    <div id="menuWx"></div>
+    <div id="menuStatus"></div>
+    <div id="menuSholat" style="display:none"></div>
+    <div id="menuList"></div>
+  </div>
+
+  <!-- ═══════ QUOTES ═══════ -->
+  <div class="view" id="v-quotes">
+    <div class="top"><button class="back" data-go="menu">‹ back</button>
+      <div class="tt"><div class="t-title">quiet feed</div><div class="t-label" id="qtCount"></div></div></div>
+    <div class="spacer"></div>
+    <div class="card tap" id="qtCard" style="text-align:left;">
+      <div id="qtText" style="font-size:19px;line-height:1.6;font-style:italic;"></div>
+      <div style="display:flex;margin-top:20px;align-items:center;">
+        <button class="del" id="qtDel" style="font-size:12px;">✕</button>
+        <div style="flex:1;"></div>
+        <div class="t-accent" id="qtAuthor" style="font-size:13px;"></div>
+      </div>
+    </div>
+    <div class="navrow">
+      <button id="qtPrev">↑</button><button id="qtNext">↓</button>
+    </div>
+    <div class="spacer"></div>
+    <button class="addrow" id="qtAdd" style="width:100%;">+ add quote</button>
+  </div>
+
+  <!-- ═══════ REMEMBER (stickies) ═══════ -->
+  <div class="view" id="v-stickies">
+    <div class="top"><button class="back" data-go="menu">‹ back</button>
+      <div class="tt"><div class="t-title">remember wall</div><div class="t-label" id="stCount"></div></div></div>
+    <div class="pills" id="stPills"></div>
+    <div class="spacer"></div>
+    <div class="card tap" id="stCard">
+      <div id="stText" style="font-size:17px;line-height:1.6;"></div>
+      <div style="display:flex;gap:10px;margin-top:18px;align-items:center;">
+        <span class="checkbox" id="stToggle"><span class="tick">✓</span></span>
+        <span id="stCat" class="t-label" style="flex:1;"></span>
+        <button class="del" id="stDel">✕</button>
+      </div>
+    </div>
+    <div class="navrow"><button id="stPrev">↑</button><button id="stNext">↓</button></div>
+    <div class="spacer"></div>
+    <button class="addrow" id="stAdd" style="width:100%;">+ add sticky</button>
+  </div>
+
+  <!-- ═══════ DAY CIRCLE (schedule) ═══════ -->
+  <div class="view" id="v-sched">
+    <div class="top"><button class="back" data-go="menu">‹ back</button>
+      <div class="tt"><div class="t-title">day circle</div><div class="t-label" id="scCount"></div></div></div>
+    <div class="tabs">
+      <button id="scTabActs" class="on">acts</button>
+      <button id="scTabSholat">sholat</button>
+    </div>
+    <div id="scActs"></div>
+    <div id="scSholat" style="display:none;"></div>
+    <button class="addrow" id="scAdd" style="width:100%;">+ add block</button>
+  </div>
+
+  <!-- ═══════ DEADLINES ═══════ -->
+  <div class="view" id="v-deadlines">
+    <div class="top"><button class="back" data-go="menu">‹ back</button>
+      <div class="tt"><div class="t-title">deadlines</div><div class="t-label" id="dlCount"></div></div></div>
+    <div id="dlList"></div>
+    <button class="addrow" id="dlAdd" style="width:100%;">+ add deadline</button>
+  </div>
+
+  <!-- ═══════ JOURNAL ═══════ -->
+  <div class="view" id="v-journal">
+    <div class="top"><button class="back" data-go="menu">‹ back</button>
+      <div class="tt"><div class="t-title">journal</div><div class="t-label" id="jCount"></div></div></div>
+    <div id="jList"></div>
+    <button class="addrow" id="jAdd" style="width:100%;">+ new chapter</button>
+  </div>
+
+  <!-- ═══════ DAILY GUIDE ═══════ -->
+  <div class="view" id="v-guide">
+    <div class="top"><button class="back" data-go="menu">‹ back</button>
+      <div class="tt"><div class="t-title">daily guide</div><div class="t-label" id="gCount"></div></div></div>
+    <div id="gList"></div>
+    <button class="addrow" id="gAdd" style="width:100%;">+ new guide</button>
+  </div>
+
+  <!-- ═══════ SETTINGS ═══════ -->
+  <div class="view" id="v-settings">
+    <div class="top"><button class="back" data-go="menu">‹ back</button>
+      <div class="tt"><div class="t-title">settings</div><div class="t-label">one question · owl web</div></div></div>
+    <div class="row"><span class="syncdot" id="syncDot2" style="position:static;"></span><span class="t-label" id="syncTxt2" style="flex:1;">connecting…</span></div>
+    <div class="card" style="margin-top:14px;">
+      <div class="t-label" style="margin-bottom:10px;">sholat location</div>
+      <div style="display:flex;gap:8px;">
+        <input id="setLat" placeholder="latitude" inputmode="decimal">
+        <input id="setLon" placeholder="longitude" inputmode="decimal">
+      </div>
+      <button class="addrow" id="setSaveLoc" style="width:100%;">save location</button>
+    </div>
+    <div class="card" style="margin-top:14px;">
+      <div class="t-label">the old web app lives at <a href="/one/" style="color:var(--accent);text-decoration:underline;">/one/</a> · this owl build reads and writes the same server data</div>
+    </div>
+  </div>
+</div>
+
+<!-- modals -->
+<div class="modal" id="modal"><div class="modal-box" id="modalBox"></div></div>
+<div id="toast"></div>
+
+<script>
+"use strict";
+/* ═══════════════ owl web — one file, no build step ═══════════════
+   reads/writes the same /api/state as the phone widget + old web app */
+
+const API="/one/api/state";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pad=(n,w=2)=>String(n).padStart(w,"0");
+let KEYS={},online=false;
+
+/* ── state sync ── */
+const MUT={};   // key -> value, dirty
+let syncTimer=null,uiState={qt:0,st:0,cat:"all",g:null,sc:"acts"};
+
+async function pull(){
+  try{
+    const r=await fetch(API,{cache:"no-store"});
+    if(!r.ok)throw 0;
+    const d=await r.json();
+    KEYS={};for(const[k,v]of Object.entries(d.keys||{}))KEYS[k]=v.value;
+    online=true;setSync();renderAll();
+  }catch(e){online=false;setSync();}
+}
+async function push(){
+  const changes={};
+  for(const[k,v]of Object.entries(MUT))changes[k]={value:v,updatedAt:Date.now()};
+  if(!Object.keys(changes).length)return true;
+  try{
+    const r=await fetch(API,{method:"PUT",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({changes})});
+    if(!r.ok)throw 0;
+    for(const k in MUT)KEYS[k]=MUT[k];
+    for(const k in MUT)delete MUT[k];
+    online=true;setSync();return true;
+  }catch(e){online=false;setSync();return false;}
+}
+function set(k,v){MUT[k]=v;renderAll();clearTimeout(syncTimer);syncTimer=setTimeout(async()=>{
+  const ok=await push();if(!ok)toast("offline — will retry");
+  else{KEYS=KEYS;renderAll();}
+},250);}
+function setSync(){
+  const c=online?"ok":"bad",t=online?"online · synced":"offline";
+  for(const[id,tx]of[["syncDot",null],["syncDot2",null]])
+    $(id)&&( $(id).className="syncdot "+c );
+  $("syncTxt").textContent=t;$("syncTxt2").textContent=t;
+}
+function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),2200);}
+
+/* ── accessors ── */
+const get=k=>MUT[k]!==undefined?MUT[k]:(KEYS[k]!==undefined?KEYS[k]:[]);
+const uid=()=>Math.random().toString(36).slice(2,10);
+
+/* ── navigation ── */
+let cur="menu";
+const VIEWS=["menu","quotes","stickies","sched","deadlines","journal","guide","settings"];
+function go(v){
+  if(v===cur&&v!=="menu")return;
+  document.querySelectorAll(".view").forEach(x=>x.classList.remove("on"));
+  const el=$("v-"+v);
+  el.classList.add("on");
+  el.style.animation="none";el.offsetHeight;el.style.animation="";
+  cur=v;
+  const f=$("flash");f.classList.add("lit");
+  requestAnimationFrame(()=>requestAnimationFrame(()=>f.classList.remove("lit")));
+  window.scrollTo(0,0);
+  if(v==="menu")renderMenu();
+}
+document.body.addEventListener("click",e=>{
+  const b=e.target.closest("[data-go]");
+  if(b)go(b.dataset.go);
+});
+
+/* ═══════ MENU ═══════ */
+const SECTIONS=[
+  ["quotes","quiet feed",()=>get("oneQuestionQuotes").length],
+  ["stickies","remember",()=>get("oneQuestionStickies").length],
+  ["sched","day circle",()=>get("oneQuestionSchedule").length],
+  ["deadlines","deadlines",()=>get("oneQuestionDeadlines").filter(d=>!d.done).length+" open"],
+  ["journal","journal",()=>get("oneQuestionJournal").length],
+  ["guide","daily guide",()=>guides().length],
+  ["settings","settings",""],
+];
+function guides(){return get("oneQuestionSettings").widgetGuides||[];}
+function renderMenu(){
+  const n=new Date();
+  $("menuClock").textContent=pad(n.getHours())+":"+pad(n.getMinutes());
+  $("menuSub").textContent=n.toLocaleDateString("en",{weekday:"short",month:"short",day:"numeric"});
+  $("menuList").innerHTML=SECTIONS.map(([v,l,c])=>
+    `<div class="menu-row" data-go="${v}">${l}<span class="count">${typeof c=="function"?c():c}</span></div>`).join("");
+  // day circle status
+  const sched=get("oneQuestionSchedule");
+  const mn=n.getHours()*60+n.getMinutes();
+  const act=sched.find(b=>mn>=b.start&&mn<b.end);
+  $("menuStatus").innerHTML=act
+    ?`<span style="color:${esc(act.color||"var(--green)")}">● ${esc(act.label)} · ends ${pad(Math.floor(act.end/60))}:${pad(act.end%60)}</span>`
+    :"";
+  renderSholat(n);
+  renderWx();
+}
+/* sholat: computed from coords in settings (no external API needed offline) */
+function renderSholat(n){
+  const box=$("menuSholat");
+  const s=get("oneQuestionSholat");
+  const today=n.toISOString().slice(0,10);
+  if(!s||s.date!==today||!s.times){box.style.display="none";return;}
+  const mn=n.getHours()*60+n.getMinutes();
+  const T=s.times,B=s.bounds||{};
+  const list=[["subuh",T.subuh,B.subuh||T.dzuhur],["dzuhur",T.dzuhur,B.dzuhur||T.ashar],
+    ["ashar",T.ashar,B.ashar||T.maghrib],["maghrib",T.maghrib,B.maghrib||T.isya],
+    ["isya",T.isya,[T.isya[0],T.isya[1]+15]]];
+  const act=list.find(([k,t,e])=>mn>=t[0]*60+t[1]&&mn<e[0]*60+e[1]);
+  const next=list.find(([k,t])=>t[0]*60+t[1]>mn)||list[0];
+  const show=act||next;
+  const fmt=t=>pad(t[0])+":"+pad(t[1]);
+  const doneKey=(s.done||{})[show[0]]===today;
+  if(act&&!doneKey){
+    box.style.display="block";
+    box.innerHTML=`${act[0]} · ${fmt(act[1])} - ${fmt(act[2])}<div class="t">${act[1][0]*60+act[1][1]>mn?"in progress":"ends"} window</div>
+      <button class="done" id="shDone">✓ sudah sholat</button>`;
+    $("shDone").onclick=()=>{markSholat(act[0]);};
+  }else{
+    box.style.display="block";
+    box.innerHTML=`${show[0]}<div class="t">${fmt(show[1])} - ${fmt(show[2])}</div>`;
+  }
+}
+function markSholat(key){
+  const s=get("oneQuestionSholat");
+  const today=new Date().toISOString().slice(0,10);
+  s.done=s.done||{};s.done[key]=today;
+  set("oneQuestionSholat",s);toast("✓ "+key);
+}
+/* weather: wttr.in, cached */
+let wxT=null;
+function renderWx(){
+  if(wxT){$("menuWx").textContent=wxT;return;}
+  $("menuWx").textContent="…";
+  fetch("https://wttr.in/?format=%c+&temp_C").then(r=>r.text()).then(t=>{
+    wxT=t.trim().replace(/\+/g,"")+"°c";$("menuWx").textContent=wxT;
+  }).catch(()=>{$("menuWx").textContent="";});
+}
+
+/* ═══════ QUOTES ═══════ */
+let qtI=0;
+function renderQuotes(){
+  const q=get("oneQuestionQuotes");
+  $("qtCount").textContent=q.length+" quotes";
+  if(!q.length){$("qtText").textContent="no quotes yet";$("qtAuthor").textContent="";return;}
+  qtI=((qtI%q.length)+q.length)%q.length;
+  const c=q[qtI];
+  $("qtText").textContent="“"+c.text+"”";
+  $("qtAuthor").textContent="— "+(c.author||"unknown");
+}
+$("qtCard").onclick=e=>{if(e.target.id!="qtDel"){qtI++;renderQuotes();}};
+$("qtPrev").onclick=()=>{qtI--;renderQuotes();};
+$("qtNext").onclick=()=>{qtI++;renderQuotes();};
+$("qtAdd").onclick=()=>modal(`<h3>+ add quote</h3>
+  <textarea id="mQ" rows="3" placeholder="the quote"></textarea><div style="height:10px"></div>
+  <input id="mA" placeholder="author">
+  <div class="modal-actions"><button data-close>cancel</button><button class="primary" id="mSave">add</button></div>`,
+  ()=>{$("mSave").onclick=()=>{
+    const t=$("mQ").value.trim();if(!t)return;
+    const q=get("oneQuestionQuotes");
+    q.push({id:uid(),text:t,author:$("mA").value.trim()||"unknown",created:Date.now()});
+    set("oneQuestionQuotes",q);closeModal();toast("added");
+  };});
+$("qtDel").onclick=()=>{
+  const q=get("oneQuestionQuotes");if(!q.length)return;
+  const c=q[qtI];
+  confirmDel(c.text,()=>{q.splice(qtI,1);qtI=0;set("oneQuestionQuotes",q);});
+};
+
+/* ═══════ STICKIES ═══════ */
+function renderStickies(){
+  const s=get("oneQuestionStickies");
+  const done=s.filter(x=>x.done).length;
+  $("stCount").textContent=done+" done · "+(s.length-done)+" open";
+  const cats=[...new Set(["all",...s.map(x=>x.cat||"general")])];
+  $("stPills").innerHTML=cats.map(c=>
+    `<button class="pill${uiState.cat===c?" on":""}" data-cat="${esc(c)}">${c==="all"?"all":"#"+esc(c)}</button>`).join("");
+  $("stPills").onclick=e=>{
+    const p=e.target.closest("[data-cat]");if(!p)return;
+    uiState.cat=p.dataset.cat;renderStickies();
+  };
+  const list=uiState.cat==="all"?s:s.filter(x=>(x.cat||"general")===uiState.cat);
+  if(!list.length){
+    $("stText").textContent="nothing here yet";$("stCat").textContent="";$("stCard").classList.add("center");
+    return;
+  }
+  $("stCard").classList.remove("center");
+  uiState.st=((uiState.st%list.length)+list.length)%list.length;
+  const c=list[uiState.st];
+  $("stText").textContent=c.text;
+  $("stText").className=c.done?"done-text":"";
+  $("stCat").textContent="#"+(c.cat||"general")+(c.done?" · done":"");
+  $("stToggle").className="checkbox"+(c.done?" on":"");
+}
+$("stCard").onclick=e=>{
+  if(e.target.closest("#stToggle")||e.target.closest("#stDel"))return;
+  uiState.st++;renderStickies();
+};
+$("stToggle").onclick=()=>{
+  const s=get("oneQuestionStickies");
+  const list=uiState.cat==="all"?s:s.filter(x=>(x.cat||"general")===uiState.cat);
+  const c=list[uiState.st];if(!c)return;
+  c.done=!c.done;set("oneQuestionStickies",s);toast(c.done?"done":"reopened");
+};
+$("stPrev").onclick=()=>{uiState.st--;renderStickies();};
+$("stNext").onclick=()=>{uiState.st++;renderStickies();};
+$("stDel").onclick=()=>{
+  const s=get("oneQuestionStickies");
+  const list=uiState.cat==="all"?s:s.filter(x=>(x.cat||"general")===uiState.cat);
+  const c=list[uiState.st];if(!c)return;
+  confirmDel(c.text,()=>{set("oneQuestionStickies",s.filter(x=>x.id!==c.id));});
+};
+$("stAdd").onclick=()=>modal(`<h3>+ add sticky</h3>
+  <textarea id="mS" rows="2" placeholder="remember…"></textarea><div style="height:10px"></div>
+  <input id="mC" placeholder="category (general)" value="general">
+  <div class="modal-actions"><button data-close>cancel</button><button class="primary" id="mSave">add</button></div>`,
+  ()=>{$("mSave").onclick=()=>{
+    const t=$("mS").value.trim();if(!t)return;
+    const s=get("oneQuestionStickies");
+    s.push({id:uid(),text:t,cat:$("mC").value.trim()||"general",done:false,created:Date.now()});
+    set("oneQuestionStickies",s);closeModal();toast("added");
+  };});
+
+/* ═══════ DAY CIRCLE ═══════ */
+function renderSched(){
+  const s=get("oneQuestionSchedule");
+  $("scCount").textContent=s.length+" blocks";
+  const n=new Date(),mn=n.getHours()*60+n.getMinutes();
+  const sortd=[...s].sort((a,b)=>a.start-b.start);
+  $("scActs").innerHTML=sortd.map(b=>{
+    const act=mn>=b.start&&mn<b.end;
+    return `<div class="sched-block${act?" active":""}" style="border-left-color:${esc(b.color||"#8d8d8d")}">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="flex:1;">${esc(b.label)}</div>
+        <button class="del" data-dl="${b.start}-${b.label}" style="font-size:11px;">✕</button></div>
+      <div class="t2">${pad(Math.floor(b.start/60))}:${pad(b.start%60)} – ${pad(Math.floor(b.end/60))}:${pad(b.end%60)}${act?" · now":""}</div>
+    </div>`;}).join("")||'<div class="t-label center">no blocks yet</div>';
+  $("scActs").onclick=e=>{
+    const d=e.target.closest("[data-dl]");if(!d)return;
+    const[start,label]=d.dataset.dl.split("-");
+    const s2=get("oneQuestionSchedule");
+    confirmDel(label,()=>{set("oneQuestionSchedule",s2.filter(b=>!(b.start==start&&b.label==label)));});
+  };
+  const sh=get("oneQuestionSholat");
+  $("scSholat").innerHTML=sh&&sh.times?Object.entries(sh.times).map(([k,t])=>
+    `<div class="row"><span class="grow">${k}</span><span class="t-label">${pad(t[0])}:${pad(t[1])}</span>
+     ${(sh.done||{})[k]===new Date().toISOString().slice(0,10)?'<span style="color:var(--green);font-size:12px;">✓</span>':""}</div>`).join("")
+    :'<div class="t-label center">set coordinates in settings first</div>';
+}
+$("scTabActs").onclick=()=>{uiState.sc="acts";scTabs();};
+$("scTabSholat").onclick=()=>{uiState.sc="sholat";scTabs();};
+function scTabs(){
+  $("scTabActs").className=uiState.sc==="acts"?"on":"";
+  $("scTabSholat").className=uiState.sc==="sholat"?"on":"";
+  $("scActs").style.display=uiState.sc==="acts"?"":"none";
+  $("scSholat").style.display=uiState.sc==="sholat"?"":"none";
+}
+$("scAdd").onclick=()=>modal(`<h3>+ add block</h3>
+  <input id="mL" placeholder="label"><div style="height:10px"></div>
+  <div style="display:flex;gap:8px;">
+    <input id="mSh" placeholder="start h" inputmode="numeric"><input id="mSm" placeholder="start m" inputmode="numeric">
+    <input id="mEh" placeholder="end h" inputmode="numeric"><input id="mEm" placeholder="end m" inputmode="numeric">
+  </div><div style="height:10px"></div>
+  <input id="mCol" placeholder="#7d8c7c" value="#7d8c7c">
+  <div class="modal-actions"><button data-close>cancel</button><button class="primary" id="mSave">add</button></div>`,
+  ()=>{$("mSave").onclick=()=>{
+    const l=$("mL").value.trim();if(!l)return;
+    const s=get("oneQuestionSchedule");
+    s.push({label:l,start:(+$("mSh").value||9)*60+(+$("mSm").value||0),
+      end:(+$("mEh").value||10)*60+(+$("mEm").value||0),color:$("mCol").value.trim()||"#7d8c7c"});
+    set("oneQuestionSchedule",s);closeModal();toast("added");
+  };});
+
+/* ═══════ DEADLINES ═══════ */
+const MONTHS=["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+function daysLeft(d){
+  if(!d)return null;
+  const due=new Date(d+"T23:59:59"),now=new Date();
+  return Math.ceil((due-now)/86400000);
+}
+function renderDeadlines(){
+  const dl=get("oneQuestionDeadlines");
+  const open=dl.filter(d=>!d.done).length;
+  $("dlCount").textContent=open+" open";
+  // flatten parents with progress, grouped by date — controls.owl style
+  const dated=dl.filter(d=>d.date).sort((a,b)=>a.date.localeCompare(b.date));
+  const nodate=dl.filter(d=>!d.date);
+  const dates=[...new Set(dated.map(d=>d.date))];
+  let h="";
+  for(const dt of dates){
+    const items=dated.filter(d=>d.date===dt);
+    const left=daysLeft(dt);
+    const cls=left<0?"red":left===0?"gold":"acc";
+    const[_,m,d]=dt.split("-");
+    h+=`<div style="margin-top:14px;">
+      <div style="display:flex;align-items:baseline;gap:8px;padding:6px 4px 2px;">
+        <span class="dl-date ${cls}">${+d}</span><span class="t-label">${MONTHS[+m-1]}</span></div>`;
+    for(const it of items)h+=dlRow(it);
+    h+="</div>";
+  }
+  if(nodate.length){
+    h+='<div style="margin-top:14px;"><div class="t-label" style="padding:6px 4px;">no date</div>';
+    for(const it of nodate)h+=dlRow(it);
+    h+="</div>";
+  }
+  $("dlList").innerHTML=h||'<div class="t-label center">nothing due — enjoy it</div>';
+  $("dlList").onclick=e=>{
+    const row=e.target.closest("[data-dlid]");
+    if(row)openDl(row.dataset.dlid);
+  };
+}
+function dlRow(it){
+  const kids=it.children||[];
+  const dn=kids.filter(k=>k.done).length;
+  const sub=kids.length?`${dn}/${kids.length} done`:"";
+  const time=it.time?(" · "+it.time):"";
+  return `<div class="row" data-dlid="${it.id}" style="cursor:pointer;">
+    <span class="grow${it.done?" done-text":""}" style="font-size:14px;">${esc(it.title)}
+      ${sub||time?`<span class="t-label" style="display:block;margin-top:2px;">${sub}${time}</span>`:""}</span>
+    <span style="color:var(--muted);">›</span></div>`;
+}
+function findDl(list,id,par=null){
+  for(const it of list){
+    if(it.id===id)return{it,par};
+    const r=findDl(it.children||[],id,it);
+    if(r)return r;
+  }
+  return null;
+}
+function openDl(id){
+  const dl=get("oneQuestionDeadlines");
+  const r=findDl(dl,id);
+  if(!r)return;
+  const{it,par}=r;
+  const kids=it.children||[];
+  const dn=kids.filter(k=>k.done).length;
+  const left=daysLeft(it.date);
+  const leftTxt=it.date?(left<0?`<span style="color:var(--red)">${-left}d overdue</span>`
+    :left===0?`<span style="color:var(--gold)">today</span>`
+    :`in ${left}d`):"no date";
+  modal(`<button class="back" id="mBack" style="margin-bottom:12px;">‹ ${par?esc(par.title):"deadlines"}</button>
+    <div style="display:flex;gap:12px;align-items:center;">
+      <span class="checkbox${it.done?" on":""}${kids.length?" locked":""}" id="mChk"><span class="tick">✓</span></span>
+      <span style="font-size:17px;${it.done?"done-text":""}" class="${it.done?"done-text":""}">${esc(it.title)}</span></div>
+    <div class="dl-note" style="margin-top:14px;">
+      <div class="row" style="border:none;padding:4px 0;"><span class="t-label" style="flex:1;">due date</span><span style="font-size:13px;">${it.date||"no date"}${it.time?" "+it.time:""}</span></div>
+      ${it.date?`<div class="row" style="border:none;padding:4px 0;"><span class="t-label" style="flex:1;">left</span>${leftTxt}</div>`:""}
+      ${kids.length?`<div class="row" style="border:none;padding:4px 0;"><span class="t-label" style="flex:1;">subtasks</span><span style="font-size:13px;">${dn}/${kids.length} done</span></div>`:""}
+    </div>
+    ${it.note?`<div class="dl-note">${esc(it.note)}</div>`:""}
+    ${kids.length?`<div style="margin-top:14px;">${kids.map(k=>`
+      <div class="gstep"><span class="checkbox${k.done?" on":""}" data-kid="${k.id}"><span class="tick">✓</span></span>
+      <span class="txt${k.done?" done-text":""}">${esc(k.title)}</span>
+      <button class="del" data-kdel="${k.id}">✕</button></div>`).join("")}</div>`:""}
+    <div class="modal-actions"><button id="mNote">note</button><button id="mDel" style="color:var(--red);">delete</button></div>`,
+    ()=>{
+      $("mBack").onclick=closeModal;
+      $("mChk").onclick=()=>{
+        if(kids.length){toast("finish the subtasks first");return;}
+        it.done=!it.done;set("oneQuestionDeadlines",dl);closeModal();
+      };
+      $("modalBox").querySelectorAll("[data-kid]").forEach(el=>{
+        el.onclick=()=>{
+          const k=kids.find(x=>x.id===el.dataset.kid);
+          k.done=!k.done;set("oneQuestionDeadlines",dl);closeModal();openDl(id);
+        };
+      });
+      $("modalBox").querySelectorAll("[data-kdel]").forEach(el=>{
+        el.onclick=()=>{
+          it.children=kids.filter(x=>x.id!==el.dataset.kdel);
+          set("oneQuestionDeadlines",dl);closeModal();openDl(id);
+        };
+      });
+      $("mNote").onclick=()=>{
+        modal(`<h3>note — ${esc(it.title)}</h3>
+          <textarea id="mN" rows="5">${esc(it.note||"")}</textarea>
+          <div class="modal-actions"><button data-close>cancel</button><button class="primary" id="mSaveN">save</button></div>`,
+          ()=>{$("mSaveN").onclick=()=>{it.note=$("mN").value;set("oneQuestionDeadlines",dl);closeModal();openDl(id);};});
+      };
+      $("mDel").onclick=()=>{
+        if(par){par.children=par.children.filter(x=>x.id!==it.id);}
+        else{const i=dl.indexOf(it);if(i>=0)dl.splice(i,1);}
+        set("oneQuestionDeadlines",dl);closeModal();
+      };
+    });
+}
+$("dlAdd").onclick=()=>modal(`<h3>+ add deadline</h3>
+  <input id="mT" placeholder="title"><div style="height:10px"></div>
+  <input id="mD" type="date"><div style="height:10px"></div>
+  <input id="mTime" placeholder="time (14:30)"><div style="height:10px"></div>
+  <textarea id="mN" rows="2" placeholder="note (optional)"></textarea>
+  <div class="modal-actions"><button data-close>cancel</button><button class="primary" id="mSave">add</button></div>`,
+  ()=>{$("mSave").onclick=()=>{
+    const t=$("mT").value.trim();if(!t)return;
+    const dl=get("oneQuestionDeadlines");
+    dl.push({id:uid(),title:t,date:$("mD").value||"",time:$("mTime").value.trim(),
+      note:$("mN").value,importance:"none",done:false,collapsed:false,children:[]});
+    set("oneQuestionDeadlines",dl);closeModal();toast("added");
+  };});
+
+/* ═══════ JOURNAL ═══════ */
+function renderJournal(){
+  const j=get("oneQuestionJournal");
+  $("jCount").textContent=j.length+" chapters";
+  $("jList").innerHTML=j.map(c=>`
+    <div class="row" data-jid="${c.id}" style="cursor:pointer;">
+      <span class="grow"><span style="font-size:14px;">${esc(c.title||"untitled")}</span>
+        ${c.category?`<span class="t-label" style="display:block;margin-top:2px;">#${esc(c.category)}</span>`:""}</span>
+      <button class="del" data-jdel="${c.id}">✕</button></div>`).join("")
+    ||'<div class="t-label center">empty — write the first chapter</div>';
+  $("jList").onclick=e=>{
+    const del=e.target.closest("[data-jdel]");
+    if(del){
+      const c=get("oneQuestionJournal").find(x=>x.id===del.dataset.jdel);
+      confirmDel(c.title||"untitled",()=>{set("oneQuestionJournal",get("oneQuestionJournal").filter(x=>x.id!==del.dataset.jdel));});
+      return;
+    }
+    const row=e.target.closest("[data-jid]");
+    if(row)openJournal(row.dataset.jid);
+  };
+}
+function openJournal(id){
+  const c=get("oneQuestionJournal").find(x=>x.id===id);
+  if(!c)return;
+  modal(`<h3>${esc(c.title||"untitled")}</h3>
+    <input id="mJT" value="${esc(c.title||"")}" placeholder="title"><div style="height:8px"></div>
+    <input id="mJC" value="${esc(c.category||"")}" placeholder="category"><div style="height:10px"></div>
+    <textarea id="mJB" rows="10" style="font-size:14px;line-height:1.7;">${esc(c.text||"")}</textarea>
+    <div class="modal-actions"><button data-close>cancel</button><button class="primary" id="mSaveJ">save</button></div>`,
+    ()=>{$("mSaveJ").onclick=()=>{
+      c.title=$("mJT").value.trim();c.category=$("mJC").value.trim();c.text=$("mJB").value;
+      set("oneQuestionJournal",get("oneQuestionJournal"));closeModal();toast("✓ saved");
+    };});
+}
+$("jAdd").onclick=()=>modal(`<h3>+ new chapter</h3>
+  <input id="mJT" placeholder="title"><div style="height:10px"></div>
+  <input id="mJC" placeholder="category">
+  <div class="modal-actions"><button data-close>cancel</button><button class="primary" id="mSave">add</button></div>`,
+  ()=>{$("mSave").onclick=()=>{
+    const t=$("mJT").value.trim();if(!t)return;
+    const j=get("oneQuestionJournal");
+    j.push({id:uid(),title:t,category:$("mJC").value.trim()||"journal",text:"",date:new Date().toISOString().slice(0,10)});
+    set("oneQuestionJournal",j);closeModal();toast("added");
+  };});
+
+/* ═══════ DAILY GUIDE ═══════ */
+function renderGuide(){
+  const g=guides();
+  $("gCount").textContent=g.length+" guides";
+  if(uiState.g){
+    const cur=g.find(x=>x.id===uiState.g);
+    if(cur){renderGuidePage(cur);return;}
+    uiState.g=null;
+  }
+  $("gList").innerHTML=g.map(x=>{
+    const dn=(x.steps||[]).filter(s=>s.done).length;
+    return `<div class="row" data-gid="${x.id}" style="cursor:pointer;">
+      <span class="grow"><span style="font-size:14px;">${esc(x.title)}</span>
+      <span class="t-label" style="display:block;margin-top:2px;">${dn}/${(x.steps||[]).length} done</span></span>
+      <button class="del" data-gdel="${x.id}">✕</button></div>`;}).join("")
+    ||'<div class="t-label center">no guides yet</div>';
+  $("gList").onclick=e=>{
+    const del=e.target.closest("[data-gdel]");
+    if(del){
+      confirmDel("this guide",()=>{set("oneQuestionSettings",{...get("oneQuestionSettings"),widgetGuides:guides().filter(x=>x.id!==del.dataset.gdel)});});
+      return;
+    }
+    const row=e.target.closest("[data-gid]");
+    if(row){uiState.g=row.dataset.gid;renderGuide();}
+  };
+}
+function renderGuidePage(cur){
+  const dn=(cur.steps||[]).filter(s=>s.done).length;
+  $("gList").innerHTML=`
+    <button class="back" id="gBack" style="margin-bottom:14px;">‹ all guides</button>
+    <div class="t-title" style="margin-bottom:4px;">${esc(cur.title)}</div>
+    <div class="t-label" style="margin-bottom:12px;">${dn}/${(cur.steps||[]).length} done ${dn&&(dn===(cur.steps||[]).length)?"· complete ✓":""}</div>
+    ${(cur.steps||[]).map(s=>`
+      <div class="gstep">
+        <span class="checkbox${s.done?" on":""}" data-sid="${s.id}"><span class="tick">✓</span></span>
+        <div class="txt">
+          <div class="${s.done?"done-text":""}">${esc(s.text)}</div>
+          ${(s.choices||[]).length?`<div class="gchoices">${s.choices.map(c=>
+            `<button class="gchoice${s.pick===c?" picked":""}" data-pick="${s.id}|${esc(c)}">${esc(c)}</button>`).join("")}</div>`:""}
+        </div>
+        <button class="del" data-sdel="${s.id}">✕</button>
+      </div>`).join("")}
+    <button class="addrow" id="gStepAdd" style="width:100%;">+ add step</button>`;
+  $("gBack").onclick=()=>{uiState.g=null;renderGuide();};
+  $("gList").querySelectorAll("[data-sid]").forEach(el=>{
+    el.onclick=()=>{
+      const s=cur.steps.find(x=>x.id===el.dataset.sid);
+      s.done=!s.done;saveGuides(g);
+    };
+  });
+  $("gList").querySelectorAll("[data-pick]").forEach(el=>{
+    el.onclick=()=>{
+      const[sid,c]=el.dataset.pick.split("|");
+      const s=cur.steps.find(x=>x.id===sid);
+      s.pick=s.pick===c?null:c;saveGuides(g);
+    };
+  });
+  $("gList").querySelectorAll("[data-sdel]").forEach(el=>{
+    el.onclick=()=>{
+      cur.steps=cur.steps.filter(x=>x.id!==el.dataset.sdel);saveGuides(g);
+    };
+  });
+  $("gStepAdd").onclick=()=>modal(`<h3>+ add step</h3>
+    <textarea id="mSt" rows="2" placeholder="step"></textarea><div style="height:8px"></div>
+    <input id="mCh" placeholder="choices (comma separated, optional)">
+    <div class="modal-actions"><button data-close>cancel</button><button class="primary" id="mSave">add</button></div>`,
+    ()=>{$("mSave").onclick=()=>{
+      const t=$("mSt").value.trim();if(!t)return;
+      cur.steps.push({id:uid(),text:t,done:false,
+        choices:$("mCh").value.split(",").map(x=>x.trim()).filter(Boolean)});
+      saveGuides(g);
+    };});
+}
+function saveGuides(){
+  set("oneQuestionSettings",{...get("oneQuestionSettings"),widgetGuides:guides()});
+  renderGuide();
+}
+$("gAdd").onclick=()=>modal(`<h3>+ new guide</h3>
+  <input id="mGT" placeholder="guide title">
+  <div class="modal-actions"><button data-close>cancel</button><button class="primary" id="mSave">add</button></div>`,
+  ()=>{$("mSave").onclick=()=>{
+    const t=$("mGT").value.trim();if(!t)return;
+    const g=guides();
+    g.push({id:uid(),title:t,steps:[]});
+    set("oneQuestionSettings",{...get("oneQuestionSettings"),widgetGuides:g});
+    closeModal();toast("added");
+  };});
+
+/* ═══════ modal helpers ═══════ */
+function modal(html,after){
+  $("modalBox").innerHTML=html;
+  $("modal").classList.add("open");
+  $("modalBox").querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
+  $("modal").onclick=e=>{if(e.target===$("modal"))closeModal();};
+  if(after)after();
+}
+function closeModal(){$("modal").classList.remove("open");}
+function confirmDel(name,fn){
+  modal(`<h3 style="color:var(--red);">delete?</h3>
+    <div class="t-label" style="font-size:13px;color:var(--fg);">${esc(name)}</div>
+    <div class="modal-actions"><button data-close>cancel</button><button id="mYes" style="color:var(--red);background:rgba(255,107,107,.08);border-color:rgba(255,107,107,.3);">delete</button></div>`,
+    ()=>{$("mYes").onclick=()=>{closeModal();fn();};});
+}
+
+/* ═══════ SETTINGS ═══════ */
+function loadSet(){
+  const s=get("oneQuestionSholat");
+  $("setLat").value=s.lat??"";$("setLon").value=s.lon??"";
+}
+$("setSaveLoc").onclick=()=>{
+  const lat=parseFloat($("setLat").value),lon=parseFloat($("setLon").value);
+  if(isNaN(lat)||isNaN(lon)){toast("numbers please");return;}
+  const s=get("oneQuestionSholat");
+  s.lat=lat;s.lon=lon;
+  // quick offline sholat estimate (rough solar calc) — refreshed by real calc later
+  s.date="";set("oneQuestionSholat",s);toast("saved — times refresh on next menu open");
+};
+
+/* ═══════ boot ═══════ */
+function renderAll(){
+  renderMenu();
+  renderQuotes();renderStickies();renderSched();renderDeadlines();
+  renderJournal();renderGuide();loadSet();scTabs();
+}
+setInterval(()=>{if(cur==="menu")renderMenu();},15000);
+pull();
+setInterval(pull,30000);
 </script>
 </body>
-
 </html>

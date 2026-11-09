@@ -765,23 +765,8 @@
       "value": "Bimbingan - 7 Sept 2026 s/d 9 Jan 2027\n\nTA\n1. Keunikan Gamenya (Judul)\n  + Data Pendukung(ini digunakan untuk memvalidasi argumen terhadap keunikan sebuah game\n\n"
     },
     "oneQuestionJournal": {
-      "updatedAt": 1790655894619,
-      "value": [
-        {
-          "id": "pmum5u4mlwg69",
-          "date": "",
-          "text": "         \n   \n\n                    right here\n\n\n                                   \n\n                        \n\n                             \n\n\n                \n                          \n\n                           ",
-          "createdAt": 1790655139821,
-          "updatedAt": 1790655891498
-        },
-        {
-          "id": "pmum5u4mlir5p",
-          "date": "",
-          "text": "                                   \n                                       \n     \n                                           \n                                        \n                                     \n            \n                      \n                                        \n                     \n                   \n             \n\n                                      \n                         \n                   \n                    \n                              ",
-          "createdAt": 1790655139821,
-          "updatedAt": 1790655894018
-        }
-      ]
+      "updatedAt": 1794229281565,
+      "value": []
     },
     "oneQuestionBook": {
       "updatedAt": 1794213012156,
@@ -938,5 +923,5 @@
       ]
     }
   },
-  "updatedAt": 1794228290186
+  "updatedAt": 1794229271569
 }
