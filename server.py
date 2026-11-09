@@ -8,6 +8,9 @@ import subprocess
 import threading
 import time
 
+# on Windows, run git (and any subprocess) without flashing a console window
+_NO_WINDOW = 0x08000000 if os.name == "nt" else 0  # CREATE_NO_WINDOW
+
 ROOT = Path(__file__).resolve().parent
 HOST = os.environ.get("ONE_QUESTION_HOST", "127.0.0.1")
 PORT = int(os.environ.get("ONE_QUESTION_PORT", "8765"))
@@ -224,12 +227,15 @@ def self_update_from_git():
 
 
 def installed_version():
-    """The build this server actually serves: the ?v= query in its index.html.
+    """The build this server actually serves. owl build: latest code commit's
+    version tag from its subject (v2.59 style), falling back to the short hash.
     Lets clients tell 'server behind origin' from 'page behind server'."""
     try:
-        html = (ROOT / "index.html").read_text(encoding="utf-8")
-        m = re.search(r"app\.js\?v=([\d.]+)", html)
-        return m.group(1) if m else ""
+        subj = _git(["log", "-1", "--format=%s", "--", "index.html", "app.js"]) or ""
+        m = re.search(r"\(v([\d.]+)\)", subj)
+        if m:
+            return "v" + m.group(1)
+        return _git(["rev-parse", "--short", "HEAD"])
     except Exception:
         return ""
 
@@ -258,10 +264,20 @@ def git_update_status():
         # ahead = unpushed local commits; a self-update refuses to run over
         # them, so the client needs to know to say "push first"
         ahead = _git(["rev-list", "--count", "origin/main..HEAD"]) or "0"
-        log = (_git(["log", "--format=%s", "HEAD..origin/main", "--",
+        log = (_git(["log", "--format=%h%ad%s",
+                     "--date=format:%d %b %Y", "HEAD..origin/main", "--",
                      ".", *UPDATE_DATA_EXCLUDES])
                if count != "0" else "")
-        changes = [line.strip() for line in log.splitlines() if line.strip()]
+        changes = []
+        for line in log.splitlines():
+            if not line.strip():
+                continue
+            parts = line.split("")
+            if len(parts) == 3:
+                changes.append({"hash": parts[0], "date": parts[1],
+                                "subject": parts[2]})
+            else:
+                changes.append({"hash": "", "date": "", "subject": line.strip()})
         return {"ok": True, "current": current, "remote": remote,
                 "behind": int(count), "ahead": int(ahead), "changes": changes,
                 "version": installed_version()}
@@ -311,6 +327,26 @@ class Handler(SimpleHTTPRequestHandler):
             with STATE_LOCK:
                 payload = json.loads(json.dumps(STATE))
             self._json(200, payload)
+            return
+        if self.path == "/api/update/log":
+            if not self._authorized():
+                self._json(401, {"error": "unauthorized"})
+                return
+            try:
+                log = _git(["log", "--format=%h%ad%s",
+                            "--date=format:%d %b %Y", "-30", "--",
+                            ".", *UPDATE_DATA_EXCLUDES])
+                changes = []
+                for line in log.splitlines():
+                    if not line.strip():
+                        continue
+                    parts = line.split("")
+                    if len(parts) == 3:
+                        changes.append({"hash": parts[0], "date": parts[1],
+                                        "subject": parts[2]})
+                self._json(200, {"ok": True, "changes": changes})
+            except Exception as exc:
+                self._json(200, {"ok": False, "changes": [], "error": str(exc)})
             return
         if self.path == "/api/update/status":
             if not self._authorized():

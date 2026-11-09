@@ -1523,14 +1523,17 @@ setInterval(()=>{
 },15000);
 setInterval(()=>{if(cur==="sched"){const n=new Date();renderDial(n,n.getHours()*60+n.getMinutes(),get("oneQuestionSchedule"));}},1000);
 /* update checker (PC): server compares git HEAD vs origin/main */
-let updShown=false;
+let updShown=false,updData=null;
 async function checkUpdate(){
   try{
     const r=await fetch(apiURL("/update/status"),{cache:"no-store"});
     const d=await r.json();
     if(!d.ok||d.behind<=0){$("updPill").classList.remove("show");updShown=false;return;}
-    $("updTxt").textContent="update available · "+d.behind+" commit"+(d.behind===1?"":"s")+" behind";
-    $("updLog").textContent=(d.changes||[]).slice(0,5).map(c=>"· "+c).join("\n")
+    updData=d;
+    $("updTxt").textContent="update available";
+    const items=(d.changes||[]).slice(0,5);
+    $("updLog").textContent="changes:"
+      +(items.length?"\n"+items.map(c=>"· "+(typeof c=="object"?c.subject:c)).join("\n"):"\n· (no details)")
       +(d.ahead>0?"\n⚠ server has "+d.ahead+" unpushed commit"+(d.ahead===1?"":"s"):"");
     $("updAct").textContent=d.ahead>0?"push first":"update";
     $("updPill").classList.add("show");
@@ -1540,6 +1543,26 @@ async function checkUpdate(){
 $("updPill").addEventListener("click",e=>{
   if(e.target.id==="updAct")return;
   $("updPill").classList.toggle("open");
+});
+$("updLog").addEventListener("click",async()=>{
+  try{
+    const r=await fetch(apiURL("/update/log"),{cache:"no-store"});
+    const d=await r.json();
+    const groups={};
+    (d.changes||[]).forEach(c=>{
+      const k=c.date||"no date";
+      (groups[k]=groups[k]||[]).push(c);
+    });
+    let h="";
+    for(const[date,items]of Object.entries(groups)){
+      h+=`<div style="margin-top:12px;"><div style="display:flex;align-items:baseline;gap:8px;">
+        <span class="dl-date acc">${date.split(" ")[0]}</span><span class="t-label">${date.split(" ").slice(1).join(" ")}</span></div>`;
+      for(const it of items)h+=`<div class="row"><span class="grow" style="font-size:13.5px;">${esc(it.subject)}</span><span class="t-small">${esc(it.hash)}</span></div>`;
+      h+="</div>";
+    }
+    modal(`<h3>update log</h3>${h||'<div class="t-label">no entries</div>'}
+      <div class="modal-actions"><button data-close>close</button></div>`);
+  }catch(e){toast("couldn't load log");}
 });
 $("updAct").addEventListener("click",async()=>{
   const ahead=($("updAct").textContent||"").includes("push");
