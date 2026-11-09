@@ -337,10 +337,10 @@ input[type=range]::-webkit-slider-thumb{
   .pc-list::-webkit-scrollbar{display:none;}
   /* quotes: card left, nothing else — keep centered but bigger */
   #v-quotes .card{max-width:640px;margin:0 auto;}
-  /* menu: two-column info + list */
-  #v-menu{padding-top:60px;}
-  #menuList{margin-top:90px;}
-  .menu-row{font-size:20px;padding:17px 13px;}
+  /* menu: vertically centered, never page-scrolls */
+  #v-menu{padding-top:20px;min-height:100vh;display:flex;flex-direction:column;justify-content:center;}
+  #menuList{margin-top:40px;}
+  .menu-row{font-size:20px;padding:15px 13px;}
 }
 </style>
 </head>
@@ -639,7 +639,7 @@ function go(v){
   window.scrollTo(0,0);
   // sholat reminder only lives on the main view
   const sd=$("menuSholat");
-  if(sd)sd.style.display=(v==="menu"&&(localStorage.getItem("oqStatus")||"on")==="on")?"":"none";
+  if(sd&&v==="menu")sd.style.display="";
   if(v==="menu")renderMenu();
 }
 document.body.addEventListener("click",e=>{

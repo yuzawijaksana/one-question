@@ -160,10 +160,10 @@ UPDATE_RUNTIME_FILES = [
 ]
 
 
-def _git(args, timeout=120):
+def _git(args, timeout=120, env=None):
     proc = subprocess.run(
-        ["git", *args], cwd=ROOT, capture_output=True, text=True, timeout=timeout,
-        creationflags=_NO_WINDOW
+        ["git", *args], cwd=ROOT, capture_output=True, text=True,
+        timeout=timeout, creationflags=_NO_WINDOW, env=env
     )
     if proc.returncode != 0:
         raise RuntimeError(f"git {' '.join(args)}: {proc.stderr.strip() or proc.stdout.strip()}")
@@ -266,6 +266,24 @@ UPDATE_DATA_EXCLUDES = [
     ":!one-question-state-shared.json",
     ":!settings export",
 ]
+
+
+def _auto_push_runtime():
+    """Silently commit+push runtime-data files (state, backups). Never touches
+    code; never raises — failures are logged and simply retried next write."""
+    try:
+        _git(["add", "one-question-state.json", "one-question-state-shared.json",
+              "settings export"], timeout=30)
+        staged = _git(["diff", "--cached", "--name-only"])
+        if staged.strip():
+            _git(["commit", "-m", "auto: runtime data sync",
+                  "--no-verify"], timeout=30)
+            # credential helper needs HOME (~/.git-credentials)
+            env_home = os.environ.get("HOME") or str(Path.home())
+            _git(["push", "origin", "HEAD:main"], timeout=60,
+                 env={**os.environ, "HOME": env_home})
+    except Exception as exc:
+        print(f"[auto-push] skipped: {exc}", flush=True)
 
 
 def git_update_status():
@@ -419,6 +437,7 @@ class Handler(SimpleHTTPRequestHandler):
                     STATE["version"] = 1
                     STATE["updatedAt"] = int(time.time() * 1000)
                     save_state(STATE)
+                    threading.Thread(target=_auto_push_runtime, daemon=True).start()
                 result = json.loads(json.dumps(STATE))
             self._json(200, result)
         except Exception as exc:
