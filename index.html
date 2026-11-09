@@ -82,6 +82,33 @@ img{display:block;}
 #v-menu{padding-top:70px;text-align:center;}
 #menuClock{font-size:64px;font-weight:300;letter-spacing:2px;line-height:1;}
 #menuSub{margin-top:10px;font-size:13px;color:var(--fg);}
+/* update-available pill: bottom-right, PC only (checks /api/update/status) */
+#updPill{
+  position:fixed;bottom:18px;right:18px;z-index:85;display:none;
+  padding:10px 16px;background:rgba(10,10,10,.92);
+  border:1px solid rgba(141,141,141,.45);color:var(--fg);
+  font-size:12.5px;cursor:pointer;align-items:center;gap:10px;
+  max-width:360px;
+}
+#updPill.show{display:flex;}
+#updPill .upd-dot{width:7px;height:7px;background:var(--gold);flex-shrink:0;}
+#updPill:hover{border-color:rgba(141,141,141,.8);}
+#updPill .upd-log{
+  display:none;margin-top:8px;max-width:340px;
+  color:var(--muted);font-size:11.5px;line-height:1.6;
+  word-break:break-word;white-space:normal;
+}
+#updPill.open{flex-direction:column;align-items:stretch;gap:8px;}
+#updPill.open .upd-log{display:block;}
+#updPill .upd-top{display:flex;align-items:center;gap:10px;}
+#updPill .upd-btn{
+  margin-left:auto;padding:7px 14px;background:rgba(141,141,141,.2);
+  border:1px solid rgba(141,141,141,.5);color:var(--accent);font-size:12px;
+  flex-shrink:0;white-space:nowrap;
+}
+#updPill .upd-btn:active{color:var(--fg);}
+@media(max-width:899px){#updPill{display:none !important;}}
+
 /* sholat reminder floats — never inside the content flow */
 #menuSholat{
   position:fixed;z-index:80;font-size:13px;color:var(--gold);
@@ -505,6 +532,14 @@ input[type=range]::-webkit-slider-thumb{
 <!-- modals -->
 <div class="modal" id="modal"><div class="modal-box" id="modalBox"></div></div>
 <div id="toast"></div>
+<div id="updPill">
+  <div class="upd-top">
+    <span class="upd-dot"></span>
+    <span id="updTxt">update available</span>
+    <button class="upd-btn" id="updAct">update</button>
+  </div>
+  <div class="upd-log" id="updLog"></div>
+</div>
 
 <script>
 "use strict";
@@ -581,6 +616,10 @@ document.body.addEventListener("click",e=>{
 });
 
 /* ═══════ MENU ═══════ */
+function secTitle(id,def){
+  const t=JSON.parse(localStorage.getItem("oqTitles")||"{}");
+  return t[id]||def;
+}
 const SECTIONS=[
   ["quotes","quiet feed",()=>get("oneQuestionQuotes").length],
   ["stickies","remember",()=>get("oneQuestionStickies").length],
@@ -596,7 +635,7 @@ function renderMenu(){
   $("menuClock").textContent=pad(n.getHours())+":"+pad(n.getMinutes());
   $("menuSub").textContent=n.toLocaleDateString("en",{weekday:"short",month:"short",day:"numeric"});
   $("menuList").innerHTML=SECTIONS.map(([v,l])=>
-    `<div class="menu-row" data-go="${v}">${l}</div>`).join("");
+    `<div class="menu-row" data-go="${v}">${secTitle(v,l)}</div>`).join("");
   // menu order: oqOrder first (in order), then any never-ordered ones
   const order=secOrder();
   if(order.length){
@@ -1250,14 +1289,29 @@ function loadSet(){
   // sections: hide/show mirrors the widget's secHide
   const hide=(localStorage.getItem("oqHide")||"").split("|").filter(Boolean);
   const defs=[["quotes","quiet feed"],["stickies","remember"],["sched","day circle"],["deadlines","deadlines"],["journal","journal"],["guide","daily guide"]];
+  const titles=JSON.parse(localStorage.getItem("oqTitles")||"{}");
   $("setSections").innerHTML=defs.map(([id,label])=>{
     const hid=hide.includes(id);
-    return `<div class="set-row"><span style="flex:1;font-size:14px;${hid?"color:var(--muted);":""}">${label}</span>
+    return `<div class="set-row"><span style="flex:1;font-size:14px;${hid?"color:var(--muted);":""}">${titles[id]||label}</span>
+      <button class="set-ghost" data-rename="${id}" data-label="${label}">[ rename ]</button>
       <button class="set-ghost" data-up="${id}">[ ↑ ]</button>
       <button class="set-ghost" data-down="${id}">[ ↓ ]</button>
       <button class="set-ghost" data-sec="${id}">${hid?"show":"hide"}</button></div>`;
   }).join("");
   $("setSections").querySelectorAll("[data-up]").forEach(b=>b.onclick=()=>moveSection(b.dataset.up,-1));
+  $("setSections").querySelectorAll("[data-rename]").forEach(b=>b.onclick=()=>{
+    const id=b.dataset.rename,label=b.dataset.label;
+    modal(`<h3>rename ${label}</h3>
+      <input id="mRn" value="${(JSON.parse(localStorage.getItem("oqTitles")||"{}"))[id]||label}">
+      <div class="modal-actions"><button data-close>cancel</button><button class="primary" id="mSave">save</button></div>`,
+      ()=>{$("mSave").onclick=()=>{
+        const t=JSON.parse(localStorage.getItem("oqTitles")||"{}");
+        const v=$("mRn").value.trim();
+        if(v&&v!==label)t[id]=v;else delete t[id];
+        localStorage.setItem("oqTitles",JSON.stringify(t));
+        closeModal();loadSet();renderMenu();
+      };});
+  });
   $("setSections").querySelectorAll("[data-down]").forEach(b=>b.onclick=()=>moveSection(b.dataset.down,1));
   $("setStatus").onclick=()=>{
     const cur=localStorage.getItem("oqStatus")||"on";
@@ -1413,6 +1467,14 @@ async function ensureSholat(){
 
 /* ═══════ boot ═══════ */
 function renderAll(){
+  // custom view titles
+  const T=JSON.parse(localStorage.getItem("oqTitles")||"{}");
+  const vt={"quotes":"quiet feed","stickies":"remember","sched":"day circle","deadlines":"deadlines","journal":"journal","guide":"daily guide","settings":"settings"};
+  document.querySelectorAll(".top .tt .t-title").forEach(el=>{
+    const view=el.closest(".view")?.id.replace("v-","");
+    if(view&&T[view])el.textContent=T[view];
+    else if(view&&vt[view])el.textContent=vt[view];
+  });
   renderMenu();
   renderQuotes();renderStickies();renderSched();renderDeadlines();
   renderJournal();renderGuide();loadSet();scTabs();
@@ -1450,6 +1512,43 @@ setInterval(()=>{
   }
 },15000);
 setInterval(()=>{if(cur==="sched"){const n=new Date();renderDial(n,n.getHours()*60+n.getMinutes(),get("oneQuestionSchedule"));}},1000);
+/* update checker (PC): server compares git HEAD vs origin/main */
+let updShown=false;
+async function checkUpdate(){
+  try{
+    const r=await fetch("/one/api/update/status",{cache:"no-store"});
+    const d=await r.json();
+    if(!d.ok||d.behind<=0){$("updPill").classList.remove("show");updShown=false;return;}
+    $("updTxt").textContent="update available · "+d.behind+" commit"+(d.behind===1?"":"s")+" behind";
+    $("updLog").textContent=(d.changes||[]).slice(0,5).map(c=>"· "+c).join("\n")
+      +(d.ahead>0?"\n⚠ server has "+d.ahead+" unpushed commit"+(d.ahead===1?"":"s"):"");
+    $("updAct").textContent=d.ahead>0?"push first":"update";
+    $("updPill").classList.add("show");
+    updShown=true;
+  }catch(e){/* offline: silent */}
+}
+$("updPill").addEventListener("click",e=>{
+  if(e.target.id==="updAct")return;
+  $("updPill").classList.toggle("open");
+});
+$("updAct").addEventListener("click",async()=>{
+  const ahead=($("updAct").textContent||"").includes("push");
+  if(ahead){toast("push the repo from the server first");return;}
+  $("updAct").textContent="updating…";
+  try{
+    const r=await fetch("/one/api/update",{method:"POST"});
+    const d=await r.json().catch(()=>null);
+    if(r.ok&&(!d||d.error===undefined||d.updated!==false)){
+      $("updAct").textContent="restarting…";
+      setTimeout(()=>location.reload(),1500);
+    }else{
+      $("updAct").textContent="failed — retry";
+      if(d&&d.error)$("updLog").textContent+="\n✕ "+d.error;
+    }
+  }catch(e){$("updAct").textContent="failed — retry";}
+});
+checkUpdate();
+setInterval(checkUpdate,120000);
 pull().then(ensureSholat);
 setInterval(pull,30000);
 setInterval(ensureSholat,600000);
