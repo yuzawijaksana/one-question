@@ -115,9 +115,9 @@ img{display:block;}
   max-width:300px;padding:12px 10px;
   background:rgba(245,197,66,.06);border:1px solid rgba(245,197,66,.28);
 }
-#menuSholat.pos-left{top:50%;left:18px;transform:translateY(-50%);}
-#menuSholat.pos-center{top:18px;left:50%;transform:translateX(-50%);}
-#menuSholat.pos-right{top:50%;right:18px;transform:translateY(-50%);}
+#menuSholat.pos-left{left:18px;}
+#menuSholat.pos-center{left:50%;transform:translateX(-50%);}
+#menuSholat.pos-right{right:18px;}
 #menuSholat.pos-topleft{top:18px;left:18px;}
 #menuSholat.pos-topright{top:18px;right:18px;}
 #menuSholat.pos-bottomleft{bottom:64px;left:18px;}
@@ -709,7 +709,16 @@ function renderMenu(){
     +(sholatHtml?`<div id="menuSholat">${sholatHtml}</div>`:"");
   const sd=$("menuSholat");
   if(sd){
-    sd.classList.add("pos-"+(localStorage.getItem("oqSholatPos")||"bottomleft"));
+    const pos=localStorage.getItem("oqSholatPos")||"bottomleft";
+    sd.classList.add("pos-"+pos);
+    // vertical centering for left/right — measured height, so zoom/scale
+    // can't skew a transform -50%
+    if(pos==="left"||pos==="right"){
+      requestAnimationFrame(()=>{
+        sd.style.top=`calc(50% - ${sd.offsetHeight/2}px)`;
+        sd.style.transform="none";
+      });
+    }else{sd.style.top="";sd.style.transform="";}
     // gold styling ONLY while the prayer window is active and not done yet
     const gold=window.__sholatGold===true;
     sd.style.maxWidth="220px";sd.style.padding="10px 12px";
