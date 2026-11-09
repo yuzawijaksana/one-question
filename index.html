@@ -532,6 +532,14 @@ input[type=range]::-webkit-slider-thumb{
 
     </div>
     </div>
+    <div class="set-sec">update log</div>
+    <div class="set-group">
+      <div class="set-row" style="cursor:pointer;" id="setOpenLog">
+        <span style="flex:1;font-size:14px;">view update log</span>
+        <span style="color:var(--muted);">›</span>
+      </div>
+    </div>
+
     <div class="set-sec">about</div>
     <div class="set-group">
       <div class="set-hint">owl web · reads and writes the same server data as the phone widget</div>
@@ -1559,7 +1567,7 @@ $("updPill").addEventListener("click",e=>{
   if(e.target.id==="updAct")return;
   $("updPill").classList.toggle("open");
 });
-$("updLog").addEventListener("click",async()=>{
+async function openUpdateLog(){
   try{
     const r=await fetch(apiURL("/update/log"),{cache:"no-store"});
     const d=await r.json();
@@ -1578,7 +1586,9 @@ $("updLog").addEventListener("click",async()=>{
     modal(`<h3>update log</h3>${h||'<div class="t-label">no entries</div>'}
       <div class="modal-actions"><button data-close>close</button></div>`);
   }catch(e){toast("couldn't load log");}
-});
+}
+$("updLog").addEventListener("click",openUpdateLog);
+$("setOpenLog").addEventListener("click",openUpdateLog);
 $("updAct").addEventListener("click",async()=>{
   const ahead=($("updAct").textContent||"").includes("push");
   if(ahead){toast("push the repo from the server first");return;}
