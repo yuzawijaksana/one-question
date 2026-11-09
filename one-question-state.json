@@ -913,7 +913,7 @@
       ]
     },
     "oneQuestionSholat": {
-      "updatedAt": 1794261880320,
+      "updatedAt": 1794261960024,
       "value": {
         "lat": -6.2088,
         "lon": 106.8456,
@@ -922,5 +922,5 @@
       }
     }
   },
-  "updatedAt": 1794261820324
+  "updatedAt": 1794261870030
 }
