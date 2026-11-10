@@ -427,6 +427,14 @@ input[type=range]::-webkit-slider-thumb{
     <button class="add-bottom" id="dlAdd">+ add deadline</button>
   </div>
 
+  <!-- ═══════ DEADLINE DETAIL (fullscreen, all levels) ═══════ -->
+  <div class="view" id="v-dlview">
+    <div class="top">
+      <button class="back-bottom" id="dlvBack">‹ back</button>
+      <div class="tt"><div class="t-title" id="dlvTitle"></div><div class="t-label" id="dlvSub"></div></div></div>
+    <div id="dlvBody"></div>
+  </div>
+
   <!-- ═══════ JOURNAL ═══════ -->
   <div class="view" id="v-journal">
     <div class="top">
@@ -626,7 +634,7 @@ const uid=()=>Math.random().toString(36).slice(2,10);
 
 /* ── navigation ── */
 let cur="menu";
-const VIEWS=["menu","quotes","stickies","sched","deadlines","journal","guide","settings"];
+const VIEWS=["menu","quotes","stickies","sched","deadlines","journal","guide","settings","dlview"];
 function go(v){
   if(v===cur&&v!=="menu")return;
   document.querySelectorAll(".view").forEach(x=>x.classList.remove("on"));
@@ -1086,63 +1094,112 @@ function findDl(list,id,par=null){
   }
   return null;
 }
+/* ── deadline detail: fullscreen view, editable, all levels ── */
+let dlvId=null;
+function findDlPath(list,id,path=[]){
+  for(const it of list){
+    const p=[...path,it];
+    if(it.id===id)return{it,path:p};
+    const r=findDlPath(it.children||[],id,p);
+    if(r)return r;
+  }
+  return null;
+}
 function openDl(id){
+  dlvId=id;
+  renderDlv();
+}
+function renderDlv(){
   const dl=get("oneQuestionDeadlines");
-  const r=findDl(dl,id);
-  if(!r)return;
-  const{it,par}=r;
+  const r=dlvId?findDlPath(dl,dlvId):null;
+  if(!r){go("deadlines");return;}
+  const{it,path}=r;
+  const par=path.length>1?path[path.length-2]:null;
   const kids=it.children||[];
   const dn=kids.filter(k=>k.done).length;
   const left=daysLeft(it.date);
-  const leftTxt=it.date?(left<0?`<span style="color:var(--red)">${-left}d overdue</span>`
-    :left===0?`<span style="color:var(--gold)">today</span>`
-    :`in ${left}d`):"no date";
-  modal(`<button class="back" id="mBack" style="margin-bottom:12px;">‹ ${par?esc(par.title):"deadlines"}</button>
+  const leftCls=left<0?"red":left===0?"gold":"acc";
+  document.querySelectorAll(".view").forEach(x=>x.classList.remove("on"));
+  const v=$("v-dlview");
+  v.classList.add("on");
+  v.style.animation="none";v.offsetHeight;v.style.animation="";
+  cur="dlview";
+  $("dlvBack").textContent=par?("‹ "+par.title):"‹ deadlines";
+  $("dlvTitle").textContent=it.title;
+  $("dlvSub").textContent=(it.date?leftTxtFor(it.date):"no date")+(it.time?" · "+it.time:"");
+  let h="";
+  // done checkbox (locked while subtasks open)
+  h+=`<div class="card" style="margin-bottom:14px;">
     <div style="display:flex;gap:12px;align-items:center;">
-      <span class="checkbox${it.done?" on":""}${kids.length?" locked":""}" id="mChk"><span class="tick">✓</span></span>
-      <span style="font-size:17px;${it.done?"done-text":""}" class="${it.done?"done-text":""}">${esc(it.title)}</span></div>
-    <div class="dl-note" style="margin-top:14px;">
-      <div class="row" style="border:none;padding:4px 0;"><span class="t-label" style="flex:1;">due date</span><span style="font-size:13px;">${it.date||"no date"}${it.time?" "+it.time:""}</span></div>
-      ${it.date?`<div class="row" style="border:none;padding:4px 0;"><span class="t-label" style="flex:1;">left</span>${leftTxt}</div>`:""}
-      ${kids.length?`<div class="row" style="border:none;padding:4px 0;"><span class="t-label" style="flex:1;">subtasks</span><span style="font-size:13px;">${dn}/${kids.length} done</span></div>`:""}
+      <span class="checkbox${it.done?" on":""}" id="dlvChk"><span class="tick">✓</span></span>
+      <span style="flex:1;font-size:15px;${it.done?"done-text":""}" id="dlvTText">${esc(it.title)}</span>
     </div>
-    ${it.note?`<div class="dl-note">${esc(it.note)}</div>`:""}
-    ${kids.length?`<div style="margin-top:14px;">${kids.map(k=>`
-      <div class="gstep"><span class="checkbox${k.done?" on":""}" data-kid="${k.id}"><span class="tick">✓</span></span>
-      <span class="txt${k.done?" done-text":""}">${esc(k.title)}</span>
-      <button class="del" data-kdel="${k.id}">✕</button></div>`).join("")}</div>`:""}
-    <div class="modal-actions"><button id="mNote">note</button><button id="mDel" style="color:var(--red);">delete</button></div>`,
-    ()=>{
-      $("mBack").onclick=closeModal;
-      $("mChk").onclick=()=>{
-        if(kids.length){toast("finish the subtasks first");return;}
-        it.done=!it.done;set("oneQuestionDeadlines",dl);closeModal();
-      };
-      $("modalBox").querySelectorAll("[data-kid]").forEach(el=>{
-        el.onclick=()=>{
-          const k=kids.find(x=>x.id===el.dataset.kid);
-          k.done=!k.done;set("oneQuestionDeadlines",dl);closeModal();openDl(id);
-        };
-      });
-      $("modalBox").querySelectorAll("[data-kdel]").forEach(el=>{
-        el.onclick=()=>{
-          it.children=kids.filter(x=>x.id!==el.dataset.kdel);
-          set("oneQuestionDeadlines",dl);closeModal();openDl(id);
-        };
-      });
-      $("mNote").onclick=()=>{
-        modal(`<h3>note — ${esc(it.title)}</h3>
-          <textarea id="mN" rows="5">${esc(it.note||"")}</textarea>
-          <div class="modal-actions"><button data-close>cancel</button><button class="primary" id="mSaveN">save</button></div>`,
-          ()=>{$("mSaveN").onclick=()=>{it.note=$("mN").value;set("oneQuestionDeadlines",dl);closeModal();openDl(id);};});
-      };
-      $("mDel").onclick=()=>{
-        if(par){par.children=par.children.filter(x=>x.id!==it.id);}
-        else{const i=dl.indexOf(it);if(i>=0)dl.splice(i,1);}
-        set("oneQuestionDeadlines",dl);closeModal();
-      };
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <input id="dlvDate" type="date" value="${esc(it.date||"")}" style="flex:1;">
+      <input id="dlvTime" placeholder="HH:MM" value="${esc(it.time||"")}" style="width:90px;flex-shrink:0;">
+    </div>
+    <textarea id="dlvNote" rows="3" placeholder="note…" style="margin-top:8px;">${esc(it.note||"")}</textarea>
+    <button class="add-bottom" id="dlvSave" style="bottom:64px;">save changes</button>
+  </div>`;
+  // subtasks
+  h+=`<div class="set-sec">subtasks ${kids.length?`· ${dn}/${kids.length} done`:""}</div>
+    <div id="dlvKids">${kids.map(k=>`
+      <div class="gstep">
+        <span class="checkbox${k.done?" on":""}" data-kid="${k.id}"><span class="tick">✓</span></span>
+        <span class="txt${k.done?" done-text":""}" data-kopen="${k.id}" style="cursor:pointer;">${esc(k.title)}</span>
+        <button class="del" data-kdel="${k.id}">✕</button>
+      </div>`).join("")||'<div class="t-label">no subtasks</div>'}</div>
+    <button class="addrow" id="dlvAddKid" style="width:100%;">+ add subtask</button>
+    <button class="addrow" id="dlvDel" style="width:100%;color:var(--red);">✕ delete this ${par?"subtask":"deadline"}</button>`;
+  $("dlvBody").innerHTML=h;
+  window.scrollTo(0,0);
+  // wiring
+  $("dlvBack").onclick=()=>{ if(par){dlvId=par.id;renderDlv();} else go("deadlines"); };
+  $("dlvChk").onclick=()=>{
+    if(kids.length){toast("finish the subtasks first");return;}
+    it.done=!it.done;set("oneQuestionDeadlines",dl);renderDlv();
+  };
+  $("dlvSave").onclick=()=>{
+    it.date=$("dlvDate").value;it.time=$("dlvTime").value.trim();
+    it.note=$("dlvNote").value;
+    set("oneQuestionDeadlines",dl);toast("saved");renderDlv();
+  };
+  $("dlvAddKid").onclick=()=>{
+    modal(`<h3>+ add subtask</h3><input id="mKT" placeholder="subtask title">
+      <div class="modal-actions"><button data-close>cancel</button><button class="primary" id="mKS">add</button></div>`,
+      ()=>{$("mKS").onclick=()=>{
+        const t=$("mKT").value.trim();if(!t)return;
+        it.children=it.children||[];it.children.push({id:uid(),title:t,done:false});
+        set("oneQuestionDeadlines",dl);closeModal();renderDlv();
+      };});
+  };
+  $("dlvBody").querySelectorAll("[data-kid]").forEach(el=>{
+    el.onclick=()=>{
+      const k=kids.find(x=>x.id===el.dataset.kid);
+      k.done=!k.done;set("oneQuestionDeadlines",dl);renderDlv();
+    };
+  });
+  $("dlvBody").querySelectorAll("[data-kopen]").forEach(el=>{
+    el.onclick=()=>{dlvId=el.dataset.kopen;renderDlv();};
+  });
+  $("dlvBody").querySelectorAll("[data-kdel]").forEach(el=>{
+    el.onclick=()=>{
+      it.children=kids.filter(x=>x.id!==el.dataset.kdel);
+      set("oneQuestionDeadlines",dl);renderDlv();
+    };
+  });
+  $("dlvDel").onclick=()=>{
+    confirmDel(it.title,()=>{
+      if(par){par.children=par.children.filter(x=>x.id!==it.id);}
+      else{const i=dl.indexOf(it);if(i>=0)dl.splice(i,1);}
+      set("oneQuestionDeadlines",dl);
+      dlvId=par?par.id:null;
+      if(dlvId)renderDlv();else go("deadlines");
     });
+  };
 }
+function leftTxtFor(d){const l=daysLeft(d);return l<0?`${-l}d overdue`:l===0?"today":`in ${l}d`;}
+
 $("dlAdd").onclick=()=>modal(`<h3>+ add deadline</h3>
   <input id="mT" placeholder="title"><div style="height:10px"></div>
   <input id="mD" type="date"><div style="height:10px"></div>
