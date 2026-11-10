@@ -317,12 +317,12 @@
             {
               "id": "s2442792",
               "text": "tempat",
-              "done": false,
+              "done": true,
               "choices": [
                 "kampus",
                 "perpus"
               ],
-              "pick": null
+              "pick": "kampus"
             },
             {
               "id": "s2549059",
@@ -334,7 +334,7 @@
                 "scrolling",
                 "discord"
               ],
-              "pick": null
+              "pick": "scrolling"
             },
             {
               "id": "s2626073",
@@ -714,9 +714,7 @@
           "category": "skripsi",
           "html": "<p>Day 1 :</p><p>Note from self </p><p>- Kartu bimbingan belum ada -&gt; belum ada dosen pembimbing secara administrasi (pa yosi)</p><p>- Jurnaling -&gt; fokus nyusun proposal bukan fokus nyusun skripsi dulu karena kartu bimbingan belum ada</p><p>- Kalau susah nulis mending ngetik aja soalnya ngetik lebih cepet dan otak juga bisa ngikutin pacenya karena rusuh overthinking. Ketik aja semuanya nanti belakangan rangkum semuanya biar lebih tergambar secara keseluruhan.</p><p>&quot;Jangan merasa overwhelm karena ga bakala ngebantuin kamu kelar skripsi&quot;</p><p>Recall from dosen</p><p>- Judul jadi Perancangan Gim Platformer 2D Forest Royale Berbasis Unity (Menggunakan Metode GDLC)<br>- Fokus laporan itu penelitian jadi harus ada Kuisioner, ada metode perancangannya (GDLC), dan harus ada sumber jurnal untuk mendukung :<br>1. Latar Belakang<br>2. Kajian Pustaka </p><p>&quot;Daftar Pustaka harus banyak dan penuh, kalau engga kamu bakal dikira jenius bisa nulis sendiri&quot;</p><p><br>SIDANG ITU BUQT KONFIRMASI ABOUT WHAT YOU DID ON YOUR THESIS SO IF YOU GET ASKED ABOUT SOMETHING PLEASE DONT GET PRESSURED AND TRY LEARNING HOW TO ANSWER WHAT YOU DID</p>",
           "createdAt": 1794205084714,
-          "updatedAt": 1794213012156,
-          "text": "Day 1 :Note from self - Kartu bimbingan belum ada -> belum ada dosen pembimbing secara administrasi (pa yosi)- Jurnaling -> fokus nyusun proposal bukan fokus nyusun skripsi dulu karena kartu bimbingan belum ada- Kalau susah nulis mending ngetik aja soalnya ngetik lebih cepet dan otak juga bisa ngikutin pacenya karena rusuh overthinking. Ketik aja semuanya nanti belakangan rangkum semuanya biar lebih tergambar secara keseluruhan.\"Jangan merasa overwhelm karena ga bakala ngebantuin kamu kelar skripsi\"Recall from dosen- Judul jadi Perancangan Gim Platformer 2D Forest Royale Berbasis Unity (Menggunakan Metode GDLC)- Fokus laporan itu penelitian jadi harus ada Kuisioner, ada metode perancangannya (GDLC), dan harus ada sumber jurnal untuk mendukung :1. Latar Belakang2. Kajian Pustaka \"Daftar Pustaka harus banyak dan penuh, kalau engga kamu bakal dikira jenius bisa nulis sendiri\"SIDANG ITU BUQT KONFIRMASI ABOUT WHAT YOU DID ON YOUR THESIS SO IF YOU GET ASKED ABOUT SOMETHING PLEASE DONT GET PRESSURED AND TRY LEARNING HOW TO ANSWER WHAT YOU DID unsaved-edit-test",
-          "date": "2026-11-10"
+          "updatedAt": 1794213012156
         },
         {
           "id": "cmuw2egzm5an1",
@@ -733,6 +731,13 @@
           "html": "Sesuai dari buku \"Game Development Life Cycle Guidelines\" kenapa buku itu dibuat adalah :<p></p><p>1. karena video game itu bisa menjadi sebuah kemajuan untuk game industri dan sumber profitable/pendapatan industri dikarenakan semua video game semuanya ada di semua perangkat seperti smartphone, komputer, console, dan lain lain. oleh karena itu ada sebuah perusahaan yang&nbsp; mendistribusi perangkat pengembangan perangkat lunak (SDK) mereka secara terbuka kepada publik untuk memproduksi komponen atau produk (OEM) yang nantinya digunakan atau dijual kembali.&nbsp;</p><p>nanti cari [1] dari buku ini tuh apa</p><p>2. Gim gak bisa dibikin cuma pakai logika pemrograman. Software biasa (misal aplikasi kasir): fungsinya jalan = selesai. Gim yang fungsinya jalan tapi gak enak dimainkan = gagal. Jadi engineering doang gak cukup. Gim itu gak murni hasil rekayasa software, juga gak murni karya seni — tapi lebih mirip hasil keterampilan (kayak kerajinan tangan), yang dibikin dari gabungan banyak bidang yang jalin-menjalin: seni, musik, programming, acting, sama pengaturannya semua.<br>nanti cari [3][5]</p><p>Makanya pengembangan game itu perlu alur pembuatan untuk membantu referensi.</p><p><br></p><p>Dari referensi GDLC dijelaskan sistem SDLC, yaitu :<br>1. <b>Analisis </b>= mengumpulkan dan menggambarkan kebutuhan pengguna.</p><p>2. <b>Design </b>= dari analisis kebutuhan di fase ini ditranslasikan dengan model dan representasi perangkat lunak yang ada secara mendetail&nbsp;</p><p>3. <b>Code generation/Implementation</b> = model representasinya di translasi lagi ke source code seperti C++,Java dan lain lain agar menjadi aplikasi yang bisa dijalankan.</p><p>4.&nbsp; <b>Testing</b>&nbsp;= pengujian dilakukan untuk memastikan seluruh elemen berjalan sesuai fungsinya dan memenuhi spesifikasi yang telah ditentukan.</p><p><br></p>",
           "createdAt": 1791263325659,
           "updatedAt": 1793159861811
+        },
+        {
+          "id": "duem0q8n",
+          "title": "day 1 : riset paper \"Brawlmania\"",
+          "category": "riset paper",
+          "text": "underestimate yourself : \nhari ini aku gabakal bisa kelar riset paper seharian -> otw \ngabakal ketemu paper yang relevan -> ketemu\ngabakal bisa nulis latar belakang dalam waktu sehari \ngabisa lanjutin rumusan masalah tanpa latar belakang masalah\ngabakal bisa lanjutin bab 2 dan bab 3 \n\nhttps://journal.untar.ac.id/index.php/computatio/article/view/6048/4051\n\"PEMBUATAN GAME FIGHTING “BRAWLMANIA”\n\n1. dari papernya, baru tau kalau main ada time limit, kalau ga di buat nanti malah ga bakal beres2 dong wkwk\n2. ide baru soal changing maps (implementasiin ke game)\n3. ide dari papernya = game mode (arcade, versus, practice)\n\n4. bedanya paper itu sama laporan \n   - Arcade = \"Sepuluh player dengan score tertinggi akan terdaftar dalam menu High Score\" \n   - tema = \"Ada delapan karakter yang dapat dimainkan. Setiap karakter mewakili fakultas yang ada di\nUniversitas Tarumanagara dan memiliki gerakan kombo dan keunikan sendiri\" \n5. papernya game respondennya 30, noted\n6. reminder kalau paper ini paper pembuatan bukan pengembangan, jadi latar belakang masalah harus di matengin lagi\n\ndaftar pustaka\ngame (Game adalah sebuah aktivitas atau kontes secara fisik ataupun mental yang memilikisebuah aturan dan dilakukan oleh orang-orang untuk kesenangannya [1]) (Merriam-Webster, Game | Definition of game by Merriam-Webster, http://www.merriamwebster.com/dictionary/game, 22 Februari 2019.)\n\n\n",
+          "date": "2026-11-10"
         }
       ],
       "activeId": "cmuw7xntnaj4q"
