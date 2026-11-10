@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>one question · owl (dummy)</title>
+<title>one question · owl</title>
 <link rel="icon" href="icon-192.png">
 <meta name="theme-color" content="#000000">
 <style>
@@ -115,10 +115,9 @@ img{display:block;}
   max-width:300px;padding:12px 10px;
   background:rgba(245,197,66,.06);border:1px solid rgba(245,197,66,.28);
 }
-#menuSholat.pos-left{top:44%;left:18px;transform:translateY(-50%);}
-body > #menuSholat.pos-bottomleft{bottom:18px;left:18px;}
+#menuSholat.pos-left{top:50%;left:18px;transform:translateY(-50%);}
 #menuSholat.pos-center{top:18px;left:50%;transform:translateX(-50%);}
-#menuSholat.pos-right{top:44%;right:18px;transform:translateY(-50%);}
+#menuSholat.pos-right{top:50%;right:18px;transform:translateY(-50%);}
 #menuSholat.pos-topleft{top:18px;left:18px;}
 #menuSholat.pos-topright{top:18px;right:18px;}
 #menuSholat.pos-bottomleft{bottom:64px;left:18px;}
@@ -328,8 +327,8 @@ input[type=range]::-webkit-slider-thumb{
 #syncpill .syncdot{width:6px;height:6px;}
 /* ═══════ PC: two-column, everything fits the viewport ═══════ */
 @media(min-width:900px){
-  #app{max-width:none;width:100%;height:100vh;padding:0 48px;overflow:hidden;}
-  .view{height:100%;min-height:0;padding:40px 0 100px;max-width:1280px;margin:0 auto;overflow:hidden;}
+  #app{max-width:none;width:100%;min-height:100vh;padding:0 48px;}
+  .view{min-height:100vh;padding:40px 0 100px;max-width:1280px;margin:0 auto;}
   #menuClock{font-size:100px;}
   /* day circle: dial left, list right */
   .pc-two{display:flex;gap:48px;align-items:flex-start;}
@@ -338,19 +337,10 @@ input[type=range]::-webkit-slider-thumb{
   .pc-list::-webkit-scrollbar{display:none;}
   /* quotes: card left, nothing else — keep centered but bigger */
   #v-quotes .card{max-width:640px;margin:0 auto;}
-  /* menu: owl widget layout — clock centered on top, list below, all
-     vertically centered in the viewport (margin:auto, no flex clipping) */
-  #v-menu{padding:0 60px;height:100%;overflow:hidden;display:block;}
-  .menu-left{text-align:center;padding-top:110px;}
-  #menuClock{font-size:72px;line-height:1;}
-  #menuSub{margin-top:8px;}
-  #menuWx{margin-top:6px;}
-  #menuStatus{margin-top:14px;min-height:18px;font-size:13px;}
-  #menuSholat{margin-top:20px;}
-  #menuList{margin-top:50px;}
-  #menuList .menu-row{border-bottom:none;justify-content:center;}
-  .menu-row{font-size:18px;padding:13px;}
-  .menu-row .count{margin-left:auto;color:var(--muted);font-size:12px;}
+  /* menu: two-column info + list */
+  #v-menu{padding-top:60px;}
+  #menuList{margin-top:90px;}
+  .menu-row{font-size:20px;padding:17px 13px;}
 }
 </style>
 </head>
@@ -362,11 +352,9 @@ input[type=range]::-webkit-slider-thumb{
 
   <!-- ═══════ MENU ═══════ -->
   <div class="view on" id="v-menu">
-    <div class="menu-left">
-      <div id="menuClock">--:--</div>
-      <div id="menuSub"></div>
-      <div id="menuStatus"></div>
-    </div>
+    <div id="menuClock">--:--</div>
+    <div id="menuSub"></div>
+    <div id="menuStatus"></div>
     <div id="menuList"></div>
   </div>
 
@@ -555,7 +543,7 @@ input[type=range]::-webkit-slider-thumb{
 
     <div class="set-sec">about</div>
     <div class="set-group">
-      <div class="set-hint">owl web · single build for PC &amp; phone — self-updating from github · update-test 09 nov</div>
+      <div class="set-hint">owl web · single build for PC &amp; phone — self-updating from github</div>
     </div>
   </div>
 </div>
@@ -649,9 +637,6 @@ function go(v){
   const f=$("flash");f.classList.add("lit");
   requestAnimationFrame(()=>requestAnimationFrame(()=>f.classList.remove("lit")));
   window.scrollTo(0,0);
-  // sholat reminder only lives on the main view
-  const sd=$("menuSholat");
-  if(sd)sd.style.display=v==="menu"?"":"none";
   if(v==="menu")renderMenu();
 }
 document.body.addEventListener("click",e=>{
@@ -722,11 +707,8 @@ function renderMenu(){
   // compose: day circle line first, sholat card under it
   $("menuStatus").innerHTML=(act?`<span style="color:${esc(act.color||"var(--green)")}">● ${esc(act.label)} · ends ${pad(Math.floor(act.end/60))}:${pad(act.end%60)}</span>`:"")
     +(sholatHtml?`<div id="menuSholat">${sholatHtml}</div>`:"");
-  // remove any previous floating card first (renderMenu regenerates it);
-  // prevents duplicates stacking when navigating between views
-  document.querySelectorAll("body > #menuSholat").forEach(x=>x.remove());
   const sd=$("menuSholat");
-  if(sd&&cur==="menu"){
+  if(sd){
     // escape the zoomed #app: fixed positioning inside a zoomed ancestor
     // distorts coordinates (that's the off-center bug). Re-parent to body.
     if(sd.parentElement!==document.body)document.body.append(sd);
@@ -1174,7 +1156,6 @@ $("dlAdd").onclick=()=>modal(`<h3>+ add deadline</h3>
 
 /* ═══════ JOURNAL ═══════ */
 function renderJournal(){
-  // the widget reads journal chapters from oneQuestionBook.chapters — same source here
   const j=get("oneQuestionBook").chapters||[];
   $("jCount").textContent=j.length+" chapters";
   $("jList").innerHTML=j.map(c=>`
@@ -1182,7 +1163,7 @@ function renderJournal(){
       <span class="grow"><span style="font-size:14px;">${esc(c.title||"untitled")}</span>
         ${c.category?`<span class="t-label" style="display:block;margin-top:2px;">#${esc(c.category)}</span>`:""}</span>
       <button class="del" data-jdel="${c.id}">✕</button></div>`).join("")
-    ||'<div class="t-label center" style="line-height:1.7;">no journal yet<br><span style="opacity:.6;">+ new chapter di bawah, tap kartunya buat nulis</span></div>';
+    ||'<div class="t-label center">empty — write the first chapter</div>';
   $("jList").onclick=e=>{
     const del=e.target.closest("[data-jdel]");
     if(del){
@@ -1197,20 +1178,16 @@ function renderJournal(){
 function openJournal(id){
   const c=get("oneQuestionBook").chapters.find(x=>x.id===id);
   if(!c)return;
-  const body=c.html??c.text??"";
   modal(`<h3>${esc(c.title||"untitled")}</h3>
     <input id="mJT" value="${esc(c.title||"")}" placeholder="title"><div style="height:8px"></div>
     <input id="mJC" value="${esc(c.category||"")}" placeholder="category"><div style="height:10px"></div>
-    <textarea id="mJB" rows="10" style="font-size:14px;line-height:1.7;">${esc(c.text||stripHtml(body))}</textarea>
+    <textarea id="mJB" rows="10" style="font-size:14px;line-height:1.7;">${esc(c.text||"")}</textarea>
     <div class="modal-actions"><button data-close>cancel</button><button class="primary" id="mSaveJ">save</button></div>`,
     ()=>{$("mSaveJ").onclick=()=>{
-      c.title=$("mJT").value.trim();c.category=$("mJC").value.trim();
-      c.text=$("mJB").value;c.html="<p>"+esc($("mJB").value).replace(/\n\n/g,"</p><p>").replace(/\n/g,"<br>")+"</p>";
-      set("oneQuestionBook",{...get("oneQuestionBook"),chapters:get("oneQuestionBook").chapters});
-      closeModal();toast("✓ saved");
+      c.title=$("mJT").value.trim();c.category=$("mJC").value.trim();c.text=$("mJB").value;
+      set("oneQuestionBook",{...get("oneQuestionBook"),chapters:get("oneQuestionBook").chapters});closeModal();toast("✓ saved");
     };});
 }
-function stripHtml(h){const d=document.createElement("div");d.innerHTML=h||"";return d.textContent||"";}
 $("jAdd").onclick=()=>modal(`<h3>+ new chapter</h3>
   <input id="mJT" placeholder="title"><div style="height:10px"></div>
   <input id="mJC" placeholder="category">
@@ -1219,7 +1196,7 @@ $("jAdd").onclick=()=>modal(`<h3>+ new chapter</h3>
     const t=$("mJT").value.trim();if(!t)return;
     const b=get("oneQuestionBook");
     b.chapters=b.chapters||[];
-    b.chapters.push({id:uid(),title:t,category:$("mJC").value.trim()||"journal",text:"",html:"",date:new Date().toISOString().slice(0,10)});
+    b.chapters.push({id:uid(),title:t,category:$("mJC").value.trim()||"journal",text:"",date:new Date().toISOString().slice(0,10)});
     set("oneQuestionBook",b);closeModal();toast("added");
   };});
 
@@ -1437,29 +1414,8 @@ $("setScale").addEventListener("change",()=>{
 function applyScale(sc){
   // zoom the CONTENT (app) only — fixed overlays (sholat card, sync pill,
   // update pill) stay at real viewport scale so their centering math is exact
-  const z=sc/100, app=document.getElementById("app");
-  app.style.zoom=z;
-  // zoom multiplies 100vh, which overflows the real viewport — compensate
-  const fit=()=>{
-    app.style.height=(innerHeight/z)+"px";
-    // zoom renders the fitted height at z× device px — clamp the scrollable
-    // body to the real viewport so the page never scrolls under zoom
-    // (PC only: mobile views need their native scroll)
-    if(innerWidth>=900){
-      document.body.style.height=innerHeight+"px";
-      document.body.style.overflow="hidden";
-      document.documentElement.style.overflow="hidden";
-    }else{
-      document.body.style.height="";document.body.style.overflow="";
-      document.documentElement.style.overflow="";
-    }
-  };
-  fit();
-  window.removeEventListener("resize",window.__fitResize||(()=>{}));
-  window.__fitResize=fit;
-  window.addEventListener("resize",fit);
+  document.getElementById("app").style.zoom = (sc/100);
 }
-window.addEventListener("resize",()=>applyScale(+(localStorage.getItem("oqScale")||125)));
 /* animation speed: 0× instant, 1× normal, up to 3× slower (per device) */
 function applyAnim(){
   const v=+(localStorage.getItem("oqAnim")||1);
