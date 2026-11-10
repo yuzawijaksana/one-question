@@ -978,7 +978,7 @@
       }
     },
     "oneQuestionHermes": {
-      "updatedAt": 1794310316761,
+      "updatedAt": 1794310374534,
       "value": [
         {
           "q": "what is the hostname of this machine? answer in 3 words",
@@ -999,9 +999,14 @@
           "q": "kedepannya kasih opsi aja tanpa choice ya",
           "a": "Sip, preferensinya sudah aku simpan. Mulai sekarang kalau ada opsi, aku tulis langsung di chat tanpa prompt pilihan — kamu tinggal balas biasa.",
           "ts": 1794310283678
+        },
+        {
+          "q": "nah kalau gitu kamu upgrade view chat ini soalnya kelaitannya gabisa bedain antara sender sama hermes, no askingg",
+          "a": "",
+          "ts": 1794310374280
         }
       ]
     }
   },
-  "updatedAt": 1794310319492
+  "updatedAt": 1794310377235
 }
