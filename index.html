@@ -232,7 +232,7 @@ input[type=range]::-webkit-slider-thumb{
 .navrow button{padding:10px 18px;color:var(--muted);font-size:16px;}
 .navrow button:active{color:var(--fg);}
 /* ── deadline urgency ── */
-.dl-date{font-size:26px;}
+.dl-date{font-size:30px;font-weight:700;color:var(--fg);}
 .dl-date.red{color:var(--red);}
 .dl-date.gold{color:var(--gold);}
 .dl-date.acc{color:var(--accent);}
@@ -335,8 +335,9 @@ input[type=range]::-webkit-slider-thumb{
   .pc-two > .pc-dial{flex:0 0 auto;}
   .pc-two > .pc-list{flex:1;min-width:0;max-height:calc(100vh - 220px);overflow-y:auto;scrollbar-width:none;}
   .pc-list::-webkit-scrollbar{display:none;}
-  /* quotes: card left, nothing else — keep centered but bigger */
-  #v-quotes .card{max-width:640px;margin:0 auto;}
+  /* quotes & remember: centered like owl */
+  #v-quotes .top,#v-stickies .top{justify-content:center;}
+  #v-quotes .card,#v-stickies .card{max-width:640px;margin:0 auto;}
   /* menu: two-column info + list */
   #v-menu{padding-top:60px;}
   #menuList{margin-top:90px;}
@@ -1124,6 +1125,8 @@ function renderDlv(){
   v.classList.add("on");
   v.style.animation="none";v.offsetHeight;v.style.animation="";
   cur="dlview";
+  const sholatCard=document.getElementById("menuSholat");
+  if(sholatCard)sholatCard.style.display="none";
   $("dlvBack").textContent=par?("‹ "+par.title):"‹ deadlines";
   $("dlvTitle").textContent=it.title;
   $("dlvSub").textContent=(it.date?leftTxtFor(it.date):"no date")+(it.time?" · "+it.time:"");
