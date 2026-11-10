@@ -966,7 +966,17 @@
           ]
         }
       }
+    },
+    "oneQuestionHermes": {
+      "updatedAt": 1794293413354,
+      "value": [
+        {
+          "q": "what is the hostname of this machine? answer in 3 words",
+          "a": "",
+          "ts": 1794293413100
+        }
+      ]
     }
   },
-  "updatedAt": 1794287157272
+  "updatedAt": 1794293413357
 }
