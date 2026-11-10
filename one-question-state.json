@@ -792,14 +792,8 @@
       }
     },
     "oneQuestionQuotes": {
-      "updatedAt": 1794277567044,
+      "updatedAt": 1794277690148,
       "value": [
-        {
-          "id": "7997a4b2-09fd-4532-b6af-24e762034b2f",
-          "text": "zz-test roundtrip",
-          "author": "zz",
-          "created": 1794277567044
-        },
         {
           "id": "793d7d20-9493-43f6-9f7f-64f71142260e",
           "text": "If I have to fall, let me be. Because the person i become will catch me",
@@ -972,5 +966,5 @@
       }
     }
   },
-  "updatedAt": 1794277567978
+  "updatedAt": 1794277690674
 }
