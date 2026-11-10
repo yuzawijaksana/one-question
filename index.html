@@ -400,9 +400,13 @@ input[type=range]::-webkit-slider-thumb{
 #syncpill .syncdot{width:6px;height:6px;}
 /* ═══════ PC: two-column, everything fits the viewport ═══════ */
 @media(min-width:900px){
+  #menuSholat{padding:8px 12px !important;}
+  #menuStatus{margin-top:14px;font-size:12px;min-height:16px;}
+}
+@media(min-width:900px){
   #app{max-width:none;width:100%;min-height:100vh;padding:0 48px;}
-  .view{min-height:100vh;padding:40px 0 100px;max-width:1280px;margin:0 auto;}
-  #menuClock{font-size:100px;}
+  .view{min-height:100vh;padding:clamp(20px,5vh,40px) 0 clamp(16px,4vh,48px);max-width:1280px;margin:0 auto;}
+  #menuClock{font-size:min(100px,11vh);}
   /* day circle: dial left, list right */
   .pc-two{display:flex;gap:48px;align-items:flex-start;}
   .pc-two > .pc-dial{flex:0 0 auto;}
@@ -413,9 +417,9 @@ input[type=range]::-webkit-slider-thumb{
   #v-quotes .top .tt,#v-stickies .top .tt{text-align:center;}
   #v-quotes .card,#v-stickies .card{max-width:640px;margin:0 auto;}
   /* menu: two-column info + list */
-  #v-menu{padding-top:60px;}
-  #menuList{margin-top:90px;}
-  .menu-row{font-size:20px;padding:17px 13px;}
+  #v-menu{padding-top:clamp(12px,4vh,60px);}
+  #menuList{margin-top:clamp(6px,2.5vh,36px);}
+  .menu-row{font-size:20px;padding:clamp(5px,1vh,12px) 13px;}
 }
 </style>
 </head>
