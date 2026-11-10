@@ -116,6 +116,7 @@ img{display:block;}
   background:rgba(245,197,66,.06);border:1px solid rgba(245,197,66,.28);
 }
 #menuSholat.pos-left{top:50%;left:18px;transform:translateY(-50%);}
+body > #menuSholat.pos-bottomleft{bottom:18px;left:18px;}
 #menuSholat.pos-center{top:18px;left:50%;transform:translateX(-50%);}
 #menuSholat.pos-right{top:50%;right:18px;transform:translateY(-50%);}
 #menuSholat.pos-topleft{top:18px;left:18px;}
@@ -338,14 +339,15 @@ input[type=range]::-webkit-slider-thumb{
   /* quotes: card left, nothing else — keep centered but bigger */
   #v-quotes .card{max-width:640px;margin:0 auto;}
   /* menu: vertically centered, never page-scrolls */
-  /* menu: vertically centered, never page-scrolls, never clips the top
-     (margin:auto centering doesn't have the flex overflow-clipping bug) */
-  #v-menu{padding-top:12px;height:100%;overflow:hidden;}
-  #v-menu > *{margin-left:auto;margin-right:auto;}
-  #menuClock,#menuSub,#menuStatus{text-align:center;}
-  #menuSholat{margin-top:14px;}
-  #menuList{margin-top:34px;}
-  .menu-row{font-size:18px;padding:12px 13px;}
+  /* menu: owl layout on PC — clock+status left, menu list right, no float */
+  #v-menu{padding-top:40px;height:100%;overflow:hidden;
+    display:flex;gap:60px;align-items:center;justify-content:center;}
+  #v-menu > *{margin:0;}
+  #menuClock{font-size:84px;}
+  #menuSub,#menuWx,#menuStatus{text-align:center;}
+  #menuList{margin-top:0;flex:0 0 360px;}
+  .menu-row{font-size:19px;padding:15px 13px;border-bottom:1px solid var(--line);}
+  .menu-row .count{margin-left:auto;color:var(--muted);font-size:12px;}
 }
 </style>
 </head>
@@ -357,9 +359,11 @@ input[type=range]::-webkit-slider-thumb{
 
   <!-- ═══════ MENU ═══════ -->
   <div class="view on" id="v-menu">
-    <div id="menuClock">--:--</div>
-    <div id="menuSub"></div>
-    <div id="menuStatus"></div>
+    <div class="menu-left">
+      <div id="menuClock">--:--</div>
+      <div id="menuSub"></div>
+      <div id="menuStatus"></div>
+    </div>
     <div id="menuList"></div>
   </div>
 
@@ -644,7 +648,7 @@ function go(v){
   window.scrollTo(0,0);
   // sholat reminder only lives on the main view
   const sd=$("menuSholat");
-  if(sd&&v==="menu")sd.style.display="";
+  if(sd)sd.style.display=v==="menu"?"":"none";
   if(v==="menu")renderMenu();
 }
 document.body.addEventListener("click",e=>{
@@ -719,7 +723,7 @@ function renderMenu(){
   // prevents duplicates stacking when navigating between views
   document.querySelectorAll("body > #menuSholat").forEach(x=>x.remove());
   const sd=$("menuSholat");
-  if(sd){
+  if(sd&&cur==="menu"){
     // escape the zoomed #app: fixed positioning inside a zoomed ancestor
     // distorts coordinates (that's the off-center bug). Re-parent to body.
     if(sd.parentElement!==document.body)document.body.append(sd);
