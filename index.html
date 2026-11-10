@@ -869,7 +869,9 @@ function renderMenu(){
     sd.style.textAlign=align==="right"?"right":align==="center"?"center":"left";
     // horizontal placement via menuStatus flex (robust under zoom/media rules)
     $("menuStatus").style.display="flex";
-    $("menuStatus").style.justifyContent=align==="right"?"flex-end":align==="center"?"center":"flex-start";
+    $("menuStatus").style.flexDirection="column";
+    $("menuStatus").style.gap="12px";
+    $("menuStatus").style.alignItems=align==="right"?"flex-end":align==="center"?"center":"flex-start";
     // gold styling ONLY while the prayer window is active and not done yet
     const gold=window.__sholatGold===true;
     sd.style.maxWidth="300px";
@@ -1672,6 +1674,11 @@ function applyScale(sc){
   // zoom the CONTENT (app) only — fixed overlays (sholat card, sync pill,
   // update pill) stay at real viewport scale so their centering math is exact
   document.getElementById("app").style.zoom = (sc/100);
+  // zoom inflates the .view min-height:100vh (it scales inside the zoomed
+  // app) → empty scroll past the content; divide it back out
+  const mh=(100/(sc/100))+"vh";
+  document.querySelectorAll(".view").forEach(v=>v.style.minHeight=mh);
+  document.getElementById("app").style.minHeight=mh;
 }
 /* animation speed: 0× instant, 1× normal, up to 3× slower (per device) */
 function applyAnim(){
