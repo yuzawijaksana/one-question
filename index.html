@@ -1613,7 +1613,7 @@ function loadSet(){
   });
   // update status row
   fetch(apiURL("/update/status"),{cache:"no-store"}).then(r=>r.json()).then(d=>{
-    $("setCheckUpdVal").textContent=d.ok?(d.behind>0?d.behind+" behind":"up to date"):"offline";
+    $("setCheckUpdVal").textContent=d.ok?(d.behind>0?d.behind+" behind":"page "+PAGE_BUILD+" · server "+(d.version||d.current||"")):"offline";
   }).catch(()=>{$("setCheckUpdVal").textContent="offline";});
   $("setSections").onclick=e=>{
     const b=e.target.closest("[data-sec]");if(!b)return;
@@ -1781,6 +1781,14 @@ async function ensureSholat(){
   }
 }
 
+/* page build stamp: Last-Modified of index.html as served */
+let PAGE_BUILD="…";
+(async()=>{try{
+  const hr=await fetch(location.pathname,{method:"HEAD",cache:"no-store"});
+  const lm=hr.headers.get("last-modified");
+  if(lm)PAGE_BUILD=new Date(lm).toISOString().slice(0,16).replace("T"," ");
+}catch(e){}})();
+
 /* ═══════ hermes chat ═══════ */
 let hmBusy=false;
 function renderHermes(){
@@ -1937,11 +1945,23 @@ $("setCheckUpd").addEventListener("click",async()=>{
     await checkUpdate();
     const d=await (await fetch(apiURL("/update/status"),{cache:"no-store"})).json();
     if(!d.ok){val.textContent="error";return;}
+    const updNow=async()=>{
+      val.textContent="updating…";
+      try{
+        const r=await fetch(apiURL("/update"),{method:"POST"});
+        const d2=await r.json();
+        val.textContent=d2.ok?"✓ updated · "+(d2.version||d2.current||""):"✕ "+(d2.error||"failed");
+        val.style.color="";
+        if(d2.ok)location.reload();
+      }catch(e2){val.textContent="offline";val.style.color="";}
+    };
     if(d.behind>0){
-      val.textContent=d.behind+" behind — pill kanan bawah";
-      $("updPill").classList.add("show");
+      val.textContent="["+d.behind+" behind — click to update]";
+      val.style.color="var(--accent)";val.style.cursor="pointer";
+      val.onclick=updNow;
     }else{
-      val.textContent="up to date · "+(d.version||d.current||"");
+      val.textContent="up to date · page "+PAGE_BUILD+" · server "+(d.version||d.current||"");
+      val.onclick=null;
     }
   }catch(e){
     // status endpoint unreachable — offer a direct git pull through the
