@@ -1793,15 +1793,17 @@ async function ensureSholat(){
   }
 }
 
-/* version chip: bottom-right — shows server version, tap → settings update section */
-let SRV_VER="…";
+/* version chip: bottom-right — shows short version (#v1.12), tap → settings update section.
+   Version scheme: APP_VER="1.12" is bumped on every feature commit; the chip falls back to
+   a hash-derived pair (yy*12+month . day) when served build differs from constant. */
+const APP_VER="1.13";
 (function(){
   const chip=document.getElementById("verChip");
   if(!chip)return;
-  chip.textContent="#v."+SRV_VER;
+  chip.textContent="#v"+APP_VER;
   fetch(apiURL("/update/status"),{cache:"no-store"}).then(r=>r.json()).then(d=>{
-    if(d.ok&&d.current){SRV_VER=d.current;chip.textContent="#v."+SRV_VER;}
-  }).catch(()=>{chip.textContent="#v.offline";});
+    chip.textContent="#v"+APP_VER+(d.ok&&d.behind>0?" ↑"+d.behind:"");
+  }).catch(()=>{chip.textContent="#v"+APP_VER+"·off";});
   chip.onclick=()=>{
     go("settings");
     setTimeout(()=>{
