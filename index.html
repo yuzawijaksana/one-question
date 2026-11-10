@@ -504,6 +504,7 @@ input[type=range]::-webkit-slider-thumb{
       <button class="back-bottom" data-go="menu">‹ back</button>
       <div class="tt"><div class="t-title">settings</div><div class="t-label">one question · owl web</div></div></div>
     <div class="row"><span class="syncdot" id="syncDot2" style="position:static;"></span><span class="t-label" id="syncTxt2" style="flex:1;">connecting…</span>
+      <button class="set-ghost" id="syncNowBtn" style="font-size:13px;padding:5px 10px;">[ sync now ]</button>
       <button class="set-ghost" id="setReset" style="flex-shrink:0;">[ reset all ]</button></div>
 
     <div class="pc-two" style="flex-wrap:wrap;">
@@ -665,6 +666,13 @@ function set(k,v){MUT[k]=v;renderAll();clearTimeout(syncTimer);syncTimer=setTime
   const ok=await push();if(!ok)toast("offline — will retry");
   else{KEYS=KEYS;renderAll();}
 },250);}
+$("syncNowBtn").onclick=async()=>{
+  const btn=$("syncNowBtn");btn.textContent="[ syncing… ]";btn.disabled=true;
+  const pushed=await push();
+  await pull();
+  btn.textContent="[ sync now ]";btn.disabled=false;
+  toast(pushed?"✓ synced — data up to date":"✓ pulled from server");
+};
 function setSync(){
   const c=online?"ok":"bad",t=online?"online · synced":"offline";
   for(const[id,tx]of[["syncDot",null],["syncDot2",null]])
