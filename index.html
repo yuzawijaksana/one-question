@@ -338,15 +338,18 @@ input[type=range]::-webkit-slider-thumb{
   .pc-list::-webkit-scrollbar{display:none;}
   /* quotes: card left, nothing else — keep centered but bigger */
   #v-quotes .card{max-width:640px;margin:0 auto;}
-  /* menu: owl widget layout — clock centered on top, list below */
-  #v-menu{padding:24px 60px;height:100%;overflow:hidden;display:flex;flex-direction:column;}
-  .menu-left{flex:0 0 auto;text-align:center;}
+  /* menu: owl widget layout — clock centered on top, list below, all
+     vertically centered in the viewport (margin:auto, no flex clipping) */
+  #v-menu{padding:0 60px;height:100%;overflow:hidden;display:block;}
+  .menu-left{text-align:center;padding-top:110px;}
   #menuClock{font-size:72px;line-height:1;}
   #menuSub{margin-top:8px;}
   #menuWx{margin-top:6px;}
   #menuStatus{margin-top:14px;min-height:18px;font-size:13px;}
-  #menuList{margin-top:30px;}
-  .menu-row{font-size:18px;padding:13px;border-bottom:1px solid var(--line);}
+  #menuSholat{margin-top:20px;}
+  #menuList{margin-top:50px;}
+  #menuList .menu-row{border-bottom:none;justify-content:center;}
+  .menu-row{font-size:18px;padding:13px;}
   .menu-row .count{margin-left:auto;color:var(--muted);font-size:12px;}
 }
 </style>
