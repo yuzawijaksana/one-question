@@ -122,6 +122,18 @@ img{display:block;}
 }
 #updPill .upd-btn:active{color:var(--fg);}
 @media(max-width:899px){#updPill{display:none !important;}}
+/* version chip: bottom-right, tap opens settings update section */
+#verChip{
+  position:fixed;bottom:18px;right:18px;z-index:84;
+  padding:6px 10px;background:rgba(10,10,10,.85);
+  border:1px solid rgba(141,141,141,.35);color:var(--muted);
+  font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:.5px;
+}
+#verChip:active{color:var(--fg);border-color:rgba(141,141,141,.7);}
+@media(min-width:900px){
+  #verChip{bottom:18px;right:18px;}
+  #updPill{bottom:56px;}
+}
 /* offline pill: bottom-left, ALL devices — mirrors the update pill */
 #offPill{
   position:fixed;bottom:18px;left:18px;z-index:85;display:none;
@@ -423,6 +435,7 @@ input[type=range]::-webkit-slider-thumb{
 <div id="wallLayer" style="position:fixed;inset:0;z-index:-1;background-size:cover;background-position:center;display:none;"></div>
 <div id="flash"></div>
 <div id="syncpill"><span class="syncdot bad" id="syncDot"></span><span id="syncTxt">connecting…</span></div>
+<div id="verChip">#v.…</div>
 <div id="offPill">
   <span class="off-dot"></span>
   <span>you're offline</span>
@@ -1780,6 +1793,25 @@ async function ensureSholat(){
     }catch(e){/* offline: keep whatever cached times exist */}
   }
 }
+
+/* version chip: bottom-right — shows server version, tap → settings update section */
+let SRV_VER="…";
+(function(){
+  const chip=document.getElementById("verChip");
+  if(!chip)return;
+  chip.textContent="#v."+SRV_VER;
+  fetch(apiURL("/update/status"),{cache:"no-store"}).then(r=>r.json()).then(d=>{
+    if(d.ok&&d.current){SRV_VER=d.current;chip.textContent="#v."+SRV_VER;}
+  }).catch(()=>{chip.textContent="#v.offline";});
+  chip.onclick=()=>{
+    go("settings");
+    setTimeout(()=>{
+      const sec=$("setCheckUpd");
+      if(sec)sec.scrollIntoView({behavior:"smooth",block:"center"});
+      sec?.click();
+    },350);
+  };
+})();
 
 /* page build stamp: Last-Modified of index.html as served */
 let PAGE_BUILD="…";
