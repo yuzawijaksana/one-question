@@ -979,7 +979,7 @@
       }
     },
     "oneQuestionHermes": {
-      "updatedAt": 1794312324120,
+      "updatedAt": 1794312347095,
       "value": [
         {
           "q": "what is the hostname of this machine? answer in 3 words",
@@ -1033,11 +1033,11 @@
         },
         {
           "q": "gausah gapapa, sekarang udah beres belum yang tadi dua perubahan ?",
-          "a": "",
+          "a": "Udah beres dua-duanya, cek di `index.html`:\n\n1. **Input bar chat** — nggak lagi `position:fixed` overlay. Sekarang `#v-hermes` jadi kolom flex setinggi layar (`100dvh`), log chat (`#hmLog`) yang scroll di tengah, dan bar input nempel di bawah sebagai bagian layout. Scrollbar log juga udah disembunyiin biar bersih.\n2. **Auto-scroll ke pesan terbaru** — pas masuk/tab ke view hermes, `go(\"hermes\")` langsung set `hmLog.scrollTop = scrollHeight`, jadi selalu ke bawah (index.html:796).\n\nTinggal mau di-commit atau di-preview dulu di browser?",
           "ts": 1794312323850
         }
       ]
     }
   },
-  "updatedAt": 1794312324210
+  "updatedAt": 1794312347199
 }
