@@ -979,7 +979,7 @@
       }
     },
     "oneQuestionHermes": {
-      "updatedAt": 1794312404110,
+      "updatedAt": 1794312464208,
       "value": [
         {
           "q": "what is the hostname of this machine? answer in 3 words",
@@ -1043,11 +1043,11 @@
         },
         {
           "q": "belum ada perubahannya di web ini",
-          "a": "",
+          "a": "offline — coba lagi nanti",
           "ts": 1794312403851
         }
       ]
     }
   },
-  "updatedAt": 1794312404171
+  "updatedAt": 1794312464286
 }
