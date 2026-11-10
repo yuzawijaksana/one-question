@@ -279,6 +279,30 @@ input[type=range]::-webkit-slider-thumb{
 /* hairline under each day-circle list row */
 .rowline{height:1px;background:rgba(236,236,236,.05);margin:2px 0;}
 .sched-row.sc-active{background:rgba(236,236,236,.04);}
+/* ── guide flowchart (owl port): centered boxes joined by ▼ ── */
+.flow-box{
+  background:rgba(236,236,236,.04);border:1px solid var(--line);
+  padding:14px 18px;margin:0 auto 0;width:fit-content;max-width:90%;
+  min-width:220px;text-align:left;
+}
+.flow-arrow{text-align:center;color:var(--muted);font-size:12px;margin:2px 0;line-height:1;}
+.flow-title{
+  display:flex;align-items:center;gap:10px;font-size:16px;color:var(--fg);
+  cursor:default;
+}
+.flow-title .st-circle{color:var(--muted);font-size:13px;}
+.flow-step.done .flow-title .st-text{color:var(--muted);text-decoration:line-through;}
+.flow-choice{
+  display:flex;align-items:center;gap:7px;padding:3px 5px;border-radius:8px;
+  font-size:13px;color:var(--muted);cursor:pointer;
+}
+.flow-choice.picked{background:rgba(141,141,141,.16);color:var(--accent);}
+.flow-choice .fc-dot{font-size:12px;}
+.flow-choice.picked .fc-dot{color:var(--accent);}
+.flow-choice .fc-x{margin-left:auto;color:var(--muted);padding:0 4px;display:none;}
+.gview-open .flow-choice .fc-x{display:inline;}
+.flow-addline{text-align:center;color:var(--accent);font-size:14px;cursor:pointer;padding:10px 6px;}
+.flow-addline:active{color:var(--fg);}
 /* ── guide steps ── */
 .gstep{
   display:flex;align-items:flex-start;gap:12px;padding:10px 4px;
@@ -444,6 +468,26 @@ input[type=range]::-webkit-slider-thumb{
       <div class="tt"><div class="t-title">journal</div><div class="t-label" id="jCount"></div></div></div>
     <div id="jList"></div>
     <button class="add-bottom" id="jAdd">+ new chapter</button>
+  </div>
+
+  <!-- ═══════ JOURNAL CHAPTER (fullscreen) ═══════ -->
+  <div class="view" id="v-jrview">
+    <div class="top">
+      <button class="back-bottom" id="jrvBack">‹ back</button>
+      <div class="tt"><div class="t-title" id="jrvTitle"></div><div class="t-label" id="jrvSub"></div></div></div>
+    <input id="jrvTitleIn" placeholder="title" style="margin-bottom:8px;">
+    <input id="jrvCat" placeholder="category" style="margin-bottom:10px;">
+    <textarea id="jrvBody" rows="14" style="font-size:14px;line-height:1.8;"></textarea>
+    <button class="addrow" id="jrvSave" style="width:100%;">save chapter</button>
+  </div>
+
+  <!-- ═══════ DAILY GUIDE (fullscreen flowchart) ═══════ -->
+  <div class="view" id="v-gview">
+    <div class="top">
+      <button class="back-bottom" id="gvBack">‹ back</button>
+      <div class="tt"><div class="t-title" id="gvTitle"></div><div class="t-label" id="gvSub"></div></div></div>
+    <div id="gvFlow"></div>
+    <button class="addrow" id="gvAddStep" style="width:100%;">+ add step</button>
   </div>
 
   <!-- ═══════ DAILY GUIDE ═══════ -->
@@ -636,7 +680,7 @@ const uid=()=>Math.random().toString(36).slice(2,10);
 
 /* ── navigation ── */
 let cur="menu";
-const VIEWS=["menu","quotes","stickies","sched","deadlines","journal","guide","settings","dlview"];
+const VIEWS=["menu","quotes","stickies","sched","deadlines","journal","guide","settings","dlview","jrview","gview"];
 function go(v){
   if(v===cur&&v!=="menu")return;
   document.querySelectorAll(".view").forEach(x=>x.classList.remove("on"));
@@ -664,7 +708,7 @@ const SECTIONS=[
   ["stickies","remember",()=>get("oneQuestionStickies").length],
   ["sched","day circle",()=>get("oneQuestionSchedule").length],
   ["deadlines","deadlines",()=>get("oneQuestionDeadlines").filter(d=>!d.done).length+" open"],
-  ["journal","journal",()=>get("oneQuestionJournal").length],
+  ["journal","journal",()=>(get("oneQuestionBook").chapters||[]).length],
   ["guide","daily guide",()=>guides().length],
   ["settings","settings",""],
 ];
@@ -1239,19 +1283,29 @@ function renderJournal(){
     if(row)openJournal(row.dataset.jid);
   };
 }
+let jrId=null;
 function openJournal(id){
-  const c=get("oneQuestionBook").chapters.find(x=>x.id===id);
-  if(!c)return;
-  modal(`<h3>${esc(c.title||"untitled")}</h3>
-    <input id="mJT" value="${esc(c.title||"")}" placeholder="title"><div style="height:8px"></div>
-    <input id="mJC" value="${esc(c.category||"")}" placeholder="category"><div style="height:10px"></div>
-    <textarea id="mJB" rows="10" style="font-size:14px;line-height:1.7;">${esc(c.text||"")}</textarea>
-    <div class="modal-actions"><button data-close>cancel</button><button class="primary" id="mSaveJ">save</button></div>`,
-    ()=>{$("mSaveJ").onclick=()=>{
-      c.title=$("mJT").value.trim();c.category=$("mJC").value.trim();c.text=$("mJB").value;
-      set("oneQuestionBook",{...get("oneQuestionBook"),chapters:get("oneQuestionBook").chapters});closeModal();toast("✓ saved");
-    };});
+  jrId=id;
+  document.querySelectorAll(".view").forEach(x=>x.classList.remove("on"));
+  const v=$("v-jrview");
+  v.classList.add("on");v.style.animation="none";v.offsetHeight;v.style.animation="";
+  cur="jrview";
+  const c=(get("oneQuestionBook").chapters||[]).find(x=>x.id===id);
+  if(!c){go("journal");return;}
+  $("jrvTitle").textContent=c.title||"untitled";
+  $("jrvSub").textContent="#"+(c.category||"journal")+" · "+(c.date||"");
+  $("jrvTitleIn").value=c.title||"";
+  $("jrvCat").value=c.category||"";
+  $("jrvBody").value=c.text||"";
 }
+$("jrvBack").onclick=()=>go("journal");
+$("jrvSave").onclick=()=>{
+  const c=(get("oneQuestionBook").chapters||[]).find(x=>x.id===jrId);if(!c)return;
+  c.title=$("jrvTitleIn").value.trim()||"untitled";
+  c.category=$("jrvCat").value.trim()||"journal";
+  c.text=$("jrvBody").value;c.date=c.date||new Date().toISOString().slice(0,10);
+  set("oneQuestionBook",{...get("oneQuestionBook"),chapters:(get("oneQuestionBook").chapters||[]).map(x=>x.id===jrId?c:x)});toast("✓ saved");go("journal");
+};
 $("jAdd").onclick=()=>modal(`<h3>+ new chapter</h3>
   <input id="mJT" placeholder="title"><div style="height:10px"></div>
   <input id="mJC" placeholder="category">
@@ -1265,13 +1319,14 @@ $("jAdd").onclick=()=>modal(`<h3>+ new chapter</h3>
   };});
 
 /* ═══════ DAILY GUIDE ═══════ */
+let gOpenId=null;
 function renderGuide(){
   const g=guides();
   $("gCount").textContent=g.length+" guides";
-  if(uiState.g){
-    const cur=g.find(x=>x.id===uiState.g);
+  if(gOpenId){
+    const cur=g.find(x=>x.id===gOpenId);
     if(cur){renderGuidePage(cur);return;}
-    uiState.g=null;
+    gOpenId=null;
   }
   $("gList").innerHTML=g.map(x=>{
     const dn=(x.steps||[]).filter(s=>s.done).length;
@@ -1287,58 +1342,66 @@ function renderGuide(){
       return;
     }
     const row=e.target.closest("[data-gid]");
-    if(row){uiState.g=row.dataset.gid;renderGuide();}
+    if(row){gOpenId=row.dataset.gid;renderGuide();}
   };
 }
-function renderGuidePage(cur){
-  const dn=(cur.steps||[]).filter(s=>s.done).length;
-  $("gList").innerHTML=`
-    <button class="back" id="gBack" style="margin-bottom:14px;">‹ all guides</button>
-    <div class="t-title" style="margin-bottom:4px;">${esc(cur.title)}</div>
-    <div class="t-label" style="margin-bottom:12px;">${dn}/${(cur.steps||[]).length} done ${dn&&(dn===(cur.steps||[]).length)?"· complete ✓":""}</div>
-    ${(cur.steps||[]).map(s=>`
-      <div class="gstep">
-        <span class="checkbox${s.done?" on":""}" data-sid="${s.id}"><span class="tick">✓</span></span>
-        <div class="txt">
-          <div class="${s.done?"done-text":""}">${esc(s.text)}</div>
-          ${(s.choices||[]).length?`<div class="gchoices">${s.choices.map(c=>
-            `<button class="gchoice${s.pick===c?" picked":""}" data-pick="${s.id}|${esc(c)}">${esc(c)}</button>`).join("")}</div>`:""}
-        </div>
-        <button class="del" data-sdel="${s.id}">✕</button>
-      </div>`).join("")}
-    <button class="addrow" id="gStepAdd" style="width:100%;">+ add step</button>`;
-  $("gBack").onclick=()=>{uiState.g=null;renderGuide();};
-  $("gList").querySelectorAll("[data-sid]").forEach(el=>{
-    el.onclick=()=>{
-      const s=cur.steps.find(x=>x.id===el.dataset.sid);
-      s.done=!s.done;saveGuides(g);
-    };
+function renderGuidePage(page){
+  // owl flowchart: fullscreen view, centered boxes joined by ▼
+  document.querySelectorAll(".view").forEach(x=>x.classList.remove("on"));
+  const v=$("v-gview");
+  v.classList.add("on");v.style.animation="none";v.offsetHeight;v.style.animation="";
+  cur="gview";
+  $("gvTitle").textContent=page.title;
+  const steps=page.steps||[];
+  const dn=steps.filter(x=>x.done).length;
+  $("gvSub").textContent=dn+"/"+steps.length+" done";
+  const flow=$("gvFlow");
+  flow.innerHTML=steps.map((st,i)=>{
+    const circ=st.done?"●":"○", circCol=st.done?"var(--green)":"var(--muted)";
+    const choices=(st.choices||[]).map(c=>{
+      const picked=st.pick===c;
+      return `<div class="flow-choice${picked?" picked":""}" data-pick="${i}|${esc(c)}">
+        <span class="fc-dot">${picked?"●":"○"}</span><span>${esc(c)}</span>
+        <span class="fc-x" data-delchoice="${i}|${esc(c)}">✕</span></div>`;
+    }).join("");
+    const arrow=i<steps.length-1?'<div class="flow-arrow">▼</div>':"";
+    return `<div class="flow-box flow-step${st.done?" done":""}">
+      <div class="flow-title"><span class="st-circle" data-toggle="${i}" style="cursor:pointer;color:${circCol};">${circ}</span>
+        <span class="st-text${st.done?" done-text":""}" data-toggle="${i}" style="cursor:pointer;">${esc(st.text)}</span></div>
+      ${choices?`<div style="margin-top:6px;">${choices}</div>`:""}
+    </div>${arrow}`;
+  }).join("")
+  +'<div class="flow-addline" id="gvAddStep">+ add step</div>';
+  const wire=(sel,fn)=>flow.querySelectorAll(sel).forEach(el=>el.onclick=ev=>fn(ev,el));
+  wire("[data-toggle]",(ev,el)=>{
+    const st=steps[+el.dataset.toggle];
+    st.done=!st.done;saveGuides(true);
   });
-  $("gList").querySelectorAll("[data-pick]").forEach(el=>{
-    el.onclick=()=>{
-      const[sid,c]=el.dataset.pick.split("|");
-      const s=cur.steps.find(x=>x.id===sid);
-      s.pick=s.pick===c?null:c;saveGuides(g);
-    };
+  wire("[data-pick]",(ev,el)=>{
+    const[i,c]=el.dataset.pick.split("|");
+    const st=steps[+i];st.pick=st.pick===c?null:c;saveGuides(true);
   });
-  $("gList").querySelectorAll("[data-sdel]").forEach(el=>{
-    el.onclick=()=>{
-      cur.steps=cur.steps.filter(x=>x.id!==el.dataset.sdel);saveGuides(g);
-    };
+  wire("[data-delchoice]",(ev,el)=>{
+    const[i,c]=el.dataset.delchoice.split("|");
+    const st=steps[+i];
+    st.choices=(st.choices||[]).filter(x=>x!==c);
+    if(st.pick===c)st.pick=null;saveGuides(true);
   });
-  $("gStepAdd").onclick=()=>modal(`<h3>+ add step</h3>
+  $("gvBack").onclick=()=>{gOpenId=null;go("guide");};
+  $("gvAddStep").onclick=()=>modal(`<h3>+ add step</h3>
     <textarea id="mSt" rows="2" placeholder="step"></textarea><div style="height:8px"></div>
     <input id="mCh" placeholder="choices (comma separated, optional)">
     <div class="modal-actions"><button data-close>cancel</button><button class="primary" id="mSave">add</button></div>`,
     ()=>{$("mSave").onclick=()=>{
       const t=$("mSt").value.trim();if(!t)return;
-      cur.steps.push({id:uid(),text:t,done:false,
+      page.steps.push({id:uid(),text:t,done:false,
         choices:$("mCh").value.split(",").map(x=>x.trim()).filter(Boolean)});
-      saveGuides(g);
+      saveGuides(true);
     };});
 }
-function saveGuides(){
+function saveGuides(silent){
   set("oneQuestionSettings",{...get("oneQuestionSettings"),widgetGuides:guides()});
+  if(cur==="gview"){const c=guides().find(x=>x.id===gOpenId);if(c){renderGuidePage(c);return;}}
   renderGuide();
 }
 $("gAdd").onclick=()=>modal(`<h3>+ new guide</h3>
