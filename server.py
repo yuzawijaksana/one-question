@@ -39,6 +39,7 @@ STATE_KEYS = {
     "oneQuestionDeadlines",
     "oneQuestionJournal",
     "oneQuestionSholat",
+    "oneQuestionHermes",
 }
 
 
@@ -450,6 +451,39 @@ class Handler(SimpleHTTPRequestHandler):
                 return
             try:
                 self._json(200, self_update_from_git())
+            except Exception as exc:
+                self._json(500, {"ok": False, "error": str(exc)})
+            return
+        if self.path == "/api/hermes":
+            if not self._authorized():
+                self._json(401, {"error": "unauthorized"})
+                return
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+                payload = json.loads(self.rfile.read(length) or b"{}")
+                prompt = str(payload.get("prompt", "")).strip()
+                session = str(payload.get("session", "")).strip() or None
+                if not prompt:
+                    self._json(400, {"error": "empty prompt"})
+                    return
+                # hard cap prompt length; hermes runs as the same user as this server
+                if len(prompt) > 4000:
+                    self._json(400, {"error": "prompt too long (max 4000)"})
+                    return
+                cmd = ["hermes", "--cli", "-z", prompt]
+                if session:
+                    cmd += ["--resume", session]
+                try:
+                    proc = subprocess.run(
+                        cmd, capture_output=True, text=True, timeout=180,
+                        env={**os.environ, "TERM": "dumb"},
+                    )
+                    out = (proc.stdout or "").strip()
+                    if proc.returncode != 0 and not out:
+                        out = (proc.stderr or "hermes failed").strip()
+                    self._json(200, {"ok": True, "reply": out[-8000:], "session": session})
+                except subprocess.TimeoutExpired:
+                    self._json(200, {"ok": False, "reply": "timed out (180s)"})
             except Exception as exc:
                 self._json(500, {"ok": False, "error": str(exc)})
             return

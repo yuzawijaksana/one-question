@@ -156,6 +156,29 @@ img{display:block;}
 }
 .menu-row:active{background:var(--card);}
 .menu-row .count{margin-left:auto;color:var(--muted);font-size:12px;}
+/* ── hermes chat ── */
+#hmLog{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:10px;padding-bottom:90px;}
+.hm-msg{padding:10px 14px;font-size:13.5px;line-height:1.7;text-align:left;white-space:pre-wrap;word-break:break-word;}
+.hm-msg.you{background:rgba(236,236,236,.06);border:1px solid var(--line);color:var(--fg);}
+.hm-msg.bot{background:rgba(141,141,141,.1);border:1px solid rgba(141,141,141,.35);color:var(--fg);}
+.hm-msg.think{color:var(--muted);font-style:italic;}
+#hmBar{
+  position:fixed;bottom:0;left:0;right:0;z-index:70;
+  display:flex;gap:8px;padding:10px 16px calc(10px + env(safe-area-inset-bottom));
+  background:rgba(10,10,10,.85);backdrop-filter:blur(6px);
+}
+#hmBar input{
+  flex:1;padding:12px 14px;background:rgba(236,236,236,.06);
+  border:1px solid var(--line);color:var(--fg);font-size:14px;
+  font-family:inherit;outline:none;
+}
+#hmBar input:focus{border-color:rgba(141,141,141,.7);}
+#hmBar button{
+  padding:12px 18px;background:rgba(141,141,141,.2);
+  border:1px solid rgba(141,141,141,.5);color:var(--accent);
+  font-size:13px;cursor:pointer;font-family:inherit;
+}
+#hmBar button:disabled{opacity:.5;}
 /* ── section top bar ── */
 .top{
   display:flex;align-items:center;gap:12px;margin-bottom:18px;
@@ -529,7 +552,20 @@ input[type=range]::-webkit-slider-thumb{
     <button class="add-bottom" id="gAdd">+ new guide</button>
   </div>
 
-  <!-- ═══════ SETTINGS ═══════ -->
+    <!-- ═══════ HERMES CHAT ═══════ -->
+  <div class="view" id="v-hermes">
+    <div class="top">
+      <button class="back-bottom" id="hmBack">&#8249; back</button>
+      <div class="tt"><div class="t-title">hermes</div><div class="t-label" id="hmSub">vps agent</div></div>
+    </div>
+    <div id="hmLog"></div>
+    <div id="hmBar">
+      <input id="hmIn" placeholder="ask hermes…" autocomplete="off">
+      <button id="hmSend">send</button>
+    </div>
+  </div>
+
+<!-- ═══════ SETTINGS ═══════ -->
   <div class="view" id="v-settings">
     <div class="top">
       <button class="back-bottom" data-go="menu">‹ back</button>
@@ -730,7 +766,7 @@ const uid=()=>Math.random().toString(36).slice(2,10);
 
 /* ── navigation ── */
 let cur="menu";
-const VIEWS=["menu","quotes","stickies","sched","deadlines","journal","guide","settings","dlview","jrview","gview"];
+const VIEWS=["menu","quotes","stickies","sched","deadlines","journal","guide","settings","dlview","jrview","gview","hmview"];
 function go(v,fromPop){
   if(v===cur&&v!=="menu")return;
   document.querySelectorAll(".view").forEach(x=>x.classList.remove("on"));
@@ -760,6 +796,7 @@ const SECTIONS=[
   ["deadlines","deadlines",()=>get("oneQuestionDeadlines").filter(d=>!d.done).length+" open"],
   ["journal","journal",()=>(get("oneQuestionBook").chapters||[]).length],
   ["guide","daily guide",()=>guides().length],
+  ["hermes","hermes",""],
   ["settings","settings",""],
 ];
 function guides(){return get("oneQuestionSettings").widgetGuides||[];}
@@ -1743,6 +1780,51 @@ async function ensureSholat(){
     }catch(e){/* offline: keep whatever cached times exist */}
   }
 }
+
+/* ═══════ hermes chat ═══════ */
+let hmBusy=false;
+function renderHermes(){
+  const h=get("oneQuestionHermes")||[];
+  $("hmLog").innerHTML=h.map((m,i)=>
+    `<div class="hm-msg you">${esc(m.q)}</div><div class="hm-msg bot${m.a?"":" think"}" data-hmi="${i}">${esc(m.a||"…thinking")}</div>`
+  ).join("")||'<div class="t-label center" style="margin-top:30px;">ask the vps anything — it runs hermes on this machine</div>';
+  const log=$("hmLog");log.scrollTop=log.scrollHeight;
+}
+async function hmAsk(q){
+  if(hmBusy||!q)return;
+  hmBusy=true;
+  const h=get("oneQuestionHermes")||[];
+  h.push({q,a:"",ts:Date.now()});
+  set("oneQuestionHermes",h);
+  renderHermes();
+  try{
+    const r=await fetch(apiURL("/hermes"),{method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({prompt:q})});
+    const d=await r.json();
+    const h2=get("oneQuestionHermes")||[];
+    for(let i=h2.length-1;i>=0;i--){
+      if(!h2[i].a){h2[i].a=d.reply||d.error||"(no reply)";break;}
+    }
+    set("oneQuestionHermes",h2);
+    renderHermes();
+  }catch(e){
+    const h2=get("oneQuestionHermes")||[];
+    for(let i=h2.length-1;i>=0;i--){
+      if(!h2[i].a){h2[i].a="offline — coba lagi nanti";break;}
+    }
+    set("oneQuestionHermes",h2);renderHermes();
+  }
+  hmBusy=false;
+}
+$("hmSend").onclick=()=>{
+  const inp=$("hmIn");const q=inp.value.trim();
+  if(!q)return;inp.value="";hmAsk(q);
+};
+$("hmIn").addEventListener("keydown",e=>{
+  if(e.key==="Enter"){$("hmSend").click();}
+});
+$("hmBack").onclick=()=>go("menu");
 
 /* ═══════ boot ═══════ */
 function renderAll(){
