@@ -235,7 +235,7 @@ input[type=range]::-webkit-slider-thumb{
 .dl-date{font-size:30px;font-weight:700;color:var(--fg);}
 .dl-date.red{color:var(--red);}
 .dl-date.gold{color:var(--gold);}
-.dl-date.acc{color:var(--accent);}
+
 .dl-note{
   margin-top:10px;padding:10px 12px;
   background:rgba(236,236,236,.04);font-size:13px;color:rgba(236,236,236,.85);
@@ -1058,7 +1058,7 @@ function renderDeadlines(){
   for(const dt of dates){
     const items=dated.filter(d=>d.date===dt);
     const left=daysLeft(dt);
-    const cls=left<0?"red":left===0?"gold":"acc";
+    const cls=left<0?"red":left===0?"gold":"";
     const[_,m,d]=dt.split("-");
     h+=`<div style="margin-top:14px;">
       <div style="display:flex;align-items:baseline;gap:8px;padding:6px 4px 2px;">
