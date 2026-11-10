@@ -487,7 +487,6 @@ input[type=range]::-webkit-slider-thumb{
       <button class="back-bottom" id="gvBack">‹ back</button>
       <div class="tt"><div class="t-title" id="gvTitle"></div><div class="t-label" id="gvSub"></div></div></div>
     <div id="gvFlow"></div>
-    <button class="addrow" id="gvAddStep" style="width:100%;">+ add step</button>
   </div>
 
   <!-- ═══════ DAILY GUIDE ═══════ -->
@@ -631,6 +630,7 @@ async function resolveAPI(){
 }
 function apiURL(path){return (API_BASE||"api")+path;}
 const $=id=>document.getElementById(id);
+function stripTags(h){const d=document.createElement("div");d.innerHTML=h||"";return d.textContent||"";}
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const pad=(n,w=2)=>String(n).padStart(w,"0");
 let KEYS={},online=false;
@@ -1296,7 +1296,7 @@ function openJournal(id){
   $("jrvSub").textContent="#"+(c.category||"journal")+" · "+(c.date||"");
   $("jrvTitleIn").value=c.title||"";
   $("jrvCat").value=c.category||"";
-  $("jrvBody").value=c.text||"";
+  $("jrvBody").value=c.text||stripTags(c.html)||"";
 }
 $("jrvBack").onclick=()=>go("journal");
 $("jrvSave").onclick=()=>{
@@ -1351,6 +1351,8 @@ function renderGuidePage(page){
   const v=$("v-gview");
   v.classList.add("on");v.style.animation="none";v.offsetHeight;v.style.animation="";
   cur="gview";
+  const sholatCard=document.getElementById("menuSholat");
+  if(sholatCard)sholatCard.style.display="none";
   $("gvTitle").textContent=page.title;
   const steps=page.steps||[];
   const dn=steps.filter(x=>x.done).length;
