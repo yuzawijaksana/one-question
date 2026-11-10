@@ -1720,14 +1720,27 @@ setInterval(()=>{
   const sh=get("oneQuestionSholat");
   if(sh&&sh.times){
     const list=sholatList(sh);
-    for(const[label,t]of list){
+    for(const[label,t,e]of list){
       const k=`sh-${label}-${key}`;
-      const start=t[0]*60+t[1];
+      const start=t[0]*60+t[1],end=e[0]*60+e[1];
       if((sh.done||{})[label]===key)continue; // already prayed — no reminder
-      if(mn===start&&oqBeeped[k]!==true){
-        oqBeeped[k]=true;
-        if("Notification" in window&&Notification.permission==="granted")
-          new Notification("waktu "+label,{"body":pad(t[0])+":"+pad(t[1])+" — yuk sholat"});
+      const inWindow=mn>=start&&mn<end;
+      // first notify at adhan; then REPEAT every ~15 min while the window is
+      // open and still not prayed (sholat only — activities stay one-shot)
+      if(inWindow){
+        const fired=oqBeeped[k]||0;
+        const due=fired===0||(mn-fired>=15);
+        if(due){
+          oqBeeped[k]=mn;
+          if("Notification" in window&&Notification.permission==="granted"){
+            const mins=mn-start;
+            new Notification("waktu "+label,
+              {"body":mins<1?"yuk sholat — window buka sampai "+pad(Math.floor(end/60))+":"+pad(end%60)
+                      :"udah "+mins+" menit — belum sholat nih"});
+          }
+        }
+      }else if(mn<start){
+        delete oqBeeped[k]; // window not reached yet — reset for today
       }
     }
   }
