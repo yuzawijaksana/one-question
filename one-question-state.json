@@ -979,7 +979,7 @@
       }
     },
     "oneQuestionHermes": {
-      "updatedAt": 1794311873420,
+      "updatedAt": 1794311934103,
       "value": [
         {
           "q": "what is the hostname of this machine? answer in 3 words",
@@ -1018,11 +1018,11 @@
         },
         {
           "q": "bikin hermes disini bisa queue message juga dong soalnya tadi ngesend tapi ilang",
-          "a": "",
+          "a": "offline — coba lagi nanti",
           "ts": 1794311873167
         }
       ]
     }
   },
-  "updatedAt": 1794311929244
+  "updatedAt": 1794311934151
 }
