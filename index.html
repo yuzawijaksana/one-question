@@ -327,8 +327,8 @@ input[type=range]::-webkit-slider-thumb{
 #syncpill .syncdot{width:6px;height:6px;}
 /* ═══════ PC: two-column, everything fits the viewport ═══════ */
 @media(min-width:900px){
-  #app{max-width:none;width:100%;min-height:100vh;padding:0 48px;}
-  .view{min-height:100vh;padding:40px 0 100px;max-width:1280px;margin:0 auto;}
+  #app{max-width:none;width:100%;height:100vh;padding:0 48px;overflow:hidden;}
+  .view{height:100%;min-height:0;padding:40px 0 100px;max-width:1280px;margin:0 auto;overflow:hidden;}
   #menuClock{font-size:100px;}
   /* day circle: dial left, list right */
   .pc-two{display:flex;gap:48px;align-items:flex-start;}
@@ -338,9 +338,14 @@ input[type=range]::-webkit-slider-thumb{
   /* quotes: card left, nothing else — keep centered but bigger */
   #v-quotes .card{max-width:640px;margin:0 auto;}
   /* menu: vertically centered, never page-scrolls */
-  #v-menu{padding-top:20px;min-height:100vh;display:flex;flex-direction:column;justify-content:center;}
-  #menuList{margin-top:40px;}
-  .menu-row{font-size:20px;padding:15px 13px;}
+  /* menu: vertically centered, never page-scrolls, never clips the top
+     (margin:auto centering doesn't have the flex overflow-clipping bug) */
+  #v-menu{padding-top:12px;height:100%;overflow:hidden;}
+  #v-menu > *{margin-left:auto;margin-right:auto;}
+  #menuClock,#menuSub,#menuStatus{text-align:center;}
+  #menuSholat{margin-top:14px;}
+  #menuList{margin-top:34px;}
+  .menu-row{font-size:18px;padding:12px 13px;}
 }
 </style>
 </head>
@@ -1425,8 +1430,29 @@ $("setScale").addEventListener("change",()=>{
 function applyScale(sc){
   // zoom the CONTENT (app) only — fixed overlays (sholat card, sync pill,
   // update pill) stay at real viewport scale so their centering math is exact
-  document.getElementById("app").style.zoom = (sc/100);
+  const z=sc/100, app=document.getElementById("app");
+  app.style.zoom=z;
+  // zoom multiplies 100vh, which overflows the real viewport — compensate
+  const fit=()=>{
+    app.style.height=(innerHeight/z)+"px";
+    // zoom renders the fitted height at z× device px — clamp the scrollable
+    // body to the real viewport so the page never scrolls under zoom
+    // (PC only: mobile views need their native scroll)
+    if(innerWidth>=900){
+      document.body.style.height=innerHeight+"px";
+      document.body.style.overflow="hidden";
+      document.documentElement.style.overflow="hidden";
+    }else{
+      document.body.style.height="";document.body.style.overflow="";
+      document.documentElement.style.overflow="";
+    }
+  };
+  fit();
+  window.removeEventListener("resize",window.__fitResize||(()=>{}));
+  window.__fitResize=fit;
+  window.addEventListener("resize",fit);
 }
+window.addEventListener("resize",()=>applyScale(+(localStorage.getItem("oqScale")||125)));
 /* animation speed: 0× instant, 1× normal, up to 3× slower (per device) */
 function applyAnim(){
   const v=+(localStorage.getItem("oqAnim")||1);
