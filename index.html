@@ -1861,7 +1861,26 @@ $("setCheckUpd").addEventListener("click",async()=>{
     }else{
       val.textContent="up to date · "+(d.version||d.current||"");
     }
-  }catch(e){val.textContent="offline";}
+  }catch(e){
+    // status endpoint unreachable — offer a direct git pull through the
+    // local server's update route (self_update_from_git)
+    val.textContent="status unreachable";
+    val.style.color="var(--accent)";val.style.cursor="pointer";
+    val.title="click to force git pull";
+    val.onclick=async()=>{
+      val.textContent="pulling…";
+      try{
+        const r=await fetch(apiURL("/update"),{method:"POST"});
+        const d=await r.json();
+        val.textContent=d.ok?"✓ pulled · "+(d.version||d.current||""):"✕ "+(d.error||"failed");
+        val.style.color="";
+        if(d.ok)location.reload();
+      }catch(e2){
+        val.textContent="offline — server unreachable";
+        setTimeout(()=>{val.style.color="";val.onclick=null;},3000);
+      }
+    };
+  }
 });
 $("updAct").addEventListener("click",async()=>{
   const ahead=($("updAct").textContent||"").includes("push");
