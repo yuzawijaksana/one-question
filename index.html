@@ -122,6 +122,18 @@ img{display:block;}
 }
 #updPill .upd-btn:active{color:var(--fg);}
 @media(max-width:899px){#updPill{display:none !important;}}
+/* offline pill: bottom-left, ALL devices — mirrors the update pill */
+#offPill{
+  position:fixed;bottom:18px;left:18px;z-index:85;display:none;
+  padding:10px 16px;background:rgba(10,10,10,.92);
+  border:1px solid rgba(141,141,141,.45);color:var(--fg);
+  font-size:12.5px;align-items:center;gap:10px;cursor:default;
+}
+#offPill.show{display:flex;}
+#offPill .off-dot{width:7px;height:7px;background:var(--red,#e5484d);flex-shrink:0;}
+#offPill .upd-btn{margin-left:auto;padding:7px 14px;background:rgba(141,141,141,.2);
+  border:1px solid rgba(141,141,141,.5);color:var(--accent);font-size:12px;
+  flex-shrink:0;white-space:nowrap;cursor:pointer;}
 
 /* sholat reminder floats — never inside the content flow */
 #menuSholat{
@@ -388,6 +400,11 @@ input[type=range]::-webkit-slider-thumb{
 <div id="wallLayer" style="position:fixed;inset:0;z-index:-1;background-size:cover;background-position:center;display:none;"></div>
 <div id="flash"></div>
 <div id="syncpill"><span class="syncdot bad" id="syncDot"></span><span id="syncTxt">connecting…</span></div>
+<div id="offPill">
+  <span class="off-dot"></span>
+  <span>you're offline</span>
+  <button class="upd-btn" id="offReconnect">reconnect</button>
+</div>
 <div id="app">
 
   <!-- ═══════ MENU ═══════ -->
@@ -692,7 +709,18 @@ function setSync(){
   for(const[id,tx]of[["syncDot",null],["syncDot2",null]])
     $(id)&&( $(id).className="syncdot "+c );
   $("syncTxt").textContent=t;$("syncTxt2").textContent=t;
+  const op=$("offPill");
+  if(op)op.classList.toggle("show",!online);
 }
+/* [ reconnect ]: flush pending edits, re-pull, hide pill on success */
+$("offReconnect").onclick=async()=>{
+  const btn=$("offReconnect");btn.textContent="connecting…";btn.disabled=true;
+  const ok=await push();
+  await pull();
+  btn.textContent="reconnect";btn.disabled=false;
+  if(online)toast("✓ reconnected — synced");
+  else toast("still offline — will retry automatically");
+};
 function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");
   clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),2200);}
 
