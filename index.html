@@ -1853,7 +1853,15 @@ $("updAct").addEventListener("click",async()=>{
 });
 checkUpdate();
 setInterval(checkUpdate,120000);
-pull().then(ensureSholat);
+/* offline-first boot: API_BASE decided instantly from hostname — no probing
+   round-trip. Local origin hits the PC server directly; remote uses /one/api.
+   pull() failure = offline mode: cached state renders, edits queue in MUT. */
+const IS_LOCAL=location.hostname==="localhost"||location.hostname==="127.0.0.1"||location.hostname==="0.0.0.0"||/^192\.168\./.test(location.hostname)||/^10\./.test(location.hostname)||/^172\.(1[6-9]|2\d|3[01])\./.test(location.hostname);
+API_BASE=IS_LOCAL?"api":"/one/api";
+(async()=>{
+  try{await pull();}catch(e){}
+  ensureSholat();
+})();
 setInterval(pull,30000);
 setInterval(ensureSholat,600000);
 </script>
