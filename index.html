@@ -685,7 +685,7 @@ const uid=()=>Math.random().toString(36).slice(2,10);
 /* ── navigation ── */
 let cur="menu";
 const VIEWS=["menu","quotes","stickies","sched","deadlines","journal","guide","settings","dlview","jrview","gview"];
-function go(v){
+function go(v,fromPop){
   if(v===cur&&v!=="menu")return;
   document.querySelectorAll(".view").forEach(x=>x.classList.remove("on"));
   const el=$("v-"+v);
@@ -1302,13 +1302,38 @@ function openJournal(id){
   $("jrvCat").value=c.category||"";
   $("jrvBody").value=c.text||stripTags(c.html)||"";
 }
-$("jrvBack").onclick=()=>go("journal");
-$("jrvSave").onclick=()=>{
+/* journal editor dirty tracking: back (button or device) prompts to save */
+let jrDirty=false,jrBaseline=null;
+function jrSnapshot(){return JSON.stringify([$("jrvTitleIn").value,$("jrvCat").value,$("jrvBody").value]);}
+function jrMarkClean(){jrBaseline=jrSnapshot();jrDirty=false;}
+$("jrvTitleIn").addEventListener("input",()=>{jrDirty=jrSnapshot()!==jrBaseline;});
+$("jrvCat").addEventListener("input",()=>{jrDirty=jrSnapshot()!==jrBaseline;});
+$("jrvBody").addEventListener("input",()=>{jrDirty=jrSnapshot()!==jrBaseline;});
+function jrSaveToBook(){
   const c=(get("oneQuestionBook").chapters||[]).find(x=>x.id===jrId);if(!c)return;
   c.title=$("jrvTitleIn").value.trim()||"untitled";
   c.category=$("jrvCat").value.trim()||"journal";
   c.text=$("jrvBody").value;c.date=c.date||new Date().toISOString().slice(0,10);
-  set("oneQuestionBook",{...get("oneQuestionBook"),chapters:(get("oneQuestionBook").chapters||[]).map(x=>x.id===jrId?c:x)});toast("✓ saved");go("journal");
+  set("oneQuestionBook",{...get("oneQuestionBook"),chapters:(get("oneQuestionBook").chapters||[]).map(x=>x.id===jrId?c:x)});
+}
+function jrMaybeLeave(){
+  if(!jrDirty){go("journal");return;}
+  modal(`<h3>unsaved changes</h3>
+    <div class="t-label" style="font-size:13px;color:var(--fg);">chapter ini punya perubahan yang belum di-save.</div>
+    <div class="modal-actions">
+      <button data-close>cancel</button>
+      <button id="jrDiscard" style="color:var(--red);">discard</button>
+      <button class="primary" id="jrKeep">save & back</button>
+    </div>`,
+    ()=>{
+      $("jrKeep").onclick=()=>{closeModal();jrSaveToBook();jrMarkClean();go("journal");toast("✓ saved");};
+      $("modalBox").querySelector("[data-close]").onclick=()=>{closeModal();};
+      $("jrDiscard").onclick=()=>{closeModal();jrMarkClean();go("journal");};
+    });
+}
+$("jrvBack").onclick=jrMaybeLeave;
+$("jrvSave").onclick=()=>{
+  jrSaveToBook();jrMarkClean();toast("✓ saved");go("journal");
 };
 $("jAdd").onclick=()=>modal(`<h3>+ new chapter</h3>
   <input id="mJT" placeholder="title"><div style="height:10px"></div>
