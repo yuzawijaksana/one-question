@@ -81,6 +81,20 @@ img{display:block;}
 /* ── menu (home) ── */
 #v-menu{padding-top:70px;text-align:center;}
 #menuClock{font-size:64px;font-weight:300;letter-spacing:2px;line-height:1;}
+/* ═══════ MOBILE: match the owl widget proportions (compact) ═══════ */
+@media(max-width:899px){
+  #v-menu{padding-top:44px;}
+  #menuClock{font-size:42px;}
+  #menuSub{margin-top:6px;font-size:11px;}
+  #menuStatus{margin-top:10px;font-size:12px;}
+  #menuSholat{max-width:230px !important;padding:8px 10px !important;font-size:12px !important;}
+  #menuSholat .done{padding:5px 8px !important;font-size:11px !important;margin-top:6px !important;}
+  #menuList{margin-top:26px;text-align:left;}
+  #menuList .menu-row{
+    justify-content:flex-start !important;font-size:15px;padding:9px 20px;
+  }
+  .add-bottom{bottom:52px;}
+}
 #menuSub{margin-top:10px;font-size:13px;color:var(--fg);}
 /* update-available pill: bottom-right, PC only (checks /api/update/status) */
 #updPill{
