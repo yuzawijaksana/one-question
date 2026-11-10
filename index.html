@@ -704,7 +704,10 @@ function renderMenu(){
   }else{
     window.__sholatGold=false;
   }
-  // compose: day circle line first, sholat card under it
+  // compose: day circle line first, sholat card under it.
+  // remove the previous floating card from body FIRST — renderMenu regenerates
+  // it, and skipping this stacks duplicates on every return to the menu
+  document.querySelectorAll("body > #menuSholat").forEach(x=>x.remove());
   $("menuStatus").innerHTML=(act?`<span style="color:${esc(act.color||"var(--green)")}">● ${esc(act.label)} · ends ${pad(Math.floor(act.end/60))}:${pad(act.end%60)}</span>`:"")
     +(sholatHtml?`<div id="menuSholat">${sholatHtml}</div>`:"");
   const sd=$("menuSholat");
