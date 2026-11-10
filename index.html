@@ -558,10 +558,6 @@ input[type=range]::-webkit-slider-thumb{
         <button class="set-ghost" data-pos="left">[ left ]</button>
         <button class="set-ghost" data-pos="center">[ center ]</button>
         <button class="set-ghost" data-pos="right">[ right ]</button>
-        <button class="set-ghost" data-pos="topleft">[ top-left ]</button>
-        <button class="set-ghost" data-pos="topright">[ top-right ]</button>
-        <button class="set-ghost" data-pos="bottomleft">[ bottom-left ]</button>
-        <button class="set-ghost" data-pos="bottomright">[ bottom-right ]</button>
       </div>
     </div>
 
@@ -762,28 +758,25 @@ function renderMenu(){
   }else{
     window.__sholatGold=false;
   }
-  // compose: day circle line first, sholat card under it.
-  // remove the previous floating card from body FIRST — renderMenu regenerates
-  // it, and skipping this stacks duplicates on every return to the menu
-  document.querySelectorAll("body > #menuSholat").forEach(x=>x.remove());
+  // compose: sholat card lives IN-FLOW inside menuStatus — it appears and
+  // disappears with the menu view automatically (never floats over other
+  // views, never stacks, zoom-proof)
   $("menuStatus").innerHTML=(act?`<span style="color:${esc(act.color||"var(--green)")}">● ${esc(act.label)} · ends ${pad(Math.floor(act.end/60))}:${pad(act.end%60)}</span>`:"")
     +(sholatHtml?`<div id="menuSholat">${sholatHtml}</div>`:"");
   const sd=$("menuSholat");
   if(sd){
-    // escape the zoomed #app: fixed positioning inside a zoomed ancestor
-    // distorts coordinates (that's the off-center bug). Re-parent to body.
-    if(sd.parentElement!==document.body)document.body.append(sd);
-    const pos=localStorage.getItem("oqSholatPos")||"bottomleft";
-    sd.classList.add("pos-"+pos);
+    const align=localStorage.getItem("oqSholatPos")||"left";
+    sd.style.textAlign=align==="right"?"right":align==="center"?"center":"left";
     // gold styling ONLY while the prayer window is active and not done yet
     const gold=window.__sholatGold===true;
-    sd.style.maxWidth="220px";sd.style.padding="10px 12px";
+    sd.style.maxWidth="300px";
+    sd.style.margin=align==="right"?"14px 0 0 auto":align==="center"?"14px auto 0":"14px auto 0 0";
+    sd.style.padding="10px 12px";
     sd.style.background=gold?"rgba(245,197,66,.06)":"rgba(236,236,236,.03)";
     sd.style.border="1px solid "+(gold?"rgba(245,197,66,.28)":"rgba(236,236,236,.1)");
     sd.style.color=gold?"var(--gold)":"var(--fg)";
     sd.querySelector(".t")?.style.setProperty("color","rgba(236,236,236,.5)");
     sd.style.lineHeight="1.3";sd.style.fontSize="14px";
-    // owl-style ✓ button: white text, boxed (fg .12 bg + fg .7 border)
     const db=sd.querySelector(".done");
     if(db){
       db.style.cssText="font-size:12px;color:var(--fg);padding:7px 10px;margin-top:8px;width:100%;background:rgba(236,236,236,.12);border:1px solid rgba(236,236,236,.7);cursor:pointer;";
@@ -1519,7 +1512,7 @@ function loadSet(){
   };
   $("setStatus").textContent=`[ ${localStorage.getItem("oqStatus")||"on"} ]`;
   // sholat reminder position
-  const curPos=localStorage.getItem("oqSholatPos")||"bottomleft";
+  const curPos=localStorage.getItem("oqSholatPos")||"left";
   $("modalBox")||0;
   document.querySelectorAll("[data-pos]").forEach(b=>{
     b.style.color=b.dataset.pos===curPos?"var(--accent)":"var(--muted)";
