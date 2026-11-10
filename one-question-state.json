@@ -2,7 +2,7 @@
   "version": 1,
   "keys": {
     "oneQuestionSettings": {
-      "updatedAt": 1794287156697,
+      "updatedAt": 1794303365315,
       "value": {
         "widgetGuides": [
           {
@@ -139,7 +139,7 @@
               {
                 "id": "s2549059",
                 "text": "remove distraction",
-                "done": false,
+                "done": true,
                 "choices": [
                   "game",
                   "anime",
@@ -985,6 +985,21 @@
           "q": "what is the hostname of this machine? answer in 3 words",
           "a": "It is galpratamaserver",
           "ts": 1794293413100
+        },
+        {
+          "q": "test",
+          "a": "Halo! Ada yang bisa saya bantu?",
+          "ts": 1794302151518
+        },
+        {
+          "q": "kalau gw nanya kaya gini tadi start awalnya cmdnya muncul ya",
+          "a": "Bisa. Kalau gw jalanin perintah lewat terminal/tools nya (bukan chat langsung), dapet shell prompt / cmd-nya muncul dulu — itu cuma bagian dari environment yang ngeksekusi perintah, bukan output dari command yang gw minta.\n\nIntinya: munculnya `cmd`/prompt di awal adalah mekanisme runtime (bash di Windows), bukan bagian dari jawaban yang gw kirim.",
+          "ts": 1794302187572
+        },
+        {
+          "q": "btw gw gabisa bedain mana chat gw sama chat dari hermes tolong tampilannya diubah lagi",
+          "a": "timed out (180s)",
+          "ts": 1794302222907
         },
         {
           "q": "aku bisa ngapain aja di sini",

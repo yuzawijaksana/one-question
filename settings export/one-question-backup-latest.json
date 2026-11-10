@@ -327,7 +327,7 @@
             {
               "id": "s2549059",
               "text": "remove distraction",
-              "done": false,
+              "done": true,
               "choices": [
                 "game",
                 "anime",
