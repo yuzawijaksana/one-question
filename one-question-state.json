@@ -978,7 +978,7 @@
       }
     },
     "oneQuestionHermes": {
-      "updatedAt": 1794311482469,
+      "updatedAt": 1794311873420,
       "value": [
         {
           "q": "what is the hostname of this machine? answer in 3 words",
@@ -1014,9 +1014,14 @@
           "q": "test",
           "a": "Hermes is up — working dir is /opt/one-question on branch owl-web, repo clean. What do you need?",
           "ts": 1794311438484
+        },
+        {
+          "q": "bikin hermes disini bisa queue message juga dong soalnya tadi ngesend tapi ilang",
+          "a": "",
+          "ts": 1794311873167
         }
       ]
     }
   },
-  "updatedAt": 1794311482529
+  "updatedAt": 1794311873823
 }
