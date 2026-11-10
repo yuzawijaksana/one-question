@@ -767,10 +767,12 @@ function renderMenu(){
   if(sd){
     const align=localStorage.getItem("oqSholatPos")||"left";
     sd.style.textAlign=align==="right"?"right":align==="center"?"center":"left";
+    // horizontal placement via menuStatus flex (robust under zoom/media rules)
+    $("menuStatus").style.display="flex";
+    $("menuStatus").style.justifyContent=align==="right"?"flex-end":align==="center"?"center":"flex-start";
     // gold styling ONLY while the prayer window is active and not done yet
     const gold=window.__sholatGold===true;
     sd.style.maxWidth="300px";
-    sd.style.margin=align==="right"?"14px 0 0 auto":align==="center"?"14px auto 0":"14px auto 0 0";
     sd.style.padding="10px 12px";
     sd.style.background=gold?"rgba(245,197,66,.06)":"rgba(236,236,236,.03)";
     sd.style.border="1px solid "+(gold?"rgba(245,197,66,.28)":"rgba(236,236,236,.1)");
