@@ -586,10 +586,14 @@ input[type=range]::-webkit-slider-thumb{
 
     </div>
     </div>
-    <div class="set-sec">update log</div>
+    <div class="set-sec">update</div>
     <div class="set-group">
+      <div class="set-row" style="cursor:pointer;" id="setCheckUpd">
+        <span style="flex:1;font-size:14px;">check for update</span>
+        <span class="t-label" id="setCheckUpdVal">–</span>
+      </div>
       <div class="set-row" style="cursor:pointer;" id="setOpenLog">
-        <span style="flex:1;font-size:14px;">view update log</span>
+        <span style="flex:1;font-size:14px;">update log</span>
         <span style="color:var(--muted);">›</span>
       </div>
     </div>
@@ -1500,6 +1504,10 @@ function loadSet(){
       renderMenu();
     };
   });
+  // update status row
+  fetch(apiURL("/update/status"),{cache:"no-store"}).then(r=>r.json()).then(d=>{
+    $("setCheckUpdVal").textContent=d.ok?(d.behind>0?d.behind+" behind":"up to date"):"offline";
+  }).catch(()=>{$("setCheckUpdVal").textContent="offline";});
   $("setSections").onclick=e=>{
     const b=e.target.closest("[data-sec]");if(!b)return;
     const id=b.dataset.sec;
@@ -1757,6 +1765,21 @@ async function openUpdateLog(){
 }
 $("updLog").addEventListener("click",openUpdateLog);
 $("setOpenLog").addEventListener("click",openUpdateLog);
+$("setCheckUpd").addEventListener("click",async()=>{
+  const val=$("setCheckUpdVal");
+  val.textContent="checking…";
+  try{
+    await checkUpdate();
+    const d=await (await fetch(apiURL("/update/status"),{cache:"no-store"})).json();
+    if(!d.ok){val.textContent="error";return;}
+    if(d.behind>0){
+      val.textContent=d.behind+" behind — pill kanan bawah";
+      $("updPill").classList.add("show");
+    }else{
+      val.textContent="up to date · "+(d.version||d.current||"");
+    }
+  }catch(e){val.textContent="offline";}
+});
 $("updAct").addEventListener("click",async()=>{
   const ahead=($("updAct").textContent||"").includes("push");
   if(ahead){toast("push the repo from the server first");return;}
