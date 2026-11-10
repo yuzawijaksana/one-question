@@ -978,7 +978,7 @@
       }
     },
     "oneQuestionHermes": {
-      "updatedAt": 1794310374534,
+      "updatedAt": 1794310434781,
       "value": [
         {
           "q": "what is the hostname of this machine? answer in 3 words",
@@ -1002,11 +1002,11 @@
         },
         {
           "q": "nah kalau gitu kamu upgrade view chat ini soalnya kelaitannya gabisa bedain antara sender sama hermes, no askingg",
-          "a": "",
+          "a": "offline — coba lagi nanti",
           "ts": 1794310374280
         }
       ]
     }
   },
-  "updatedAt": 1794310377235
+  "updatedAt": 1794310437507
 }
