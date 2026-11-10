@@ -157,10 +157,18 @@ img{display:block;}
 .menu-row:active{background:var(--card);}
 .menu-row .count{margin-left:auto;color:var(--muted);font-size:12px;}
 /* ── hermes chat ── */
-#hmLog{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:10px;padding-bottom:90px;}
-.hm-msg{padding:10px 14px;font-size:13.5px;line-height:1.7;text-align:left;white-space:pre-wrap;word-break:break-word;}
-.hm-msg.you{background:rgba(236,236,236,.06);border:1px solid var(--line);color:var(--fg);}
-.hm-msg.bot{background:rgba(141,141,141,.1);border:1px solid rgba(141,141,141,.35);color:var(--fg);}
+#hmLog{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:12px;padding-bottom:90px;}
+.hm-row{display:flex;flex-direction:column;}
+.hm-row.you{align-items:flex-end;}
+.hm-row.bot{align-items:flex-start;}
+.hm-tag{font-size:10px;color:var(--muted);letter-spacing:.5px;margin-bottom:3px;}
+.hm-row.you .hm-tag{color:rgba(109,164,255,.75);}
+.hm-row.bot .hm-tag{color:var(--green);}
+.hm-msg{max-width:82%;padding:10px 14px;font-size:13.5px;line-height:1.7;text-align:left;white-space:pre-wrap;word-break:break-word;}
+.hm-msg.you{background:rgba(109,164,255,.08);border:1px solid rgba(109,164,255,.4);color:var(--fg);
+  border-bottom-right-radius:0;}
+.hm-msg.bot{background:rgba(107,214,138,.07);border:1px solid rgba(107,214,138,.35);color:var(--fg);
+  border-bottom-left-radius:0;}
 .hm-msg.think{color:var(--muted);font-style:italic;}
 #hmBar{
   position:fixed;bottom:0;left:0;right:0;z-index:70;
@@ -1794,7 +1802,7 @@ async function ensureSholat(){
 }
 
 /* version chip: bottom-right — shows short version (#v1.12), tap → settings update section.
-   Version scheme: APP_VER="0.XXX" — XXX is a running counter bumped on every feature commit; the chip falls back to
+   Version scheme: APP_VER="0.115" — XXX is a running counter bumped on every feature commit; the chip falls back to
    a hash-derived pair (yy*12+month . day) when served build differs from constant. */
 const APP_VER="0.114";
 (function(){
@@ -1824,11 +1832,16 @@ let PAGE_BUILD="…";
 
 /* ═══════ hermes chat ═══════ */
 let hmBusy=false;
+function hmTime(ts){if(!ts)return"";const d=new Date(ts);
+  return pad(d.getHours())+":"+pad(d.getMinutes());}
 function renderHermes(){
   const h=get("oneQuestionHermes")||[];
-  $("hmLog").innerHTML=h.map((m,i)=>
-    `<div class="hm-msg you">${esc(m.q)}</div><div class="hm-msg bot${m.a?"":" think"}" data-hmi="${i}">${esc(m.a||"…thinking")}</div>`
-  ).join("")||'<div class="t-label center" style="margin-top:30px;">ask the vps anything — it runs hermes on this machine</div>';
+  $("hmLog").innerHTML=h.map((m,i)=>{
+    const tagYou=`<div class="hm-tag">you · ${hmTime(m.ts)}</div>`;
+    const tagBot=`<div class="hm-tag">hermes · ${hmTime(m.ts)}</div>`;
+    return `<div class="hm-row you">${tagYou}<div class="hm-msg you">${esc(m.q)}</div></div>`+
+      `<div class="hm-row bot">${tagBot}<div class="hm-msg bot${m.a?"":" think"}" data-hmi="${i}">${esc(m.a||"…thinking")}</div></div>`;
+  }).join("")||'<div class="t-label center" style="margin-top:30px;">ask the vps anything — it runs hermes on this machine</div>';
   const log=$("hmLog");log.scrollTop=log.scrollHeight;
 }
 async function hmAsk(q){
