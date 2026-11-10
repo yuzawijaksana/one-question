@@ -759,7 +759,7 @@
       "value": []
     },
     "oneQuestionBook": {
-      "updatedAt": 1794292955723,
+      "updatedAt": 1794306504849,
       "value": {
         "title": "",
         "chapters": [
@@ -791,8 +791,10 @@
             "id": "duem0q8n",
             "title": "day 1 : riset paper \"Brawlmania\"",
             "category": "riset paper",
-            "text": "underestimate yourself : \nhari ini aku gabakal bisa kelar riset paper seharian -> otw \ngabakal ketemu paper yang relevan -> ketemu\ngabakal bisa nulis latar belakang dalam waktu sehari \ngabisa lanjutin rumusan masalah tanpa latar belakang masalah\ngabakal bisa lanjutin bab 2 dan bab 3 \n\nhttps://journal.untar.ac.id/index.php/computatio/article/view/6048/4051\n\"PEMBUATAN GAME FIGHTING “BRAWLMANIA”\n\n1. dari papernya, baru tau kalau main ada time limit, kalau ga di buat nanti malah ga bakal beres2 dong wkwk\n2. ide baru soal changing maps (implementasiin ke game)\n3. ide dari papernya = game mode (arcade, versus, practice)\n\n4. bedanya paper itu sama laporan \n   - Arcade = \"Sepuluh player dengan score tertinggi akan terdaftar dalam menu High Score\" \n   - tema = \"Ada delapan karakter yang dapat dimainkan. Setiap karakter mewakili fakultas yang ada di\nUniversitas Tarumanagara dan memiliki gerakan kombo dan keunikan sendiri\" \n5. papernya game respondennya 30, noted\n6. reminder kalau paper ini paper pembuatan bukan pengembangan, jadi latar belakang masalah harus di matengin lagi\n\ndaftar pustaka\ngame (Game adalah sebuah aktivitas atau kontes secara fisik ataupun mental yang memilikisebuah aturan dan dilakukan oleh orang-orang untuk kesenangannya [1]) (Merriam-Webster, Game | Definition of game by Merriam-Webster, http://www.merriamwebster.com/dictionary/game, 22 Februari 2019.)\n\n\n",
-            "date": "2026-11-10"
+            "text": "underestimate yourself : \nhari ini aku gabakal bisa kelar riset paper seharian -> otw \ngabakal ketemu paper yang relevan -> ketemu\ngabakal bisa nulis latar belakang dalam waktu sehari -> lanjut besok\ngabisa lanjutin rumusan masalah tanpa latar belakang masalah -> buktinya ada 1\ngabakal bisa lanjutin bab 2 dan bab 3 -> 😭\n\nhttps://journal.untar.ac.id/index.php/computatio/article/view/6048/4051\n\"PEMBUATAN GAME FIGHTING “BRAWLMANIA”\n\n1. dari papernya, baru tau kalau main ada time limit, kalau ga di buat nanti malah ga bakal beres2 dong wkwk\n2. ide baru soal changing maps (implementasiin ke game)\n3. ide dari papernya = game mode (arcade, versus, practice)\n\n4. bedanya paper itu sama laporan \n   - Arcade = \"Sepuluh player dengan score tertinggi akan terdaftar dalam menu High Score\" \n   - tema = \"Ada delapan karakter yang dapat dimainkan. Setiap karakter mewakili fakultas yang ada di\nUniversitas Tarumanagara dan memiliki gerakan kombo dan keunikan sendiri\" \n5. papernya game respondennya 30, noted\n6. reminder kalau paper ini paper pembuatan bukan pengembangan, jadi latar belakang masalah harus di matengin lagi\n\ndaftar pustaka\ngame (Game adalah sebuah aktivitas atau kontes secara fisik ataupun mental yang memilikisebuah aturan dan dilakukan oleh orang-orang untuk kesenangannya [1]) (Merriam-Webster, Game | Definition of game by Merriam-Webster, http://www.merriamwebster.com/dictionary/game, 22 Februari 2019.)",
+            "date": "2026-11-10",
+            "html": "<p>underestimate yourself : <br>hari ini aku gabakal bisa kelar riset paper seharian -&gt; otw <br>gabakal ketemu paper yang relevan -&gt; ketemu<br>gabakal bisa nulis latar belakang dalam waktu sehari -&gt; lanjut besok<br>gabisa lanjutin rumusan masalah tanpa latar belakang masalah -&gt; buktinya ada 1<br>gabakal bisa lanjutin bab 2 dan bab 3 -&gt; 😭</p><p>https://journal.untar.ac.id/index.php/computatio/article/view/6048/4051<br>&quot;PEMBUATAN GAME FIGHTING “BRAWLMANIA”</p><p>1. dari papernya, baru tau kalau main ada time limit, kalau ga di buat nanti malah ga bakal beres2 dong wkwk<br>2. ide baru soal changing maps (implementasiin ke game)<br>3. ide dari papernya = game mode (arcade, versus, practice)</p><p>4. bedanya paper itu sama laporan <br>   - Arcade = &quot;Sepuluh player dengan score tertinggi akan terdaftar dalam menu High Score&quot; <br>   - tema = &quot;Ada delapan karakter yang dapat dimainkan. Setiap karakter mewakili fakultas yang ada di<br>Universitas Tarumanagara dan memiliki gerakan kombo dan keunikan sendiri&quot; <br>5. papernya game respondennya 30, noted<br>6. reminder kalau paper ini paper pembuatan bukan pengembangan, jadi latar belakang masalah harus di matengin lagi</p><p>daftar pustaka<br>game (Game adalah sebuah aktivitas atau kontes secara fisik ataupun mental yang memilikisebuah aturan dan dilakukan oleh orang-orang untuk kesenangannya [1]) (Merriam-Webster, Game | Definition of game by Merriam-Webster, http://www.merriamwebster.com/dictionary/game, 22 Februari 2019.)</p>",
+            "updatedAt": 1794306504849
           }
         ],
         "activeId": "cmuw7xntnaj4q"
@@ -986,5 +988,5 @@
       ]
     }
   },
-  "updatedAt": 1794293446899
+  "updatedAt": 1794306505213
 }
