@@ -1,7 +1,7 @@
 {
   "format": "one-question-zen-backup",
   "version": "2.21.3",
-  "exportedAt": "2026-11-10T12:12:31Z",
+  "exportedAt": "2026-11-11T03:50:33Z",
   "data": {
     "questions": [
       [
@@ -317,12 +317,12 @@
             {
               "id": "s2442792",
               "text": "tempat",
-              "done": true,
+              "done": false,
               "choices": [
                 "kampus",
                 "perpus"
               ],
-              "pick": "kampus"
+              "pick": null
             },
             {
               "id": "s2549059",
@@ -334,7 +334,7 @@
                 "scrolling",
                 "discord"
               ],
-              "pick": "scrolling"
+              "pick": null
             },
             {
               "id": "s2626073",
