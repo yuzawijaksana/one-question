@@ -464,8 +464,8 @@ class Handler(SimpleHTTPRequestHandler):
                 prompt = str(payload.get("prompt", "")).strip()
                 session = str(payload.get("session", "")).strip() or None
                 raw = payload.get("effort", 180)
-                tiers = {"flash": 15, "quick": 30, "medium": 60,
-                         "thinking": 180, "max": 300}
+                tiers = {"flash": 30, "quick": 45, "reasonable": 75,
+                         "explanation": 120, "thinking": 180, "max": 0}
                 if isinstance(raw, str) and raw in tiers:
                     effort = tiers[raw]
                 else:
@@ -473,9 +473,11 @@ class Handler(SimpleHTTPRequestHandler):
                         effort = max(1, min(600, int(raw)))
                     except (TypeError, ValueError):
                         effort = 180
+                if effort == 0:
+                    effort = None  # no limit
                 # hermes startup alone takes ~5-10s; tiny efforts just guarantee
                 # a cut. floor short casual prompts at 45s so greetings answer.
-                if effort < 45:
+                elif effort < 45:
                     effort = 45
                 if not prompt:
                     self._json(400, {"error": "empty prompt"})
