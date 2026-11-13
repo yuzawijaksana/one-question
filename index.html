@@ -174,9 +174,23 @@ img{display:block;}
   border:1px solid var(--line-strong);color:var(--fg);}
 .dq-msg.bot{align-self:flex-start;background:rgba(245,197,66,.05);
   border:1px solid rgba(245,197,66,.22);border-left:2px solid var(--gold);color:var(--fg);}
-.dq-msg.think{color:var(--muted);font-style:italic;}
+.dq-msg.think{color:var(--muted);font-style:italic;
+  background:none;border:none;padding:2px 12px;}
 .dq-msg .dq-cd{color:var(--muted);font-size:11px;margin-left:4px;}
 .dq-msg .dq-meta{color:var(--muted);font-size:10px;margin-top:6px;opacity:.75;}
+/* warna border bubble bot ngikutin effort jawabannya */
+.dq-msg.bot[data-eff="flash"]{border-left-color:#7ee787;}
+.dq-msg.bot[data-eff="quick"]{border-left-color:#a5d6ff;}
+.dq-msg.bot[data-eff="reasonable"]{border-left-color:#d2a8ff;}
+.dq-msg.bot[data-eff="explanation"]{border-left-color:#ffa657;}
+.dq-msg.bot[data-eff="thinking"]{border-left-color:#ff7b72;}
+.dq-msg.bot[data-eff="max"]{border-left-color:#ffd700;}
+.dq-msg.bot[data-eff="flash"] .dq-meta{color:#7ee787;}
+.dq-msg.bot[data-eff="quick"] .dq-meta{color:#a5d6ff;}
+.dq-msg.bot[data-eff="reasonable"] .dq-meta{color:#d2a8ff;}
+.dq-msg.bot[data-eff="explanation"] .dq-meta{color:#ffa657;}
+.dq-msg.bot[data-eff="thinking"] .dq-meta{color:#ff7b72;}
+.dq-msg.bot[data-eff="max"] .dq-meta{color:#ffd700;}
 .dq-msg.think .dots::after{
   content:"";animation:dqdots 1.2s steps(4,end) infinite;
 }
@@ -194,7 +208,7 @@ img{display:block;}
 }
 .dq-effort:hover{color:var(--fg);border-color:rgba(141,141,141,.7);}
 .dq-effort-menu{
-  position:absolute;bottom:calc(100% + 6px);right:10px;z-index:90;
+  position:absolute;bottom:calc(100% + 6px);left:10px;z-index:90;
   background:rgba(10,10,10,.97);border:1px solid rgba(141,141,141,.5);
   display:none;flex-direction:column;
 }
@@ -223,7 +237,8 @@ img{display:block;}
 .dq-queued{align-self:flex-end;padding:5px 10px;font-size:11px;color:var(--muted);
   border:1px dashed rgba(141,141,141,.4);background:none;}
 #dqBar{display:flex;gap:5px;padding:8px;border-top:1px solid rgba(141,141,141,.3);}
-#dqBar #dqIn{flex:1;min-width:60px;padding:8px 10px !important;font-size:12.5px;}
+#dqBar #dqIn{flex:1;min-width:60px;padding:8px 10px !important;font-size:12.5px;
+  resize:none;overflow:hidden;line-height:1.5;max-height:120px;}
 #dqBar button{padding:8px 9px !important;font-size:12px !important;}
 #dqEffort{font-size:11px !important;}
 #dqBar input{
@@ -231,7 +246,7 @@ img{display:block;}
   border:1px solid var(--line);color:var(--fg);font-size:13px;
   font-family:inherit;outline:none;
 }
-#dqBar input:focus{border-color:rgba(141,141,141,.7);}
+/* #dqIn sekarang textarea (shift+enter = newline) — selector input lama tetap berlaku buat elemen lain */
 #dqBar button{
   padding:10px 14px;background:rgba(141,141,141,.2);
   border:1px solid rgba(141,141,141,.5);color:var(--accent);
@@ -245,8 +260,6 @@ img{display:block;}
   border:1px solid rgba(141,141,141,.5);color:var(--accent);font-size:12.5px;
 }
 #newBuild.show{display:block;}
-document.getElementById("newBuild").onclick=()=>location.reload();
-
 /* version chip: bottom-right, tap opens settings update section */
 #verChip{
   position:fixed;bottom:18px;right:18px;z-index:84;
@@ -540,7 +553,7 @@ input[type=range]::-webkit-slider-thumb{
     <div class="dq-effort-menu" id="dqEffortMenu"></div>
     <button class="dq-effort" id="dqEffort" title="thinking effort — max waktu jawab">⚡ flash</button>
     <button id="dqNew" title="new chat" style="background:none;border:1px solid var(--line);color:var(--muted);cursor:pointer;font-family:inherit;padding:10px 12px;font-size:15px;">+</button>
-    <input id="dqIn" placeholder="tanya apa aja…" autocomplete="off">
+    <textarea id="dqIn" rows="1" placeholder="tanya apa aja…" autocomplete="off"></textarea>
     <button id="dqAttach" title="attach file" style="background:none;border:1px solid var(--line);color:var(--muted);cursor:pointer;font-family:inherit;padding:10px 12px;font-size:13px;">↑</button>
     <input id="dqFile" type="file" accept=".txt,.md,.json,.csv,.js,.py,.html,.css,.log,.owl,.yml,.yaml,.xml,.pdf,image/*" style="display:none;" multiple>
     <button id="dqSend">➤</button>
@@ -754,6 +767,12 @@ input[type=range]::-webkit-slider-thumb{
       <input type="range" id="wallDim" min="0" max="100" step="1" value="60">
       <div class="set-hint">wallpaper muncul di menu dengan gelap sesuai dim</div>
       <div class="set-row">
+        <span style="flex:1;font-size:14px;">greyscale</span>
+        <span class="t-label" id="wallGrayVal">0%</span>
+      </div>
+      <input type="range" id="wallGray" min="0" max="100" step="1" value="0">
+      <div class="set-hint">geser buat wallpaper jadi hitam putih</div>
+      <div class="set-row">
         <span style="flex:1;font-size:14px;">status on menu</span>
         <button class="set-ghost" id="setStatus">[ on ]</button>
       </div>
@@ -795,7 +814,7 @@ input[type=range]::-webkit-slider-thumb{
 <script>
 "use strict";
 
-const APP_VER="0.159";
+const APP_VER="0.160";
 /* ═══════════════ owl web — one file, no build step ═══════════════
    reads/writes the same /api/state as the phone widget + old web app */
 
@@ -1796,12 +1815,14 @@ $("setAnim").addEventListener("input",()=>{
 });
 /* wallpaper: image stored as dataURL in localStorage, dim slider applies live */
 function applyWall(){
-  const img=localStorage.getItem("oqWall"),dim=+(localStorage.getItem("oqWallDim")||60);
+  const img=localStorage.getItem("oqWall"),dim=+(localStorage.getItem("oqWallDim")||60),
+        gray=+(localStorage.getItem("oqWallGray")||0);
   const L=$("wallLayer");
   if(!img){L.style.display="none";return;}
   L.style.display="block";
   L.style.backgroundImage=`url(${img})`;
   L.style.opacity=1-dim/100;
+  L.style.filter=gray>0?`grayscale(${gray}%)`:"";
 }
 $("setWall").onclick=()=>$("wallFile").click();
 $("wallFile").onchange=e=>{
@@ -1820,15 +1841,22 @@ $("wallDim").addEventListener("input",()=>{
   localStorage.setItem("oqWallDim",$("wallDim").value);
   applyWall();
 });
+$("wallGray").addEventListener("input",()=>{
+  $("wallGrayVal").textContent=$("wallGray").value+"%";
+  localStorage.setItem("oqWallGray",$("wallGray").value);
+  applyWall();
+});
 (function initAnim(){applyAnim();})();
 (function initWall(){
   $("wallDim").value=+(localStorage.getItem("oqWallDim")||60);
   $("wallDimVal").textContent=($("wallDim").value)+"%";
+  $("wallGray").value=+(localStorage.getItem("oqWallGray")||0);
+  $("wallGrayVal").textContent=($("wallGray").value)+"%";
   applyWall();
 })();
 /* defaults for every resettable setting */
 const SET_DEFAULTS={
-  scale:125, font:100, anim:1, wallDim:60, sholatPos:"left", status:"on"
+  scale:125, font:100, anim:1, wallDim:60, wallGray:0, sholatPos:"left", status:"on"
 };
 $("setReset").onclick=()=>{
   modal(`<h3>reset all settings?</h3>
@@ -1902,27 +1930,32 @@ async function ensureSholat(){
 }
 
 /* thinking effort: max detik hermes boleh mikir (server timeout = effort) */
+/* tiap tier ada warnanya sendiri biar gampang bedain */
 const DQ_EFFORTS=[
-  {id:"flash",secs:15,desc:"jawaban 10 kata · nama/tanggal/ya-tidak"},
-  {id:"quick",secs:30,desc:"jawaban singkat · tanyaan santai"},
-  {id:"reasonable",secs:75,desc:"jawaban wajar · dikit konteks"},
-  {id:"explanation",secs:120,desc:"ada penjelasan · perlu mikir"},
-  {id:"thinking",secs:180,desc:"dalem · tool calls"},
-  {id:"max",secs:0,desc:"no limit · full power"}
+  {id:"flash",secs:15,desc:"jawaban 10 kata · nama/tanggal/ya-tidak",color:"#7ee787"},
+  {id:"quick",secs:30,desc:"jawaban singkat · tanyaan santai",color:"#a5d6ff"},
+  {id:"reasonable",secs:75,desc:"jawaban wajar · dikit konteks",color:"#d2a8ff"},
+  {id:"explanation",secs:120,desc:"ada penjelasan · perlu mikir",color:"#ffa657"},
+  {id:"thinking",secs:180,desc:"dalem · tool calls",color:"#ff7b72"},
+  {id:"max",secs:0,desc:"no limit · full power",color:"#ffd700"}
 ];
 let dqEffort="flash";
 try{const sv=localStorage.getItem("oqDqEffort");if(DQ_EFFORTS.some(e=>e.id===sv))dqEffort=sv;}catch(e){}
 (function(){
   const btn=document.getElementById("dqEffort"),menu=document.getElementById("dqEffortMenu");
   function label(){
+    const cur=DQ_EFFORTS.find(e=>e.id===dqEffort)||DQ_EFFORTS[0];
     btn.textContent="⚡ "+dqEffort;
+    btn.style.color=cur.color;
+    btn.style.borderColor=cur.color+"66";
   }
   function render(){
     menu.innerHTML="";
     for(const e of DQ_EFFORTS){
       const b=document.createElement("button");
       b.textContent=e.id+" — "+e.desc;
-      if(e.id===dqEffort)b.style.color="var(--accent)";
+      b.style.color=e.color;
+      if(e.id===dqEffort)b.style.fontWeight="700";
       b.onclick=()=>{dqEffort=e.id;localStorage.setItem("oqDqEffort",e.id);label();menu.classList.remove("open");};
       menu.append(b);
     }
@@ -2017,10 +2050,12 @@ function dqOpenSession(id){
   const st=dqStore();
   for(const m of ((st.chats||{})[id]||[])){
     const el=dqPush(m.c==="you"?"you":"bot",m.t);
+    if(m.c!=="you"&&m.meta)el.dataset.eff=m.meta.effort||"";
     if(m.meta&&m.meta.model&&m.c==="bot"){
       const tag=document.createElement("div");tag.className="dq-meta";
-      tag.textContent=(m.meta.session==="flash"?"⚡ flash":"🤖 "+m.meta.model)
+      tag.textContent=(m.meta.session==="flash"?"⚡ flash":m.meta.effort==="max"?"🔥 max":"🤖 "+m.meta.model)
         +" · ↑"+fmtTok((m.meta.usage||{}).in)+"　↓"+fmtTok((m.meta.usage||{}).out)+" tok";
+      tag.style.color=(DQ_EFFORTS.find(e=>e.id===m.meta.effort)||{}).color||"";
       el.append(tag);
     }
   }
@@ -2039,10 +2074,12 @@ function dqSetView(v){
     if(id&&s.chats&&s.chats[id]){
       for(const m of s.chats[id]){
         const el=dqPush(m.c==="you"?"you":"bot",m.t);
+        if(m.c!=="you"&&m.meta)el.dataset.eff=m.meta.effort||"";
         if(m.meta&&m.meta.model&&m.c==="bot"){
           const tag=document.createElement("div");tag.className="dq-meta";
-          tag.textContent=(m.meta.session==="flash"?"⚡ flash":"🤖 "+m.meta.model)
+          tag.textContent=(m.meta.session==="flash"?"⚡ flash":m.meta.effort==="max"?"🔥 max":"🤖 "+m.meta.model)
             +" · ↑"+fmtTok((m.meta.usage||{}).in)+"　↓"+fmtTok((m.meta.usage||{}).out)+" tok";
+          tag.style.color=(DQ_EFFORTS.find(e=>e.id===m.meta.effort)||{}).color||"";
           el.append(tag);
         }
       }
@@ -2296,11 +2333,13 @@ const tm=dqSecs>0?setTimeout(()=>ac.abort(),Math.max(dqSecs+5,110)*1000):null;
     if(th._cd)clearInterval(th._cd);
     th.innerHTML=dqFmt(reply);
     if(d.model){const m=document.createElement("div");m.className="dq-meta";
-      m.textContent=(d.session==="flash"?"⚡ flash":"🤖 "+d.model)+" · ↑"+fmtTok((d.usage||{}).in)+"　↓"+fmtTok((d.usage||{}).out)+" tok";
+      th.dataset.eff=d.effort||dqEffort;
+      m.textContent=(d.session==="flash"?"⚡ flash":(dqEffort==="max"?"🔥 max":"🤖 "+d.model))+" · ↑"+fmtTok((d.usage||{}).in)+"　↓"+fmtTok((d.usage||{}).out)+" tok";
+      m.style.color=(DQ_EFFORTS.find(e=>e.id===(d.effort||dqEffort))||{}).color||"";
       th.append(m);}
     if(dqView!=="chat"||dqDay){dqSetView("chat");const l=document.getElementById("dqLog");l.append(th);l.scrollTop=l.scrollHeight;}
     else th.classList.remove("think");
-    dqSave("bot",reply,{model:d.model||null,session:d.session,
+    dqSave("bot",reply,{model:d.model||null,session:d.session,effort:d.effort||dqEffort,
       usage:{in:(d.usage||{}).in||0,out:(d.usage||{}).out||0}});
     if(choices&&choices.length){
       const l=document.getElementById("dqLog");
@@ -2340,8 +2379,17 @@ document.getElementById("dqSend").onclick=()=>{
   i.value="";dqAsk(q);
   if(dqBusy)document.getElementById("dqSend").disabled=false;
 };
-document.getElementById("dqIn").addEventListener("keydown",e=>{
-  if(e.key==="Enter")document.getElementById("dqSend").click();
+const dqInEl=document.getElementById("dqIn");
+function dqAutosize(){
+  dqInEl.style.height="auto";
+  dqInEl.style.height=Math.min(dqInEl.scrollHeight,120)+"px";
+}
+dqInEl.addEventListener("input",dqAutosize);
+dqInEl.addEventListener("keydown",e=>{
+  if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){
+    e.preventDefault();
+    document.getElementById("dqSend").click();
+  }
 });
 
 /* version chip: bottom-right — shows short version (#v1.12), tap → settings update section.
@@ -2564,6 +2612,7 @@ setInterval(pull,30000);
    any device appear instantly, no page reload. renderAll only touches data
    views, so open dialogs/chat survive. Poll stays as fallback. */
 let sseDebounce=null;
+document.getElementById("newBuild").onclick=()=>location.reload();
 try{
   const es=new EventSource(apiURL("/events"));
   es.onmessage=(ev)=>{

@@ -1,4 +1,4 @@
-const CACHE = "onequestion-v3";
+const CACHE = "onequestion-v4";
 const ASSETS = ["/", "/index.html", "/style.css", "/app.js", "/fonts/Monocraft.ttf", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", e => {
