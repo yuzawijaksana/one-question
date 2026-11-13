@@ -1,7 +1,7 @@
 {
   "format": "one-question-zen-backup",
   "version": "2.21.3",
-  "exportedAt": "2026-11-13T07:44:09Z",
+  "exportedAt": "2026-11-13T07:44:15Z",
   "data": {
     "questions": [
       [
@@ -457,12 +457,6 @@
         "end": 960,
         "label": "sleep",
         "color": "#7c9c95"
-      },
-      {
-        "start": 900,
-        "end": 1080,
-        "label": "work on anything",
-        "color": "#9c8d7c"
       },
       {
         "start": 1080,
