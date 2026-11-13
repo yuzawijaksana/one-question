@@ -205,6 +205,12 @@ img{display:block;}
   white-space:nowrap;
 }
 .dq-effort-menu button:hover{background:rgba(141,141,141,.15);color:var(--accent);}
+.dq-hrow{display:flex;gap:6px;align-items:stretch;}
+.dq-hbtn{
+  padding:6px 9px;background:none;border:1px solid var(--line);
+  color:var(--muted);cursor:pointer;font-size:12px;font-family:inherit;
+}
+.dq-hbtn:active{color:var(--fg);border-color:rgba(141,141,141,.7);}
 .dq-filechip{
   padding:4px 8px;font-size:11px;color:var(--accent);
   border:1px solid rgba(141,141,141,.45);background:rgba(141,141,141,.12);
@@ -1943,11 +1949,35 @@ function dqRestore(){
     const msgs=chats[id];
     const first=(msgs.find(m=>m.c==="you")||{}).t||"(kosong)";
     const when=new Date(msgs[0]?.ts||Date.now());
+    const row=document.createElement("div");
+    row.className="dq-hrow";
     const b=document.createElement("button");
-    b.type="button";b.className="dq-day";
-    b.textContent=when.toLocaleDateString("en",{month:"short",day:"numeric"})+" · "+first.slice(0,32)+" ("+msgs.length+" msg)";
+    b.type="button";b.className="dq-day";b.style.flex="1";
+    const titles=s.meta&&s.meta.titles;
+    b.textContent=when.toLocaleDateString("en",{month:"short",day:"numeric"})+" · "
+      +((titles&&titles[id])||first.slice(0,32))+" ("+msgs.length+" msg)";
     b.onclick=()=>{dqOpenSession(id);};
-    log.append(b);
+    const ren=document.createElement("button");
+    ren.type="button";ren.className="dq-hbtn";ren.textContent="✎";ren.title="rename";
+    ren.onclick=(ev)=>{ev.stopPropagation();
+      const cur=(titles&&titles[id])||first.slice(0,32);
+      const t=prompt("rename sesi:",cur);
+      if(t&&t.trim()){const st=dqStore();st.meta=st.meta||{};st.meta.titles=st.meta.titles||{};
+        st.meta.titles[id]=t.trim();
+        try{localStorage.setItem(dqStoreKey,JSON.stringify(st));}catch(e){}
+        dqRestore();}
+    };
+    const del=document.createElement("button");
+    del.type="button";del.className="dq-hbtn";del.textContent="✕";del.title="hapus";
+    del.onclick=(ev)=>{ev.stopPropagation();
+      if(!confirm("hapus sesi ini?"))return;
+      const st=dqStore();delete st.chats[id];
+      if(st.meta&&st.meta.titles)delete st.meta.titles[id];
+      try{localStorage.setItem(dqStoreKey,JSON.stringify(st));}catch(e){}
+      dqRestore();
+    };
+    row.append(b,ren,del);
+    log.append(row);
   }
 }
 function dqOpenSession(id){
