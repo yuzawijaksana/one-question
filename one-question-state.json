@@ -473,7 +473,7 @@
       }
     },
     "oneQuestionSchedule": {
-      "updatedAt": 1793933707114,
+      "updatedAt": 1794555933489,
       "value": [
         {
           "start": 240,
@@ -489,21 +489,15 @@
         },
         {
           "start": 540,
-          "end": 720,
+          "end": 690,
           "label": "work on anything",
           "color": "#9c8d7c"
         },
         {
-          "start": 720,
-          "end": 900,
+          "start": 840,
+          "end": 960,
           "label": "sleep",
           "color": "#7c9c95"
-        },
-        {
-          "start": 900,
-          "end": 1080,
-          "label": "work on anything",
-          "color": "#9c8d7c"
         },
         {
           "start": 1080,
@@ -522,6 +516,12 @@
           "end": 1380,
           "label": "game/social",
           "color": "#9c8d7c"
+        },
+        {
+          "start": 720,
+          "end": 810,
+          "label": "work on anything",
+          "color": "#7c9c95"
         }
       ]
     },
