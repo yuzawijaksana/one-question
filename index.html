@@ -174,6 +174,23 @@ img{display:block;}
   75%{content:". . .";}
   100%{content:". . .";}
 }
+.dq-effort{
+  padding:4px 8px;font-size:11px;color:var(--muted);
+  border:1px solid rgba(141,141,141,.4);background:none;cursor:pointer;
+  font-family:inherit;white-space:nowrap;
+}
+.dq-effort:hover{color:var(--fg);border-color:rgba(141,141,141,.7);}
+.dq-effort-menu{
+  position:absolute;bottom:calc(100% + 6px);right:10px;z-index:90;
+  background:rgba(10,10,10,.97);border:1px solid rgba(141,141,141,.5);
+  display:none;flex-direction:column;
+}
+.dq-effort-menu.open{display:flex;}
+.dq-effort-menu button{
+  padding:8px 14px;background:none;border:none;border-bottom:1px solid rgba(141,141,141,.2);
+  color:var(--fg);font-size:12px;cursor:pointer;font-family:inherit;text-align:left;
+}
+.dq-effort-menu button:hover{background:rgba(141,141,141,.15);color:var(--accent);}
 .dq-filechip{
   padding:4px 8px;font-size:11px;color:var(--accent);
   border:1px solid rgba(141,141,141,.45);background:rgba(141,141,141,.12);
@@ -185,7 +202,8 @@ img{display:block;}
   border:1px dashed rgba(141,141,141,.4);}
 .dq-queued{align-self:flex-end;padding:5px 10px;font-size:11px;color:var(--muted);
   border:1px dashed rgba(141,141,141,.4);background:none;}
-#dqBar{display:flex;gap:8px;padding:10px;border-top:1px solid rgba(141,141,141,.3);}
+#dqBar{display:flex;gap:6px;padding:10px;border-top:1px solid rgba(141,141,141,.3);flex-wrap:wrap;}
+#dqBar #dqIn{flex:1;min-width:100px;}
 #dqBar input{
   flex:1;padding:10px 12px;background:rgba(236,236,236,.06);
   border:1px solid var(--line);color:var(--fg);font-size:13px;
@@ -484,12 +502,14 @@ input[type=range]::-webkit-slider-thumb{
 <div id="dqPanel">
   <div id="dqHead"><span class="dq-tab active" data-t="chat">chat</span><span class="dq-tab" data-t="history">history</span><button id="dqClose">✕</button></div>
   <div id="dqLog"></div>
-  <div id="dqBar">
+  <div id="dqBar" style="position:relative;">
+    <div class="dq-effort-menu" id="dqEffortMenu"></div>
     <button id="dqNew" title="new chat" style="background:none;border:1px solid var(--line);color:var(--muted);cursor:pointer;font-family:inherit;padding:10px 12px;font-size:15px;">+</button>
     <input id="dqIn" placeholder="tanya apa aja…" autocomplete="off">
     <button id="dqAttach" title="attach file" style="background:none;border:1px solid var(--line);color:var(--muted);cursor:pointer;font-family:inherit;padding:10px 12px;font-size:13px;">↑</button>
     <input id="dqFile" type="file" accept=".txt,.md,.json,.csv,.js,.py,.html,.css,.log,.owl,.yml,.yaml,.xml,.pdf,image/*" style="display:none;" multiple>
     <button id="dqSend">send</button>
+    <button class="dq-effort" id="dqEffort" title="thinking effort — max waktu jawab">⏱ 10s</button>
   </div>
   <div id="dqFiles" style="display:none;padding:0 10px 6px;display:flex;gap:6px;flex-wrap:wrap;"></div>
 </div>
@@ -1845,6 +1865,29 @@ async function ensureSholat(){
   }
 }
 
+/* thinking effort: max detik hermes boleh mikir (server timeout = effort) */
+const DQ_EFFORTS=[1,5,10,30,60,180];
+let dqEffort=+(localStorage.getItem("oqDqEffort")||10);
+(function(){
+  const btn=document.getElementById("dqEffort"),menu=document.getElementById("dqEffortMenu");
+  function label(){
+    btn.textContent="⏱ "+(dqEffort>=60?(dqEffort/60)+"m":dqEffort+"s");
+  }
+  function render(){
+    menu.innerHTML="";
+    for(const e of DQ_EFFORTS){
+      const b=document.createElement("button");
+      b.textContent=e>=60?(e/60)+"m — thinking panjang":e+"s — effort "+(e<=10?"cepat":e<=30?"sedang":"dalem");
+      if(e===dqEffort)b.style.color="var(--accent)";
+      b.onclick=()=>{dqEffort=e;localStorage.setItem("oqDqEffort",e);label();menu.classList.remove("open");};
+      menu.append(b);
+    }
+  }
+  btn.onclick=(ev)=>{ev.stopPropagation();render();menu.classList.toggle("open");};
+  document.addEventListener("click",e=>{if(!menu.contains(e.target))menu.classList.remove("open");});
+  label();
+})();
+
 /* daily question: CS-style hermes chat (persisted per-day in localStorage) */
 let dqBusy=false,dqOpen=false,dqView="chat",dqDay=null;
 const dqStoreKey="oqDqChat";
@@ -2001,7 +2044,7 @@ async function dqAsk(q){
   dqPush("you",q.split("\n\n[attached")[0]);dqSave("you",q.split("\n\n[attached")[0]);
   const th=dqPush("bot think","");
   th.innerHTML='<span>( </span><span class="dots"></span><span> )</span>';
-  const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),120000);
+  const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),(dqEffort+3)*1000);
   // interactive: one hermes session per day, so it remembers the conversation
   const sm=dqStore();sm.meta=sm.meta||{};
   let sess=sm.meta.current;
@@ -2012,7 +2055,7 @@ async function dqAsk(q){
   }
   const doFetch=(url)=>fetch(url,{method:"POST",signal:ac.signal,
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({prompt:q,session:sess})});
+      body:JSON.stringify({prompt:q,session:sess,effort:dqEffort})});
   try{
     let r;
     try{r=await doFetch(apiURL("/hermes"));}

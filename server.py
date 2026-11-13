@@ -463,6 +463,10 @@ class Handler(SimpleHTTPRequestHandler):
                 payload = json.loads(self.rfile.read(length) or b"{}")
                 prompt = str(payload.get("prompt", "")).strip()
                 session = str(payload.get("session", "")).strip() or None
+                try:
+                    effort = max(1, min(600, int(payload.get("effort", 180))))
+                except (TypeError, ValueError):
+                    effort = 180
                 if not prompt:
                     self._json(400, {"error": "empty prompt"})
                     return
@@ -487,7 +491,7 @@ class Handler(SimpleHTTPRequestHandler):
                 try:
                     def _run(c):
                         return subprocess.run(
-                            c, capture_output=True, text=True, timeout=180,
+                            c, capture_output=True, text=True, timeout=effort,
                             input=prompt,
                             env={**os.environ, "TERM": "dumb"},
                             creationflags=_NO_WINDOW,
@@ -525,7 +529,7 @@ class Handler(SimpleHTTPRequestHandler):
                             pass
                     self._json(200, {"ok": True, "reply": out[-8000:], "session": eff_session})
                 except subprocess.TimeoutExpired:
-                    self._json(200, {"ok": False, "reply": "timed out (180s)"})
+                    self._json(200, {"ok": False, "reply": "kepotong di "+str(effort)+"s — naikin effort (⏱) atau tanya yang lebih simpel"})
             except Exception as exc:
                 self._json(500, {"ok": False, "error": str(exc)})
             return
