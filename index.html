@@ -1851,46 +1851,62 @@ let dqBusy=false,dqOpen=false,dqView="chat",dqDay=null;
 const dqStoreKey="oqDqChat";
 function dqStore(){try{return JSON.parse(localStorage.getItem(dqStoreKey)||"{}");}catch(e){return{};}}
 function dqSave(cls,txt){
-  const day=new Date().toISOString().slice(0,10);
-  const s=dqStore();(s[day]=s[day]||[]).push({c:cls,t:txt,ts:Date.now()});
-  // keep last 30 days
-  const days=Object.keys(s).sort();while(days.length>30)delete s[days.shift()];
+  const s=dqStore();
+  const id=s.meta&&s.meta.current;
+  if(!id)return;
+  (s.chats[id]=s.chats[id]||[]).push({c:cls,t:txt,ts:Date.now()});
+  // keep last 40 sessions
+  const ids=Object.keys(s.chats||{}).sort((a,b)=>(s.chats[b][0]?.ts||0)-(s.chats[a][0]?.ts||0));
+  while(ids.length>40){const old=ids.pop();delete s.chats[old];if(s.meta.titles)delete s.meta.titles[old];}
   try{localStorage.setItem(dqStoreKey,JSON.stringify(s));}catch(e){}
 }
 function dqRestore(){
   const s=dqStore(),log=document.getElementById("dqLog");
   log.innerHTML="";
-  const days=Object.keys(s).filter(d=>d!=="meta").sort();
-  if(!days.length){dqPush("bot","belum ada history.");return;}
-  for(const d of days){
+  const chats=s.chats||{};
+  const ids=Object.keys(chats).sort((a,b)=>(chats[b][0]?.ts||0)-(chats[a][0]?.ts||0));
+  if(!ids.length){dqPush("bot","belum ada history.");return;}
+  for(const id of ids){
+    const msgs=chats[id];
+    const first=(msgs.find(m=>m.c==="you")||{}).t||"(kosong)";
+    const when=new Date(msgs[0]?.ts||Date.now());
     const b=document.createElement("button");
     b.type="button";b.className="dq-day";
-    b.textContent=d+" ("+s[d].length+" msg)";
-    b.onclick=()=>{dqOpenDay(d);};
+    b.textContent=when.toLocaleDateString("en",{month:"short",day:"numeric"})+" · "+first.slice(0,32)+" ("+msgs.length+" msg)";
+    b.onclick=()=>{dqOpenSession(id);};
     log.append(b);
   }
 }
-function dqOpenDay(d){
-  dqDay=d;dqView="chat";
+function dqOpenSession(id){
+  dqSessionId=id;dqView="chat";
+  // resume this session's hermes context
+  const s=dqStore();s.meta=s.meta||{};s.meta.current=id;
+  try{localStorage.setItem(dqStoreKey,JSON.stringify(s));}catch(e){}
   document.querySelectorAll(".dq-tab").forEach(t=>t.classList.toggle("active",t.dataset.t==="chat"));
   const log=document.getElementById("dqLog");
   log.innerHTML="";
   const back=document.createElement("button");
-  back.type="button";back.className="dq-back";back.textContent="← kembali ke chat";
-  back.onclick=()=>{dqDay=null;dqSetView("chat");};
+  back.type="button";back.className="dq-back";back.textContent="← kembali ke daftar";
+  back.onclick=()=>{dqView="history";dqRestore();};
   log.append(back);
-  for(const m of (dqStore()[d]||[]))dqPush(m.c==="you"?"you":"bot",m.t);
+  for(const m of (dqStore().chats[id]||[]))dqPush(m.c==="you"?"you":"bot",m.t);
   document.getElementById("dqIn").focus();
 }
 function dqSetView(v){
   dqView=v;
-  if(v!=="chat")dqDay=null;
+  if(v==="history")dqDay=null;
   document.querySelectorAll(".dq-tab").forEach(t=>t.classList.toggle("active",t.dataset.t===v));
   if(v==="history")dqRestore();
   else{
+    // reopen CURRENT session (not reset!) so switching tabs doesn't lose context
+    const s=dqStore();const id=s.meta&&s.meta.current;
     const log=document.getElementById("dqLog");
     log.innerHTML="";
-    dqPush("bot","halo 👋 tanya apa aja — ini hermes di vps.");
+    if(id&&s.chats&&s.chats[id]){
+      for(const m of s.chats[id])dqPush(m.c==="you"?"you":"bot",m.t);
+    }else{
+      dqPush("bot","halo 👋 tanya apa aja — ini hermes di vps.");
+    }
     document.getElementById("dqIn").focus();
   }
 }
@@ -1948,12 +1964,13 @@ document.getElementById("dqFile").onchange=async e=>{
 };
 document.getElementById("dqNew").onclick=()=>{
   if(dqBusy){dqPush("bot","tunggu jawaban selesai dulu ya.");return;}
-  const day=new Date().toISOString().slice(0,10);
   const sm=dqStore();sm.meta=sm.meta||{};
-  sm.meta[day]="dq-"+day+"-"+Math.random().toString(36).slice(2,8);
+  sm.meta.current="dq-"+new Date().toISOString().slice(0,10)+"-"+Math.random().toString(36).slice(2,8);
   try{localStorage.setItem(dqStoreKey,JSON.stringify(sm));}catch(e){}
-  dqDay=null;dqSetView("chat");
-  dqPush("bot","🆕 sesi baru — kontens kosong lagi.");
+  dqDay=null;dqView="chat";
+  document.querySelectorAll(".dq-tab").forEach(t=>t.classList.toggle("active",t.dataset.t==="chat"));
+  document.getElementById("dqLog").innerHTML="";
+  dqPush("bot","🆕 sesi baru — kontek kosong lagi.");
 };
 document.getElementById("dqClose").onclick=()=>{
   dqOpen=false;document.getElementById("dqPanel").classList.remove("open");
@@ -1987,10 +2004,13 @@ async function dqAsk(q){
   th.innerHTML='<span>( </span><span class="dots"></span><span> )</span>';
   const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),120000);
   // interactive: one hermes session per day, so it remembers the conversation
-  const day=new Date().toISOString().slice(0,10);
-  const sess=(dqStore().meta||{})[day]||("dq-"+day+"-"+Math.random().toString(36).slice(2,8));
-  const sm=dqStore();sm.meta=sm.meta||{};sm.meta[day]=sess;
-  try{localStorage.setItem(dqStoreKey,JSON.stringify(sm));}catch(e){}
+  const sm=dqStore();sm.meta=sm.meta||{};
+  let sess=sm.meta.current;
+  if(!sess){
+    sess="dq-"+new Date().toISOString().slice(0,10)+"-"+Math.random().toString(36).slice(2,8);
+    sm.meta.current=sess;
+    try{localStorage.setItem(dqStoreKey,JSON.stringify(sm));}catch(e){}
+  }
   const doFetch=()=>fetch(apiURL("/hermes"),{method:"POST",signal:ac.signal,
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({prompt:q,session:sess})});
@@ -2048,7 +2068,7 @@ document.getElementById("dqIn").addEventListener("keydown",e=>{
 /* version chip: bottom-right — shows short version (#v1.12), tap → settings update section.
    Version scheme: APP_VER="0.115" — XXX is a running counter bumped on every feature commit; the chip falls back to
    a hash-derived pair (yy*12+month . day) when served build differs from constant. */
-const APP_VER="0.122";
+const APP_VER="0.123";
 (function(){
   const chip=document.getElementById("verChip");
   if(!chip)return;
