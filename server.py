@@ -473,13 +473,23 @@ class Handler(SimpleHTTPRequestHandler):
                 # keep widget answers short: prepend a style directive
                 prompt = ("Jawab SINGKAT (1-3 kalimat, max ~80 kata), gaya santai. "
                           "Gak perlu tambah penjelasan panjang.\n\n" + prompt)
-                cmd = ["hermes", "--cli", "-z", prompt]
+                # route the chat to a remote hermes (e.g. the VPS) when
+                # ONE_QUESTION_HERMES_SSH is set (user@host); the prompt
+                # travels over stdin so no remote shell-quoting is needed
+                remote = os.environ.get("ONE_QUESTION_HERMES_SSH", "").strip()
+                if remote:
+                    cmd = ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10",
+                           remote, 'hermes --cli -z "$(cat)"']
+                else:
+                    cmd = ["hermes", "--cli", "-z", prompt]
                 if session:
                     cmd += ["--resume", session]
                 try:
                     proc = subprocess.run(
                         cmd, capture_output=True, text=True, timeout=180,
+                        input=prompt,
                         env={**os.environ, "TERM": "dumb"},
+                        creationflags=_NO_WINDOW,
                     )
                     out = (proc.stdout or "").strip()
                     if proc.returncode != 0 and not out:
