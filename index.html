@@ -2057,8 +2057,13 @@ async function dqAsk(q){
   q=full;
   dqPush("you",q.split("\n\n[attached")[0]);dqSave("you",q.split("\n\n[attached")[0]);
   const th=dqPush("bot think","");
-  th.innerHTML='<span>( </span><span class="dots"></span><span> )</span><span class="dq-cd"></span>';
   const t0=Date.now();
+  th._stage="sending";
+  function dqStage(st){
+    th._stage=st;
+    th.innerHTML='<span>('+st+'. . )</span><span class="dq-cd"></span>';
+  }
+  dqStage("sending");
   th._cd=setInterval(()=>{
     const el=th.querySelector(".dq-cd");
     if(el)el.textContent=" "+Math.round((Date.now()-t0)/1000)+"s";
@@ -2075,6 +2080,7 @@ const tm=dqSecs>0?setTimeout(()=>ac.abort(),Math.max(dqSecs+5,110)*1000):null;
     sm.meta.current=sess;
     try{localStorage.setItem(dqStoreKey,JSON.stringify(sm));}catch(e){}
   }
+  dqStage("thinking");
   const doFetch=(url,eff)=>fetch(url,{method:"POST",signal:ac.signal,
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({prompt:q,session:sess,effort:eff||dqEffort})});
@@ -2092,11 +2098,12 @@ const tm=dqSecs>0?setTimeout(()=>ac.abort(),Math.max(dqSecs+5,110)*1000):null;
     let d;
     try{d=await r.json();}
     catch(e3){d={error:"server error "+r.status+" — server PC lama, update dulu"};}
+    dqStage("answering");
     // kepotong + effort pendek → auto-retry sekali di 90s (hermes start-up ~5-10s,
     // jadi effort 15-30s suka kepotong padahal pertanyaan simpel)
     if(d.ok===false&&/kepotong/.test(d.reply||"")&&(dqEffort==="flash"||dqEffort==="quick"||dqEffort==="reasonable")){
       if(th._cd)clearInterval(th._cd);
-      th.innerHTML='<span>⏳ hermes sibuk — retry 90s </span><span class="dots"></span>';
+      th.innerHTML='<span>(⏳ retrying. . )</span><span class="dq-cd"></span>';
       try{
         const r2=await doFetch(apiURL("/hermes"),90);
         d=await r2.json();
