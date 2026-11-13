@@ -2021,6 +2021,7 @@ document.getElementById("dqClose").onclick=()=>{
 /* queue: ketika hermes masih mikir, pertanyaan berikutnya masuk antrian */
 const dqQueue=[];
 async function dqAsk(q){
+  try{
   if(!q)return;
   if(dqBusy){
     const qe=dqPush("dq-queued","⏳ queued: "+q.slice(0,40));
@@ -2104,6 +2105,12 @@ async function dqAsk(q){
     const next=dqQueue.shift();
     next.qe.textContent="▶ "+next.qe.textContent.replace("⏳ queued: ","");
     setTimeout(()=>dqAsk(next.q),400);
+  }
+  }catch(err){
+    console.error("dqAsk error:",err);
+    dqBusy=false;
+    const lg=document.getElementById("dqLog");
+    if(lg)dqPush("bot","⚠ error internal: "+err.message+" — hard refresh (Ctrl+Shift+R)");
   }
 }
 document.getElementById("dqSend").onclick=()=>{
