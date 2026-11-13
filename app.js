@@ -333,7 +333,7 @@ const COMPARE_KEYS=[
   ["oneQuestionDeadlines","deadline wall"],
   ["oneQuestionNote","quick note"],
   ["oneQuestionBook","book"],
-  ["oneQuestionQuotes","quiet feed"],
+  ["oneQuestionQuotes","quotes"],
   ["oneQuestionHydration","hydration"]
 ];
 function summarizeValue(key,value){
@@ -859,7 +859,7 @@ function loadSettings(){
   }catch{return {...DEFAULT_SETTINGS,appearance:{...DEFAULT_APPEARANCE}}}
 }
 const MODE_ORDER_CLASSES={question:"modeQuestion",focus:"modeFocus",scheduler:"modeScheduler",sticky:"modeSticky",quotes:"modeQuotes",deadlines:"modeDeadlines",notifs:"modeNotifs"};
-const MODE_ORDER_LABELS={question:"question",focus:"book",scheduler:"scheduler",sticky:"remember wall",quotes:"quiet feed",deadlines:"deadline wall",notifs:"notifications"};
+const MODE_ORDER_LABELS={question:"question",focus:"book",scheduler:"scheduler",sticky:"remember wall",quotes:"quotes",deadlines:"deadline wall",notifs:"notifications"};
 function normalizedModeOrder(){
   const valid=Object.keys(MODE_ORDER_CLASSES);
   const saved=Array.isArray(settings.modeOrder)?settings.modeOrder.filter(k=>valid.includes(k)):[];
@@ -6365,7 +6365,7 @@ function initBookStudio(){
     else if(e.key==="ArrowLeft"){e.preventDefault();e.stopPropagation();readerFlip(-1);}
   },true);
 }
-// ---- quiet feed (quotes) mode -----------------------------------------
+// ---- quotes (quotes) mode -----------------------------------------
 // a reels-style vertical feed, but calm: one text quote per screen, a feed
 // that ends on purpose, and no autoplay. scroll/snap does the navigation.
 // the feed starts empty — the quotes are yours, added from inside the feed.
@@ -6569,7 +6569,7 @@ function enterQuotesMode(){
   document.body.classList.remove("focusModeVisual");
   quoteSessionStart=Date.now();
   updateModeUI();updateFocusUI();
-  setCycleStatus("quiet feed",false);
+  setCycleStatus("quotes",false);
   answerEl.blur();
   updateQuoteSession();
 }
@@ -7019,7 +7019,7 @@ function cycleMode(dir){
 document.addEventListener("keydown",e=>{
   if(e.key!=="ArrowUp"&&e.key!=="ArrowDown")return;
   // the rail runs vertically, so the mode cycle rides ↑ ↓ — on every
-  // screen alike; the quiet feed turns its quotes with space instead
+  // screen alike; the quotes turns its quotes with space instead
   if(e.altKey||e.ctrlKey||e.metaKey)return;
   if($("historyPanel").classList.contains("open"))return;
   if(document.querySelector(".appDialog.open"))return;
