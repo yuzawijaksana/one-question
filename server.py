@@ -478,9 +478,14 @@ class Handler(SimpleHTTPRequestHandler):
                 if len(prompt) > 4000:
                     self._json(400, {"error": "prompt too long (max 4000)"})
                     return
-                # keep widget answers short: prepend a style directive
-                prompt = ("Jawab SINGKAT (1-3 kalimat, max ~80 kata), gaya santai. "
-                          "Gak perlu tambah penjelasan panjang.\n\n" + prompt)
+                # keep widget answers short: cap scales with effort
+                if effort <= 30:
+                    cap = "Jawab MAX 10 KATA, 1 kalimat, gaya santai. Tanpa penjelasan."
+                elif effort <= 60:
+                    cap = "Jawab SINGKAT (max 2 kalimat), gaya santai."
+                else:
+                    cap = "Jawab ringkas & padat, gaya santai."
+                prompt = cap + "\n\n" + prompt
                 # route the chat to a remote hermes (e.g. the VPS) when
                 # ONE_QUESTION_HERMES_SSH is set (user@host); the prompt
                 # travels over stdin so no remote shell-quoting is needed
