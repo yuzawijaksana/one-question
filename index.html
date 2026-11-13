@@ -98,7 +98,7 @@ img{display:block;}
 #menuSub{margin-top:10px;font-size:13px;color:var(--fg);}
 /* update-available pill: bottom-right, PC only (checks /api/update/status) */
 #updPill{
-  position:fixed;bottom:18px;right:18px;z-index:85;display:none;
+  position:fixed;top:18px;right:18px;z-index:85;display:none;
   padding:10px 16px;background:rgba(10,10,10,.92);
   border:1px solid rgba(141,141,141,.45);color:var(--fg);
   font-size:12.5px;cursor:pointer;align-items:center;gap:10px;
@@ -208,7 +208,6 @@ img{display:block;}
 #verChip:active{color:var(--fg);border-color:rgba(141,141,141,.7);}
 @media(min-width:900px){
   #verChip{bottom:18px;right:18px;}
-  #updPill{bottom:56px;}
 }
 /* offline pill: bottom-left, ALL devices — mirrors the update pill */
 #offPill{
@@ -481,7 +480,7 @@ input[type=range]::-webkit-slider-thumb{
 <div id="flash"></div>
 <div id="syncpill"><span class="syncdot bad" id="syncDot"></span><span id="syncTxt">connecting…</span></div>
 <div id="verChip">#v.…</div>
-<button id="dqBtn">daily question</button>
+<button id="dqBtn" title="ask a question" style="padding:10px 12px;font-size:15px;">💬</button>
 <div id="dqPanel">
   <div id="dqHead"><span class="dq-tab active" data-t="chat">chat</span><span class="dq-tab" data-t="history">history</span><button id="dqClose">✕</button></div>
   <div id="dqLog"></div>
@@ -2068,7 +2067,7 @@ document.getElementById("dqIn").addEventListener("keydown",e=>{
 /* version chip: bottom-right — shows short version (#v1.12), tap → settings update section.
    Version scheme: APP_VER="0.115" — XXX is a running counter bumped on every feature commit; the chip falls back to
    a hash-derived pair (yy*12+month . day) when served build differs from constant. */
-const APP_VER="0.123";
+const APP_VER="0.124";
 (function(){
   const chip=document.getElementById("verChip");
   if(!chip)return;
