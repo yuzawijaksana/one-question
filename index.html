@@ -2010,14 +2010,23 @@ async function dqAsk(q){
     sm.meta.current=sess;
     try{localStorage.setItem(dqStoreKey,JSON.stringify(sm));}catch(e){}
   }
-  const doFetch=()=>fetch(apiURL("/hermes"),{method:"POST",signal:ac.signal,
+  const doFetch=(url)=>fetch(url,{method:"POST",signal:ac.signal,
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({prompt:q,session:sess})});
   try{
     let r;
-    try{r=await doFetch();}
-    catch(e1){await new Promise(res=>setTimeout(res,1200));r=await doFetch();} // retry once on transient drop
-    const d=await (r.ok?r.json():Promise.resolve({error:"server error "+r.status}));
+    try{r=await doFetch(apiURL("/hermes"));}
+    catch(e1){
+      // retry once on transient drop...
+      try{r=await doFetch(apiURL("/hermes"));}
+      catch(e2){
+        // local PC server unreachable/old-build — fall back to the VPS endpoint
+        r=await doFetch("/one/api/hermes");
+      }
+    }
+    let d;
+    try{d=await r.json();}
+    catch(e3){d={error:"server error "+r.status+" — server PC lama, update dulu"};}
     let reply=d.reply||d.error||"(no reply)";
     let choices=null;
     const cm=reply.match(/CHOICES?:([^\n]+)\n?/i);
@@ -2067,7 +2076,7 @@ document.getElementById("dqIn").addEventListener("keydown",e=>{
 /* version chip: bottom-right — shows short version (#v1.12), tap → settings update section.
    Version scheme: APP_VER="0.115" — XXX is a running counter bumped on every feature commit; the chip falls back to
    a hash-derived pair (yy*12+month . day) when served build differs from constant. */
-const APP_VER="0.124";
+const APP_VER="0.125";
 (function(){
   const chip=document.getElementById("verChip");
   if(!chip)return;
