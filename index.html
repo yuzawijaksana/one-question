@@ -174,6 +174,15 @@ img{display:block;}
   75%{content:". . .";}
   100%{content:". . .";}
 }
+.dq-filechip{
+  padding:4px 8px;font-size:11px;color:var(--accent);
+  border:1px solid rgba(141,141,141,.45);background:rgba(141,141,141,.12);
+  display:flex;align-items:center;gap:5px;max-width:140px;
+}
+.dq-filechip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dq-filechip .rm{cursor:pointer;color:var(--muted);font-size:12px;}
+.dq-filemsg{align-self:flex-end;padding:6px 10px;font-size:11.5px;color:var(--muted);
+  border:1px dashed rgba(141,141,141,.4);}
 .dq-queued{align-self:flex-end;padding:5px 10px;font-size:11px;color:var(--muted);
   border:1px dashed rgba(141,141,141,.4);background:none;}
 #dqBar{display:flex;gap:8px;padding:10px;border-top:1px solid rgba(141,141,141,.3);}
@@ -474,12 +483,16 @@ input[type=range]::-webkit-slider-thumb{
 <div id="verChip">#v.…</div>
 <button id="dqBtn">daily question</button>
 <div id="dqPanel">
-  <div id="dqHead"><span class="dq-tab active" data-t="chat">chat</span><span class="dq-tab" data-t="history">history</span><button id="dqNew" title="new chat" style="margin-left:6px;background:none;border:none;color:var(--muted);cursor:pointer;font-family:inherit;font-size:13px;">+</button><button id="dqClose">✕</button></div>
+  <div id="dqHead"><span class="dq-tab active" data-t="chat">chat</span><span class="dq-tab" data-t="history">history</span><button id="dqClose">✕</button></div>
   <div id="dqLog"></div>
   <div id="dqBar">
+    <button id="dqAttach" title="attach file" style="background:none;border:1px solid var(--line);color:var(--muted);cursor:pointer;font-family:inherit;padding:10px 12px;font-size:13px;">📎</button>
+    <input id="dqFile" type="file" accept=".txt,.md,.json,.csv,.js,.py,.html,.css,.log,.owl,.yml,.yaml,.xml,.pdf,image/*" style="display:none;" multiple>
     <input id="dqIn" placeholder="tanya apa aja…" autocomplete="off">
+    <button id="dqNew" title="new chat" style="background:none;border:1px solid var(--line);color:var(--muted);cursor:pointer;font-family:inherit;padding:10px 12px;font-size:15px;">+</button>
     <button id="dqSend">send</button>
   </div>
+  <div id="dqFiles" style="display:none;padding:0 10px 6px;display:flex;gap:6px;flex-wrap:wrap;"></div>
 </div>
 <div id="offPill">
   <span class="off-dot"></span>
@@ -1904,6 +1917,35 @@ document.getElementById("dqBtn").onclick=()=>{
     document.getElementById("dqIn").focus();
   }
 };
+/* file attach: baca isi file, sisip ke prompt */
+let dqFiles=[];
+const filesBox=document.getElementById("dqFiles");
+function renderFileChips(){
+  filesBox.style.display=dqFiles.length?"flex":"none";
+  filesBox.innerHTML="";
+  dqFiles.forEach((f,idx)=>{
+    const c=document.createElement("div");c.className="dq-filechip";
+    const nm=document.createElement("span");nm.textContent=f.name;
+    const rm=document.createElement("span");rm.className="rm";rm.textContent="✕";
+    rm.onclick=()=>{dqFiles.splice(idx,1);renderFileChips();};
+    c.append(nm,rm);filesBox.append(c);
+  });
+}
+document.getElementById("dqAttach").onclick=()=>document.getElementById("dqFile").click();
+document.getElementById("dqFile").onchange=async e=>{
+  for(const f of e.target.files){
+    if(f.size>200*1024){dqPush("bot","file "+f.name+" kegedean (max 200KB).");continue;}
+    let text="";
+    if(f.type.startsWith("image/")){
+      text="[image: "+f.name+" — "+Math.round(f.size/1024)+"KB — gambar gak bisa dibaca hermes CLI, jelasin pake teks aja]";
+    }else{
+      try{text=await f.text();}catch(err){dqPush("bot","gagal baca "+f.name);continue;}
+    }
+    dqFiles.push({name:f.name,text});
+  }
+  e.target.value="";
+  renderFileChips();
+};
 document.getElementById("dqNew").onclick=()=>{
   if(dqBusy){dqPush("bot","tunggu jawaban selesai dulu ya.");return;}
   const day=new Date().toISOString().slice(0,10);
@@ -1928,7 +1970,19 @@ async function dqAsk(q){
   }
   dqBusy=true;
   document.getElementById("dqSend").disabled=true;
-  dqPush("you",q);dqSave("you",q);
+  let full=q;
+  if(dqFiles.length){
+    const blocks=dqFiles.map(f=>"\n\n=== file: "+f.name+" ===\n"+f.text+"\n=== end "+f.name+" ===").join("");
+    full=q+"\n\n[attached "+dqFiles.length+" file(s)]"+blocks;
+    for(const f of dqFiles)dqSave("you","📎 "+f.name);
+    const fm=document.createElement("div");fm.className="dq-filemsg";
+    fm.textContent="📎 "+dqFiles.map(f=>f.name).join(", ");
+    const log0=document.getElementById("dqLog");
+    log0.insertBefore(fm,log0.lastChild);log0.scrollTop=log0.scrollHeight;
+    dqFiles=[];renderFileChips();
+  }
+  q=full;
+  dqPush("you",q.split("\n\n[attached")[0]);dqSave("you",q.split("\n\n[attached")[0]);
   const th=dqPush("bot think","");
   th.innerHTML='<span>( </span><span class="dots"></span><span> )</span>';
   const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),120000);
@@ -1994,7 +2048,7 @@ document.getElementById("dqIn").addEventListener("keydown",e=>{
 /* version chip: bottom-right — shows short version (#v1.12), tap → settings update section.
    Version scheme: APP_VER="0.115" — XXX is a running counter bumped on every feature commit; the chip falls back to
    a hash-derived pair (yy*12+month . day) when served build differs from constant. */
-const APP_VER="0.119";
+const APP_VER="0.120";
 (function(){
   const chip=document.getElementById("verChip");
   if(!chip)return;
