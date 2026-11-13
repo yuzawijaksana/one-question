@@ -473,8 +473,9 @@ class Handler(SimpleHTTPRequestHandler):
                         effort = max(1, min(600, int(raw)))
                     except (TypeError, ValueError):
                         effort = 180
+                no_limit = effort == 0
                 if effort == 0:
-                    effort = None  # no limit
+                    effort = 600  # sentinel; subprocess timeout 600s
                 elif effort < 45:
                     effort = 45
                 # FLASH/QUICK fast-path: skip the agent entirely — direct LLM
@@ -593,7 +594,7 @@ class Handler(SimpleHTTPRequestHandler):
                             pass
                     self._json(200, {"ok": True, "reply": out[-8000:], "session": eff_session})
                 except subprocess.TimeoutExpired:
-                    self._json(200, {"ok": False, "reply": "kepotong di "+str(effort)+"s — naikin effort (⏱) atau tanya yang lebih simpel"})
+                    self._json(200, {"ok": False, "reply": "kepotong di "+str(effort)+"s — naikin effort (⚡) atau tanya lebih simpel"})
             except Exception as exc:
                 self._json(500, {"ok": False, "error": str(exc)})
             return
