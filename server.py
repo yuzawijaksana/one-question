@@ -495,6 +495,8 @@ class Handler(SimpleHTTPRequestHandler):
                            remote, 'hermes --cli -z "$(cat)"']
                 else:
                     cmd = ["hermes", "--cli", "-z", prompt]
+                if effort <= 30:
+                    cmd += ["--reasoning", "low"]  # fast path: short casual answers
                 if session:
                     cmd += ["--resume", session]
                 try:
