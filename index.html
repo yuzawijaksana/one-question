@@ -156,6 +156,16 @@ img{display:block;}
 .dq-msg.bot{align-self:flex-start;background:rgba(141,141,141,.1);
   border:1px solid rgba(141,141,141,.35);color:var(--fg);}
 .dq-msg.think{color:var(--muted);font-style:italic;}
+.dq-msg.think .dots::after{
+  content:"";animation:dqdots 1.2s steps(4,end) infinite;
+}
+@keyframes dqdots{
+  0%{content:"";}
+  25%{content:".";}
+  50%{content:". .";}
+  75%{content:". . .";}
+  100%{content:". . .";}
+}
 #dqBar{display:flex;gap:8px;padding:10px;border-top:1px solid rgba(141,141,141,.3);}
 #dqBar input{
   flex:1;padding:10px 12px;background:rgba(236,236,236,.06);
@@ -1841,7 +1851,8 @@ async function dqAsk(q){
   dqBusy=true;
   document.getElementById("dqSend").disabled=true;
   dqPush("you",q);
-  const th=dqPush("think","…");
+  const th=dqPush("think","");
+  th.innerHTML='<span>( </span><span class="dots"></span><span> )</span>';
   try{
     const r=await fetch(apiURL("/hermes"),{method:"POST",
       headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt:q})});
