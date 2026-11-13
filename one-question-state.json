@@ -2,7 +2,11 @@
   "version": 1,
   "keys": {
     "oneQuestionSettings": {
+<<<<<<< HEAD
       "updatedAt": 1794303365315,
+=======
+      "updatedAt": 1794369033362,
+>>>>>>> 34e086b (auto: runtime data sync)
       "value": {
         "widgetGuides": [
           {
@@ -129,12 +133,12 @@
               {
                 "id": "s2442792",
                 "text": "tempat",
-                "done": true,
+                "done": false,
                 "choices": [
                   "kampus",
                   "perpus"
                 ],
-                "pick": "kampus"
+                "pick": null
               },
               {
                 "id": "s2549059",
@@ -146,7 +150,7 @@
                   "scrolling",
                   "discord"
                 ],
-                "pick": "scrolling"
+                "pick": null
               },
               {
                 "id": "s2626073",
@@ -1069,5 +1073,10 @@
       ]
     }
   },
+<<<<<<< HEAD
   "updatedAt": 1794312751329
 }
+=======
+  "updatedAt": 1794369033975
+}
+>>>>>>> 34e086b (auto: runtime data sync)
