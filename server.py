@@ -477,9 +477,19 @@ class Handler(SimpleHTTPRequestHandler):
                     effort = None  # no limit
                 elif effort < 45:
                     effort = 45
-                # FLASH fast-path: skip the agent entirely — direct LLM call
-                # (no tools/session spawn), answers in ~2-5s
-                if raw == "flash":
+                # FLASH/QUICK fast-path: skip the agent entirely — direct LLM
+                # call (no tools/session spawn), answers in ~2-8s
+                if raw in ("flash", "quick"):
+                    if raw == "quick":
+                        sysmsg = ("Kamu asisten widget chat. Jawab singkat & jelas: "
+                                  "2-3 kalimat max, bahasa santai, boleh ada penjelasan "
+                                  "kecil kalau perlu.")
+                        effort = 30
+                    else:
+                        sysmsg = ("Kamu asisten widget chat. Jawab SANGAT SINGKAT: "
+                                  "max 10 kata, 1 kalimat, bahasa santai. "
+                                  "Tanpa penjelasan, tanpa format.")
+                        effort = 15
                     try:
                         import urllib.request
                         env_path = Path.home() / ".hermes" / ".env"
@@ -493,10 +503,7 @@ class Handler(SimpleHTTPRequestHandler):
                             body = json.dumps({
                                 "model": "glm-5.3-flash",
                                 "messages": [
-                                    {"role": "system", "content":
-                                        "Kamu asisten widget chat. Jawab SANGAT SINGKAT: "
-                                        "max 10 kata, 1 kalimat, bahasa santai. "
-                                        "Tanpa penjelasan, tanpa format."},
+                                    {"role": "system", "content": sysmsg},
                                     {"role": "user", "content": prompt},
                                 ],
                             }).encode()
