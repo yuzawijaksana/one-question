@@ -600,28 +600,33 @@ class Handler(SimpleHTTPRequestHandler):
                         out = (proc.stdout or "").strip()
                     if proc.returncode != 0 and not out:
                         out = (proc.stderr or "hermes failed").strip()
-                    # when the client sent no session, the run above created a
-                    # fresh one — grab its ID so the client can resume it next turn
+                    # the client's id is arbitrary; hermes stores its own session
+                    # ids. Always resolve the real id from the listing so usage
+                    # lookup matches the db
                     eff_session = session
-                    if not eff_session and proc.returncode == 0 and out:
+                    usage_lookup_id = None
+                    if proc.returncode == 0 and out:
                         try:
-                            listing = subprocess.run(
-                                ["hermes", "sessions", "list", "--json"],
-                                capture_output=True, text=True, timeout=30,
-                                env={**os.environ, "TERM": "dumb"},
-                                creationflags=_NO_WINDOW,
-                            )
-                            data = json.loads(listing.stdout or "[]")
-                            rows = data.get("sessions", data) if isinstance(data, dict) else data
-                            if rows:
-                                sid = str(rows[0].get("id", "")).strip()
-                                if sid:
+                            import sqlite3
+                            db_path = Path.home() / ".hermes" / "state.db"
+                            con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, timeout=3)
+                            try:
+                                row = con.execute(
+                                    "select id from sessions order by started_at desc limit 1"
+                                ).fetchone()
+                            finally:
+                                con.close()
+                            if row and row[0]:
+                                sid = row[0]
+                                # keep client id for resume; use real id for usage lookup
+                                usage_lookup_id = sid
+                                if not session:
                                     eff_session = sid
                         except Exception:
                             pass
                     self._json(200, {"ok": True, "reply": out[-8000:], "session": eff_session,
                                      **({"model": u["model"], "usage": {"in": u["in"], "out": u["out"]}}
-                                        if (u := _session_usage(eff_session)) else {})})
+                                        if (u := _session_usage(usage_lookup_id or eff_session)) else {})})
                 except subprocess.TimeoutExpired:
                     self._json(200, {"ok": False, "reply": "kepotong di "+str(effort)+"s — naikin effort (⚡) atau tanya lebih simpel"})
             except Exception as exc:
