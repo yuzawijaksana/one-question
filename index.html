@@ -174,6 +174,8 @@ img{display:block;}
   75%{content:". . .";}
   100%{content:". . .";}
 }
+.dq-queued{align-self:flex-end;padding:5px 10px;font-size:11px;color:var(--muted);
+  border:1px dashed rgba(141,141,141,.4);background:none;}
 #dqBar{display:flex;gap:8px;padding:10px;border-top:1px solid rgba(141,141,141,.3);}
 #dqBar input{
   flex:1;padding:10px 12px;background:rgba(236,236,236,.06);
@@ -472,7 +474,7 @@ input[type=range]::-webkit-slider-thumb{
 <div id="verChip">#v.…</div>
 <button id="dqBtn">daily question</button>
 <div id="dqPanel">
-  <div id="dqHead"><span class="dq-tab active" data-t="chat">chat</span><span class="dq-tab" data-t="history">history</span><button id="dqClose">✕</button></div>
+  <div id="dqHead"><span class="dq-tab active" data-t="chat">chat</span><span class="dq-tab" data-t="history">history</span><button id="dqNew" title="new chat" style="margin-left:6px;background:none;border:none;color:var(--muted);cursor:pointer;font-family:inherit;font-size:13px;">+</button><button id="dqClose">✕</button></div>
   <div id="dqLog"></div>
   <div id="dqBar">
     <input id="dqIn" placeholder="tanya apa aja…" autocomplete="off">
@@ -1902,12 +1904,28 @@ document.getElementById("dqBtn").onclick=()=>{
     document.getElementById("dqIn").focus();
   }
 };
+document.getElementById("dqNew").onclick=()=>{
+  if(dqBusy){dqPush("bot","tunggu jawaban selesai dulu ya.");return;}
+  const day=new Date().toISOString().slice(0,10);
+  const sm=dqStore();sm.meta=sm.meta||{};
+  sm.meta[day]="dq-"+day+"-"+Math.random().toString(36).slice(2,8);
+  try{localStorage.setItem(dqStoreKey,JSON.stringify(sm));}catch(e){}
+  dqDay=null;dqSetView("chat");
+  dqPush("bot","🆕 sesi baru — kontens kosong lagi.");
+};
 document.getElementById("dqClose").onclick=()=>{
   dqOpen=false;document.getElementById("dqPanel").classList.remove("open");
   document.getElementById("dqBtn").style.display="";
 };
+/* queue: ketika hermes masih mikir, pertanyaan berikutnya masuk antrian */
+const dqQueue=[];
 async function dqAsk(q){
-  if(dqBusy||!q)return;
+  if(!q)return;
+  if(dqBusy){
+    const qe=dqPush("dq-queued","⏳ queued: "+q.slice(0,40));
+    dqQueue.push({q,qe});
+    return;
+  }
   dqBusy=true;
   document.getElementById("dqSend").disabled=true;
   dqPush("you",q);dqSave("you",q);
@@ -1957,11 +1975,17 @@ async function dqAsk(q){
   clearTimeout(tm);
   document.getElementById("dqSend").disabled=false;
   dqBusy=false;
+  if(dqQueue.length){
+    const next=dqQueue.shift();
+    next.qe.textContent="▶ "+next.qe.textContent.replace("⏳ queued: ","");
+    setTimeout(()=>dqAsk(next.q),400);
+  }
 }
 document.getElementById("dqSend").onclick=()=>{
   const i=document.getElementById("dqIn");
   const q=i.value.trim();if(!q)return;
   i.value="";dqAsk(q);
+  if(dqBusy)document.getElementById("dqSend").disabled=false;
 };
 document.getElementById("dqIn").addEventListener("keydown",e=>{
   if(e.key==="Enter")document.getElementById("dqSend").click();
@@ -1970,7 +1994,7 @@ document.getElementById("dqIn").addEventListener("keydown",e=>{
 /* version chip: bottom-right — shows short version (#v1.12), tap → settings update section.
    Version scheme: APP_VER="0.115" — XXX is a running counter bumped on every feature commit; the chip falls back to
    a hash-derived pair (yy*12+month . day) when served build differs from constant. */
-const APP_VER="0.118";
+const APP_VER="0.119";
 (function(){
   const chip=document.getElementById("verChip");
   if(!chip)return;
