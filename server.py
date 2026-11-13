@@ -485,16 +485,45 @@ class Handler(SimpleHTTPRequestHandler):
                 if session:
                     cmd += ["--resume", session]
                 try:
-                    proc = subprocess.run(
-                        cmd, capture_output=True, text=True, timeout=180,
-                        input=prompt,
-                        env={**os.environ, "TERM": "dumb"},
-                        creationflags=_NO_WINDOW,
-                    )
+                    def _run(c):
+                        return subprocess.run(
+                            c, capture_output=True, text=True, timeout=180,
+                            input=prompt,
+                            env={**os.environ, "TERM": "dumb"},
+                            creationflags=_NO_WINDOW,
+                        )
+                    proc = _run(cmd)
                     out = (proc.stdout or "").strip()
+                    # rotated/new session id not known to hermes yet ("session
+                    # not found") -> drop --resume and start a fresh session
+                    if proc.returncode != 0 and "session not found" in (
+                        (proc.stderr or "") + " " + out
+                    ).lower():
+                        fresh = [c for c in cmd if c != "--resume" and c != session]
+                        proc = _run(fresh)
+                        out = (proc.stdout or "").strip()
                     if proc.returncode != 0 and not out:
                         out = (proc.stderr or "hermes failed").strip()
-                    self._json(200, {"ok": True, "reply": out[-8000:], "session": session})
+                    # when the client sent no session, the run above created a
+                    # fresh one — grab its ID so the client can resume it next turn
+                    eff_session = session
+                    if not eff_session and proc.returncode == 0 and out:
+                        try:
+                            listing = subprocess.run(
+                                ["hermes", "sessions", "list", "--json"],
+                                capture_output=True, text=True, timeout=30,
+                                env={**os.environ, "TERM": "dumb"},
+                                creationflags=_NO_WINDOW,
+                            )
+                            data = json.loads(listing.stdout or "[]")
+                            rows = data.get("sessions", data) if isinstance(data, dict) else data
+                            if rows:
+                                sid = str(rows[0].get("id", "")).strip()
+                                if sid:
+                                    eff_session = sid
+                        except Exception:
+                            pass
+                    self._json(200, {"ok": True, "reply": out[-8000:], "session": eff_session})
                 except subprocess.TimeoutExpired:
                     self._json(200, {"ok": False, "reply": "timed out (180s)"})
             except Exception as exc:
