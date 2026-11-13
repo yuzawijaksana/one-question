@@ -1894,7 +1894,8 @@ const dqStoreKey="oqDqChat";
 function dqStore(){try{return JSON.parse(localStorage.getItem(dqStoreKey)||"{}");}catch(e){return{};}}
 function dqSave(cls,txt){
   const s=dqStore();
-  const id=s.meta&&s.meta.current;
+  s.chats=s.chats||{};s.meta=s.meta||{};
+  const id=s.meta.current;
   if(!id)return;
   (s.chats[id]=s.chats[id]||[]).push({c:cls,t:txt,ts:Date.now()});
   // keep last 40 sessions
@@ -1931,7 +1932,7 @@ function dqOpenSession(id){
   back.type="button";back.className="dq-back";back.textContent="← kembali ke daftar";
   back.onclick=()=>{dqView="history";dqRestore();};
   log.append(back);
-  for(const m of (dqStore().chats[id]||[]))dqPush(m.c==="you"?"you":"bot",m.t);
+  const st=dqStore();for(const m of ((st.chats||{})[id]||[]))dqPush(m.c==="you"?"you":"bot",m.t);
   document.getElementById("dqIn").focus();
 }
 function dqSetView(v){
