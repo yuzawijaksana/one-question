@@ -2077,7 +2077,7 @@ const tm=dqSecs>0?setTimeout(()=>ac.abort(),Math.max(dqSecs+5,110)*1000):null;
   }
   const doFetch=(url,eff)=>fetch(url,{method:"POST",signal:ac.signal,
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({prompt:q,session:sess,effort:eff||dqSecs})});
+      body:JSON.stringify({prompt:q,session:sess,effort:eff||dqEffort})});
   try{
     let r;
     try{r=await doFetch(apiURL("/hermes"));}
