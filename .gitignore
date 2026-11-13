@@ -2,3 +2,4 @@
 one-question-state.json
 one-question-state-shared.json
 settings export/one-question-backup-latest.json
+__pycache__/
