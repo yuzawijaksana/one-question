@@ -131,13 +131,24 @@ img{display:block;}
 }
 #dqBtn:active{color:var(--fg);}
 #dqPanel{
-  position:fixed;bottom:56px;right:18px;z-index:87;display:none;
+  position:fixed;z-index:87;display:none;
   width:min(360px,calc(100vw - 36px));height:min(480px,60vh);
   background:rgba(10,10,10,.96);border:1px solid rgba(141,141,141,.5);
-  flex-direction:column;
+  flex-direction:column;overflow:hidden;min-width:280px;min-height:220px;max-width:96vw;max-height:96vh;
 }
 #dqPanel.open{display:flex;}
+/* grip resize custom: 8 sisi — 4 pojok + 4 tengah sisi */
+.dq-rs{position:absolute;z-index:5;touch-action:none;}
+.dq-rs.n{left:8px;right:8px;top:-3px;height:7px;cursor:ns-resize;}
+.dq-rs.s{left:8px;right:8px;bottom:-3px;height:7px;cursor:ns-resize;}
+.dq-rs.e{top:8px;bottom:8px;right:-3px;width:7px;cursor:ew-resize;}
+.dq-rs.w{top:8px;bottom:8px;left:-3px;width:7px;cursor:ew-resize;}
+.dq-rs.se{right:-3px;bottom:-3px;width:16px;height:16px;cursor:nwse-resize;}
+.dq-rs.sw{left:-3px;bottom:-3px;width:16px;height:16px;cursor:nesw-resize;}
+.dq-rs.nw{left:-3px;top:-3px;width:16px;height:16px;cursor:nwse-resize;}
+.dq-rs.ne{right:-3px;top:-3px;width:16px;height:16px;cursor:nesw-resize;}
 #dqHead{
+  cursor:move;user-select:none;touch-action:none;
   display:flex;align-items:center;padding:10px 14px;
   border-bottom:1px solid rgba(141,141,141,.3);
   font-size:13px;color:var(--fg);
@@ -165,6 +176,7 @@ img{display:block;}
   border:1px solid rgba(245,197,66,.22);border-left:2px solid var(--gold);color:var(--fg);}
 .dq-msg.think{color:var(--muted);font-style:italic;}
 .dq-msg .dq-cd{color:var(--muted);font-size:11px;margin-left:4px;}
+.dq-msg .dq-meta{color:var(--muted);font-size:10px;margin-top:6px;opacity:.75;}
 .dq-msg.think .dots::after{
   content:"";animation:dqdots 1.2s steps(4,end) infinite;
 }
@@ -504,6 +516,8 @@ input[type=range]::-webkit-slider-thumb{
 <div id="verChip">#v.…</div>
 <button id="dqBtn" title="ask a question" style="padding:10px 12px;font-size:15px;">💬</button>
 <div id="dqPanel">
+  <div class="dq-rs n"></div><div class="dq-rs s"></div><div class="dq-rs e"></div><div class="dq-rs w"></div>
+  <div class="dq-rs nw"></div><div class="dq-rs sw"></div><div class="dq-rs se"></div><div class="dq-rs ne"></div>
   <div id="dqHead"><span class="dq-tab active" data-t="chat">chat</span><span class="dq-tab" data-t="history">history</span><button id="dqClose">✕</button></div>
   <div id="dqLog"></div>
   <div id="dqBar" style="position:relative;">
@@ -1903,7 +1917,7 @@ try{const sv=localStorage.getItem("oqDqEffort");if(DQ_EFFORTS.some(e=>e.id===sv)
 })();
 
 /* daily question: CS-style hermes chat (persisted per-day in localStorage) */
-let dqBusy=false,dqOpen=false,dqView="chat",dqDay=null;
+let dqBusy=false,dqOpen=false,dqView="chat",dqDay=null,dqSessionId=null;
 const dqStoreKey="oqDqChat";
 function dqStore(){try{return JSON.parse(localStorage.getItem(dqStoreKey)||"{}");}catch(e){return{};}}
 function dqSave(cls,txt){
@@ -1980,11 +1994,90 @@ function dqPush(cls,txt){
   log.append(el);log.scrollTop=log.scrollHeight;
   return el;
 }
+/* chatbox window ala Windows: drag dari header, resize dari pojok, posisi+ukuran disimpan */
+(function(){
+  const panel=document.getElementById("dqPanel");
+  const head=document.getElementById("dqHead");
+  let saved={};
+  try{saved=JSON.parse(localStorage.getItem("oqDqWin")||"{}");}catch(e){}
+  if(saved.w)panel.style.width=saved.w+"px";
+  if(saved.h)panel.style.height=saved.h+"px";
+  if(saved.x!=null){
+    panel.style.left=saved.x+"px";panel.style.top=saved.y+"px";
+  }
+  function placeDefault(){
+    // posisi awal: kanan-bawah (dipanggil pas panel udah visible biar size-nya bener)
+    panel.style.left=Math.max(8,window.innerWidth-panel.offsetWidth-18)+"px";
+    panel.style.top=Math.max(8,window.innerHeight-panel.offsetHeight-56)+"px";
+  }
+  function clampPos(){
+    panel.style.left=Math.max(8,Math.min(window.innerWidth-panel.offsetWidth-8,parseFloat(panel.style.left)||8))+"px";
+    panel.style.top=Math.max(8,Math.min(window.innerHeight-panel.offsetHeight-8,parseFloat(panel.style.top)||8))+"px";
+  }
+  function persist(){
+    try{localStorage.setItem("oqDqWin",JSON.stringify({
+      w:panel.offsetWidth,h:panel.offsetHeight,
+      x:parseFloat(panel.style.left)||0,y:parseFloat(panel.style.top)||0}));}catch(e){}
+  }
+  // drag pakai pointer events (jalan di mouse + touch), hook dari head kecuali tombol/tab
+  let drag=null;
+  head.addEventListener("pointerdown",e=>{
+    if(e.target.closest("button,.dq-tab"))return;
+    drag={dx:e.clientX-parseFloat(panel.style.left||0),dy:e.clientY-parseFloat(panel.style.top||0)};
+    head.setPointerCapture(e.pointerId);e.preventDefault();
+  });
+  head.addEventListener("pointermove",e=>{
+    if(!drag)return;
+    panel.style.left=(e.clientX-drag.dx)+"px";
+    panel.style.top=(e.clientY-drag.dy)+"px";
+    clampPos();
+  });
+  const endDrag=()=>{if(drag){drag=null;persist();}};
+  head.addEventListener("pointerup",endDrag);
+  head.addEventListener("pointercancel",endDrag);
+  // resize custom dari 8 sisi: 4 pojok + 4 tengah
+  document.querySelectorAll(".dq-rs").forEach(g=>{
+    let rs=null;
+    g.addEventListener("pointerdown",e=>{
+      rs={id:e.pointerId,cx:e.clientX,cy:e.clientY,w:panel.offsetWidth,h:panel.offsetHeight,
+          l:parseFloat(panel.style.left)||panel.offsetLeft,t:parseFloat(panel.style.top)||panel.offsetTop,
+          dir:g.classList.contains("se")?"se":g.classList.contains("sw")?"sw":
+             g.classList.contains("nw")?"nw":g.classList.contains("ne")?"ne":
+             g.classList.contains("n")?"n":g.classList.contains("s")?"s":
+             g.classList.contains("e")?"e":"w"};
+      g.setPointerCapture(e.pointerId);e.preventDefault();
+    });
+    g.addEventListener("pointermove",e=>{
+      if(!rs)return;
+      const dx=e.clientX-rs.cx,dy=e.clientY-rs.cy,
+            minW=280,minH=220,maxW=Math.min(window.innerWidth-16,Math.round(window.innerWidth*.96)),
+            maxH=Math.min(window.innerHeight-16,Math.round(window.innerHeight*.96));
+      let nw=rs.w,nh=rs.h,nl=rs.l,nt=rs.t;
+      if(rs.dir.includes("e"))nw=Math.min(maxW,Math.max(minW,rs.w+dx));
+      if(rs.dir.includes("s"))nh=Math.min(maxH,Math.max(minH,rs.h+dy));
+      if(rs.dir.includes("w")){nw=Math.min(maxW,Math.max(minW,rs.w-dx));nl=rs.l+rs.w-nw;}
+      if(rs.dir.includes("n")){nh=Math.min(maxH,Math.max(minH,rs.h-dy));nt=rs.t+rs.h-nh;}
+      panel.style.left=nl+"px";panel.style.top=nt+"px";
+      panel.style.width=nw+"px";panel.style.height=nh+"px";
+      clampPos();
+    });
+    const end=()=>{if(rs){rs=null;persist();}};
+    g.addEventListener("pointerup",end);
+    g.addEventListener("pointercancel",end);
+  });
+  window.addEventListener("resize",clampPos);
+})();
 document.getElementById("dqBtn").onclick=()=>{
   dqOpen=!dqOpen;
   document.getElementById("dqPanel").classList.toggle("open",dqOpen);
   document.getElementById("dqBtn").style.display=dqOpen?"none":"";
   if(dqOpen){
+    const p=document.getElementById("dqPanel");
+    if(!p.style.left){/* first open: taruh kanan-bawah */
+      p.style.left=Math.max(8,window.innerWidth-p.offsetWidth-18)+"px";
+      p.style.top=Math.max(8,window.innerHeight-p.offsetHeight-56)+"px";
+    }
+    clampPos();/* layar beda (rotate/ganti device): panel jangan nyangkut di luar layar */
     if(dqView==="chat"&&!document.getElementById("dqLog").children.length)
       dqPush("bot","halo 👋 tanya apa aja — ini hermes di vps.");
     document.getElementById("dqIn").focus();
@@ -2033,6 +2126,7 @@ document.getElementById("dqClose").onclick=()=>{
   dqOpen=false;document.getElementById("dqPanel").classList.remove("open");
   document.getElementById("dqBtn").style.display="";
 };
+function fmtTok(n){n=+n||0;return n>=1000?(n/1000).toFixed(1).replace(/\.0$/,"")+"k":String(n);}
 /* queue: ketika hermes masih mikir, pertanyaan berikutnya masuk antrian */
 const dqQueue=[];
 async function dqAsk(q){
@@ -2130,6 +2224,9 @@ const tm=dqSecs>0?setTimeout(()=>ac.abort(),Math.max(dqSecs+5,110)*1000):null;
     }
     if(th._cd)clearInterval(th._cd);
     th.innerHTML=dqFmt(reply);
+    if(d.model&&dqEffort!=="flash"){const m=document.createElement("div");m.className="dq-meta";
+      m.textContent="🤖 "+d.model+" · in "+fmtTok((d.usage||{}).in)+" / out "+fmtTok((d.usage||{}).out)+" tok";
+      th.append(m);}
     if(dqView!=="chat"||dqDay){dqSetView("chat");const l=document.getElementById("dqLog");l.append(th);l.scrollTop=l.scrollHeight;}
     else th.classList.remove("think");
     dqSave("bot",reply);

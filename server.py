@@ -72,6 +72,28 @@ def load_state():
         return {"version": 1, "keys": {}}
 
 
+def _session_usage(session_id):
+    """Read token usage + model for a hermes session from state.db.
+    Returns {'model','in','out'} or None. Read-only, best-effort."""
+    try:
+        import sqlite3
+        db_path = Path.home() / ".hermes" / "state.db"
+        if not db_path.exists():
+            return None
+        con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, timeout=3)
+        try:
+            row = con.execute(
+                "select model, input_tokens, output_tokens from sessions where id=?",
+                (session_id,)).fetchone()
+        finally:
+            con.close()
+        if not row or not row[0]:
+            return None
+        return {"model": row[0], "in": row[1] or 0, "out": row[2] or 0}
+    except Exception:
+        return None
+
+
 def schedule_is_downgrade(new, old):
     """Guard: a blank or junk schedule never wipes a real, richer one.
     Junk signature seen in the wild: an empty list, or a handful of generic
@@ -518,8 +540,13 @@ class Handler(SimpleHTTPRequestHandler):
                                 out = json.loads(resp.read().decode())
                             text = (out.get("choices") or [{}])[0].get("message", {}).get("content", "")
                             if text:
+                                usage = out.get("usage") or {}
                                 self._json(200, {"ok": True, "reply": text.strip()[-1000:],
-                                                 "session": "flash"})
+                                                 "session": "flash",
+                                                 "model": "glm-5.3-flash",
+                                                 "usage": {"in": usage.get("prompt_tokens", 0),
+                                                           "out": usage.get("completion_tokens", 0),
+                                                           "total": usage.get("total_tokens", 0)}})
                                 return
                         # no key or empty answer -> fall through to hermes
                     except Exception as flash_exc:
@@ -592,7 +619,9 @@ class Handler(SimpleHTTPRequestHandler):
                                     eff_session = sid
                         except Exception:
                             pass
-                    self._json(200, {"ok": True, "reply": out[-8000:], "session": eff_session})
+                    self._json(200, {"ok": True, "reply": out[-8000:], "session": eff_session,
+                                     **({"model": u["model"], "usage": {"in": u["in"], "out": u["out"]}}
+                                        if (u := _session_usage(eff_session)) else {})})
                 except subprocess.TimeoutExpired:
                     self._json(200, {"ok": False, "reply": "kepotong di "+str(effort)+"s — naikin effort (⚡) atau tanya lebih simpel"})
             except Exception as exc:
