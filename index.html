@@ -204,8 +204,10 @@ img{display:block;}
   border:1px dashed rgba(141,141,141,.4);}
 .dq-queued{align-self:flex-end;padding:5px 10px;font-size:11px;color:var(--muted);
   border:1px dashed rgba(141,141,141,.4);background:none;}
-#dqBar{display:flex;gap:6px;padding:10px;border-top:1px solid rgba(141,141,141,.3);flex-wrap:wrap;}
-#dqBar #dqIn{flex:1;min-width:100px;}
+#dqBar{display:flex;gap:5px;padding:8px;border-top:1px solid rgba(141,141,141,.3);}
+#dqBar #dqIn{flex:1;min-width:60px;padding:8px 10px !important;font-size:12.5px;}
+#dqBar button{padding:8px 9px !important;font-size:12px !important;}
+#dqEffort{font-size:11px !important;}
 #dqBar input{
   flex:1;padding:10px 12px;background:rgba(236,236,236,.06);
   border:1px solid var(--line);color:var(--fg);font-size:13px;
@@ -511,7 +513,7 @@ input[type=range]::-webkit-slider-thumb{
     <input id="dqIn" placeholder="tanya apa aja…" autocomplete="off">
     <button id="dqAttach" title="attach file" style="background:none;border:1px solid var(--line);color:var(--muted);cursor:pointer;font-family:inherit;padding:10px 12px;font-size:13px;">↑</button>
     <input id="dqFile" type="file" accept=".txt,.md,.json,.csv,.js,.py,.html,.css,.log,.owl,.yml,.yaml,.xml,.pdf,image/*" style="display:none;" multiple>
-    <button id="dqSend">send</button>
+    <button id="dqSend">➤</button>
   </div>
   <div id="dqFiles" style="display:none;padding:0 10px 6px;display:flex;gap:6px;flex-wrap:wrap;"></div>
 </div>
