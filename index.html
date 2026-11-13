@@ -122,6 +122,53 @@ img{display:block;}
 }
 #updPill .upd-btn:active{color:var(--fg);}
 @media(max-width:899px){#updPill{display:none !important;}}
+/* daily question: CS-style chat button + panel, bottom-right */
+#dqBtn{
+  position:fixed;bottom:56px;right:18px;z-index:86;
+  padding:10px 14px;background:rgba(10,10,10,.92);
+  border:1px solid rgba(141,141,141,.5);color:var(--accent);
+  font-size:12.5px;cursor:pointer;font-family:inherit;
+}
+#dqBtn:active{color:var(--fg);}
+#dqPanel{
+  position:fixed;bottom:56px;right:18px;z-index:87;display:none;
+  width:min(360px,calc(100vw - 36px));height:min(480px,60vh);
+  background:rgba(10,10,10,.96);border:1px solid rgba(141,141,141,.5);
+  flex-direction:column;
+}
+#dqPanel.open{display:flex;}
+#dqHead{
+  display:flex;align-items:center;padding:10px 14px;
+  border-bottom:1px solid rgba(141,141,141,.3);
+  font-size:13px;color:var(--fg);
+}
+#dqClose{margin-left:auto;background:none;border:none;color:var(--muted);
+  font-size:14px;cursor:pointer;font-family:inherit;}
+#dqLog{
+  flex:1;overflow-y:auto;scrollbar-width:none;padding:12px;
+  display:flex;flex-direction:column;gap:8px;
+}
+#dqLog::-webkit-scrollbar{display:none;}
+.dq-msg{padding:8px 12px;font-size:13px;line-height:1.65;max-width:88%;
+  white-space:pre-wrap;word-break:break-word;text-align:left;}
+.dq-msg.you{align-self:flex-end;background:rgba(236,236,236,.08);
+  border:1px solid var(--line);color:var(--fg);}
+.dq-msg.bot{align-self:flex-start;background:rgba(141,141,141,.1);
+  border:1px solid rgba(141,141,141,.35);color:var(--fg);}
+.dq-msg.think{color:var(--muted);font-style:italic;}
+#dqBar{display:flex;gap:8px;padding:10px;border-top:1px solid rgba(141,141,141,.3);}
+#dqBar input{
+  flex:1;padding:10px 12px;background:rgba(236,236,236,.06);
+  border:1px solid var(--line);color:var(--fg);font-size:13px;
+  font-family:inherit;outline:none;
+}
+#dqBar input:focus{border-color:rgba(141,141,141,.7);}
+#dqBar button{
+  padding:10px 14px;background:rgba(141,141,141,.2);
+  border:1px solid rgba(141,141,141,.5);color:var(--accent);
+  font-size:12px;cursor:pointer;font-family:inherit;
+}
+#dqBar button:disabled{opacity:.5;}
 /* version chip: bottom-right, tap opens settings update section */
 #verChip{
   position:fixed;bottom:18px;right:18px;z-index:84;
@@ -405,6 +452,15 @@ input[type=range]::-webkit-slider-thumb{
 <div id="flash"></div>
 <div id="syncpill"><span class="syncdot bad" id="syncDot"></span><span id="syncTxt">connecting…</span></div>
 <div id="verChip">#v.…</div>
+<button id="dqBtn">daily question</button>
+<div id="dqPanel">
+  <div id="dqHead"><span>daily question</span><button id="dqClose">✕</button></div>
+  <div id="dqLog"></div>
+  <div id="dqBar">
+    <input id="dqIn" placeholder="tanya apa aja…" autocomplete="off">
+    <button id="dqSend">send</button>
+  </div>
+</div>
 <div id="offPill">
   <span class="off-dot"></span>
   <span>you're offline</span>
@@ -1757,10 +1813,60 @@ async function ensureSholat(){
   }
 }
 
+/* daily question: CS-style hermes chat (ephemeral, not synced) */
+let dqBusy=false,dqOpen=false;
+function dqPush(cls,txt){
+  const log=document.getElementById("dqLog");
+  const el=document.createElement("div");
+  el.className="dq-msg "+cls;el.textContent=txt;
+  log.append(el);log.scrollTop=log.scrollHeight;
+  return el;
+}
+document.getElementById("dqBtn").onclick=()=>{
+  dqOpen=!dqOpen;
+  document.getElementById("dqPanel").classList.toggle("open",dqOpen);
+  document.getElementById("dqBtn").style.display=dqOpen?"none":"";
+  if(dqOpen){
+    if(!document.getElementById("dqLog").children.length)
+      dqPush("bot","halo 👋 tanya apa aja — ini hermes di vps.");
+    document.getElementById("dqIn").focus();
+  }
+};
+document.getElementById("dqClose").onclick=()=>{
+  dqOpen=false;document.getElementById("dqPanel").classList.remove("open");
+  document.getElementById("dqBtn").style.display="";
+};
+async function dqAsk(q){
+  if(dqBusy||!q)return;
+  dqBusy=true;
+  document.getElementById("dqSend").disabled=true;
+  dqPush("you",q);
+  const th=dqPush("think","…");
+  try{
+    const r=await fetch(apiURL("/hermes"),{method:"POST",
+      headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt:q})});
+    const d=await r.json();
+    th.textContent=d.reply||d.error||"(no reply)";
+    th.classList.remove("think");
+  }catch(e){
+    th.textContent="offline — coba lagi nanti";th.classList.remove("think");
+  }
+  document.getElementById("dqSend").disabled=false;
+  dqBusy=false;
+}
+document.getElementById("dqSend").onclick=()=>{
+  const i=document.getElementById("dqIn");
+  const q=i.value.trim();if(!q)return;
+  i.value="";dqAsk(q);
+};
+document.getElementById("dqIn").addEventListener("keydown",e=>{
+  if(e.key==="Enter")document.getElementById("dqSend").click();
+});
+
 /* version chip: bottom-right — shows short version (#v1.12), tap → settings update section.
    Version scheme: APP_VER="0.115" — XXX is a running counter bumped on every feature commit; the chip falls back to
    a hash-derived pair (yy*12+month . day) when served build differs from constant. */
-const APP_VER="0.115";
+const APP_VER="0.116";
 (function(){
   const chip=document.getElementById("verChip");
   if(!chip)return;
