@@ -6,6 +6,7 @@ import re
 import shutil
 import subprocess
 import threading
+import queue
 import time
 
 # on Windows, run git (and any subprocess) without flashing a console window
@@ -136,11 +137,27 @@ def book_is_empty(value):
     return True
 
 
+# SSE subscribers: one queue per connected client; a tick is pushed on state writes
+SSE_CLIENTS = set()
+SSE_LOCK = threading.Lock()
+
+
+def sse_broadcast(event="state"):
+    with SSE_LOCK:
+        queues = list(SSE_CLIENTS)
+    for q in queues:
+        try:
+            q.put_nowait(event)
+        except Exception:
+            pass
+
+
 def save_state(state):
     tmp = STATE_FILE.with_suffix(".tmp")
     tmp.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
     os.replace(tmp, STATE_FILE)
     export_snapshot()
+    sse_broadcast()
 
 
 def export_snapshot():
@@ -379,6 +396,34 @@ class Handler(SimpleHTTPRequestHandler):
         return self.headers.get("Authorization", "") == expected
 
     def do_GET(self):
+        if self.path == "/api/events":
+            if not self._authorized():
+                self._json(401, {"error": "unauthorized"})
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream")
+            self.send_header("Cache-Control", "no-cache")
+            self.send_header("Connection", "keep-alive")
+            self.end_headers()
+            q = queue.Queue()
+            with SSE_LOCK:
+                SSE_CLIENTS.add(q)
+            try:
+                self.wfile.write(b": connected\n\n")
+                self.wfile.flush()
+                while True:
+                    try:
+                        q.get(timeout=15)
+                        self.wfile.write(b"data: state\n\n")
+                    except queue.Empty:
+                        self.wfile.write(b": ping\n\n")
+                    self.wfile.flush()
+            except Exception:
+                pass
+            finally:
+                with SSE_LOCK:
+                    SSE_CLIENTS.discard(q)
+            return
         if self.path == "/api/state":
             if not self._authorized():
                 self._json(401, {"error": "unauthorized"})

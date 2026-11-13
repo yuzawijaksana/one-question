@@ -2550,6 +2550,18 @@ API_BASE=IS_LOCAL?"api":"/one/api";
   ensureSholat();
 })();
 setInterval(pull,30000);
+/* live updates: server pushes a tick on every state write (SSE) — edits from
+   any device appear instantly, no page reload. renderAll only touches data
+   views, so open dialogs/chat survive. Poll stays as fallback. */
+let sseDebounce=null;
+try{
+  const es=new EventSource(apiURL("/events"));
+  es.onmessage=()=>{
+    clearTimeout(sseDebounce);
+    sseDebounce=setTimeout(pull,150);
+  };
+  es.onerror=()=>{/* EventSource auto-reconnects; poll covers gaps */};
+}catch(e){}
 setInterval(ensureSholat,600000);
 </script>
 </body>
