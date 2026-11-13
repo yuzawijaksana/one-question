@@ -779,7 +779,7 @@ input[type=range]::-webkit-slider-thumb{
 <script>
 "use strict";
 
-const APP_VER="0.151";
+const APP_VER="0.152";
 /* ═══════════════ owl web — one file, no build step ═══════════════
    reads/writes the same /api/state as the phone widget + old web app */
 
@@ -1920,12 +1920,14 @@ try{const sv=localStorage.getItem("oqDqEffort");if(DQ_EFFORTS.some(e=>e.id===sv)
 let dqBusy=false,dqOpen=false,dqView="chat",dqDay=null,dqSessionId=null;
 const dqStoreKey="oqDqChat";
 function dqStore(){try{return JSON.parse(localStorage.getItem(dqStoreKey)||"{}");}catch(e){return{};}}
-function dqSave(cls,txt){
+function dqSave(cls,txt,meta){
   const s=dqStore();
   s.chats=s.chats||{};s.meta=s.meta||{};
   const id=s.meta.current;
   if(!id)return;
-  (s.chats[id]=s.chats[id]||[]).push({c:cls,t:txt,ts:Date.now()});
+  const m={c:cls,t:txt,ts:Date.now()};
+  if(meta)m.meta=meta;
+  s.chats[id].push(m);
   // keep last 40 sessions
   const ids=Object.keys(s.chats||{}).sort((a,b)=>(s.chats[b][0]?.ts||0)-(s.chats[a][0]?.ts||0));
   while(ids.length>40){const old=ids.pop();delete s.chats[old];if(s.meta.titles)delete s.meta.titles[old];}
@@ -1960,7 +1962,16 @@ function dqOpenSession(id){
   back.type="button";back.className="dq-back";back.textContent="← kembali ke daftar";
   back.onclick=()=>{dqView="history";dqRestore();};
   log.append(back);
-  const st=dqStore();for(const m of ((st.chats||{})[id]||[]))dqPush(m.c==="you"?"you":"bot",m.t);
+  const st=dqStore();
+  for(const m of ((st.chats||{})[id]||[])){
+    const el=dqPush(m.c==="you"?"you":"bot",m.t);
+    if(m.meta&&m.meta.model&&m.c==="bot"){
+      const tag=document.createElement("div");tag.className="dq-meta";
+      tag.textContent=(m.meta.session==="flash"?"⚡ flash":"🤖 "+m.meta.model)
+        +" · ↑"+fmtTok((m.meta.usage||{}).in)+"　↓"+fmtTok((m.meta.usage||{}).out)+" tok";
+      el.append(tag);
+    }
+  }
   document.getElementById("dqIn").focus();
 }
 function dqSetView(v){
@@ -1974,7 +1985,15 @@ function dqSetView(v){
     const log=document.getElementById("dqLog");
     log.innerHTML="";
     if(id&&s.chats&&s.chats[id]){
-      for(const m of s.chats[id])dqPush(m.c==="you"?"you":"bot",m.t);
+      for(const m of s.chats[id]){
+        const el=dqPush(m.c==="you"?"you":"bot",m.t);
+        if(m.meta&&m.meta.model&&m.c==="bot"){
+          const tag=document.createElement("div");tag.className="dq-meta";
+          tag.textContent=(m.meta.session==="flash"?"⚡ flash":"🤖 "+m.meta.model)
+            +" · ↑"+fmtTok((m.meta.usage||{}).in)+"　↓"+fmtTok((m.meta.usage||{}).out)+" tok";
+          el.append(tag);
+        }
+      }
     }else{
       dqPush("bot","halo 👋 tanya apa aja — ini hermes di vps.");
     }
@@ -2229,7 +2248,8 @@ const tm=dqSecs>0?setTimeout(()=>ac.abort(),Math.max(dqSecs+5,110)*1000):null;
       th.append(m);}
     if(dqView!=="chat"||dqDay){dqSetView("chat");const l=document.getElementById("dqLog");l.append(th);l.scrollTop=l.scrollHeight;}
     else th.classList.remove("think");
-    dqSave("bot",reply);
+    dqSave("bot",reply,{model:d.model||null,session:d.session,
+      usage:{in:(d.usage||{}).in||0,out:(d.usage||{}).out||0}});
     if(choices&&choices.length){
       const l=document.getElementById("dqLog");
       for(const c of choices){
