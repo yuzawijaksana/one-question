@@ -762,7 +762,7 @@ input[type=range]::-webkit-slider-thumb{
 <script>
 "use strict";
 
-const APP_VER="0.137";
+const APP_VER="0.138";
 /* ═══════════════ owl web — one file, no build step ═══════════════
    reads/writes the same /api/state as the phone widget + old web app */
 
@@ -2276,11 +2276,21 @@ async function openUpdateLog(){
       const k=c.date||"no date";
       (groups[k]=groups[k]||[]).push(c);
     });
+    // friendly version labels: prefer "(#vX.XXX)" in the commit subject;
+    // fallback: count entries from oldest to newest ending at current APP_VER
+    const flat=[];
+    for(const its of Object.values(groups))for(const it of its)flat.push(it);
+    const base=parseInt(APP_VER.split(".")[1],10)||0;
+    const verOf={};
+    flat.forEach((it,i)=>{
+      const m=/(?:#v)([0-9]+\.[0-9]+)/.exec(it.subject||"");
+      verOf[it.hash]=m?("v"+m[1]):"#v0."+(base-(flat.length-1-i));
+    });
     let h="";
     for(const[date,items]of Object.entries(groups)){
       h+=`<div style="margin-top:12px;"><div style="display:flex;align-items:baseline;gap:8px;">
         <span class="dl-date acc">${date.split(" ")[0]}</span><span class="t-label">${date.split(" ").slice(1).join(" ")}</span></div>`;
-      for(const it of items)h+=`<div class="row"><span class="grow" style="font-size:13.5px;">${esc(it.subject)}</span><span class="t-small">${esc(it.hash)}</span></div>`;
+      for(const it of items)h+=`<div class="row"><span class="grow" style="font-size:13.5px;">${esc(it.subject)}</span><span class="t-small">${esc(verOf[it.hash]||it.hash)}</span></div>`;
       h+="</div>";
     }
     modal(`<h3>update log</h3>${h||'<div class="t-label">no entries</div>'}
