@@ -486,10 +486,10 @@ input[type=range]::-webkit-slider-thumb{
   <div id="dqHead"><span class="dq-tab active" data-t="chat">chat</span><span class="dq-tab" data-t="history">history</span><button id="dqClose">✕</button></div>
   <div id="dqLog"></div>
   <div id="dqBar">
+    <button id="dqNew" title="new chat" style="background:none;border:1px solid var(--line);color:var(--muted);cursor:pointer;font-family:inherit;padding:10px 12px;font-size:15px;">+</button>
+    <input id="dqIn" placeholder="tanya apa aja…" autocomplete="off">
     <button id="dqAttach" title="attach file" style="background:none;border:1px solid var(--line);color:var(--muted);cursor:pointer;font-family:inherit;padding:10px 12px;font-size:13px;">📎</button>
     <input id="dqFile" type="file" accept=".txt,.md,.json,.csv,.js,.py,.html,.css,.log,.owl,.yml,.yaml,.xml,.pdf,image/*" style="display:none;" multiple>
-    <input id="dqIn" placeholder="tanya apa aja…" autocomplete="off">
-    <button id="dqNew" title="new chat" style="background:none;border:1px solid var(--line);color:var(--muted);cursor:pointer;font-family:inherit;padding:10px 12px;font-size:15px;">+</button>
     <button id="dqSend">send</button>
   </div>
   <div id="dqFiles" style="display:none;padding:0 10px 6px;display:flex;gap:6px;flex-wrap:wrap;"></div>
@@ -2048,7 +2048,7 @@ document.getElementById("dqIn").addEventListener("keydown",e=>{
 /* version chip: bottom-right — shows short version (#v1.12), tap → settings update section.
    Version scheme: APP_VER="0.115" — XXX is a running counter bumped on every feature commit; the chip falls back to
    a hash-derived pair (yy*12+month . day) when served build differs from constant. */
-const APP_VER="0.120";
+const APP_VER="0.121";
 (function(){
   const chip=document.getElementById("verChip");
   if(!chip)return;
