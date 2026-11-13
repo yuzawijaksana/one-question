@@ -761,6 +761,8 @@ input[type=range]::-webkit-slider-thumb{
 
 <script>
 "use strict";
+
+const APP_VER="0.137";
 /* ═══════════════ owl web — one file, no build step ═══════════════
    reads/writes the same /api/state as the phone widget + old web app */
 
@@ -1693,7 +1695,7 @@ function loadSet(){
   });
   // update status row
   fetch(apiURL("/update/status"),{cache:"no-store"}).then(r=>r.json()).then(d=>{
-    $("setCheckUpdVal").textContent=d.ok?(d.behind>0?d.behind+" behind":"page "+PAGE_BUILD+" · server "+(d.version||d.current||"")):"offline";
+    $("setCheckUpdVal").textContent=d.ok?(d.behind>0?d.behind+" behind":"page #v"+APP_VER+" · server #v"+APP_VER):"offline";
   }).catch(()=>{$("setCheckUpdVal").textContent="offline";});
   $("setSections").onclick=e=>{
     const b=e.target.closest("[data-sec]");if(!b)return;
@@ -2158,7 +2160,6 @@ document.getElementById("dqIn").addEventListener("keydown",e=>{
 /* version chip: bottom-right — shows short version (#v1.12), tap → settings update section.
    Version scheme: APP_VER="0.XXX" — XXX is a running counter bumped on every feature commit; the chip falls back to
    a hash-derived pair (yy*12+month . day) when served build differs from constant. */
-const APP_VER="0.136";
 (function(){
   const chip=document.getElementById("verChip");
   if(!chip)return;
@@ -2300,7 +2301,7 @@ $("setCheckUpd").addEventListener("click",async()=>{
       try{
         const r=await fetch(apiURL("/update"),{method:"POST"});
         const d2=await r.json();
-        val.textContent=d2.ok?"✓ updated · "+(d2.version||d2.current||""):"✕ "+(d2.error||"failed");
+        val.textContent=d2.ok?"✓ updated · #v"+APP_VER:"✕ "+(d2.error||"failed");
         val.style.color="";
         if(d2.ok)location.reload();
       }catch(e2){val.textContent="offline";val.style.color="";}
@@ -2310,7 +2311,7 @@ $("setCheckUpd").addEventListener("click",async()=>{
       val.style.color="var(--accent)";val.style.cursor="pointer";
       val.onclick=updNow;
     }else{
-      val.textContent="up to date · page "+PAGE_BUILD+" · server "+(d.version||d.current||"");
+      val.textContent="up to date · page #v"+APP_VER+" · server #v"+APP_VER;
       val.onclick=null;
     }
   }catch(e){
@@ -2324,7 +2325,7 @@ $("setCheckUpd").addEventListener("click",async()=>{
       try{
         const r=await fetch(apiURL("/update"),{method:"POST"});
         const d=await r.json();
-        val.textContent=d.ok?"✓ pulled · "+(d.version||d.current||""):"✕ "+(d.error||"failed");
+        val.textContent=d.ok?"✓ pulled · #v"+APP_VER:"✕ "+(d.error||"failed");
         val.style.color="";
         if(d.ok)location.reload();
       }catch(e2){
