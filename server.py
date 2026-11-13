@@ -266,6 +266,7 @@ def self_update_from_git():
         _git(["reset", "--hard", "origin/main"])
         after = _git(["rev-parse", "--short", "HEAD"])
         commits = _git(["rev-list", "--count", f"{before}..{after}"]) or "0"
+        sse_broadcast("version")
         return {"ok": True, "before": before, "after": after, "commits": commits,
                 "updated": before != after, "backup": str(backup_dir)}
     finally:
@@ -413,8 +414,8 @@ class Handler(SimpleHTTPRequestHandler):
                 self.wfile.flush()
                 while True:
                     try:
-                        q.get(timeout=15)
-                        self.wfile.write(b"data: state\n\n")
+                        evt = q.get(timeout=15)
+                        self.wfile.write(("data: "+evt+"\n\n").encode())
                     except queue.Empty:
                         self.wfile.write(b": ping\n\n")
                     self.wfile.flush()

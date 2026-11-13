@@ -238,6 +238,15 @@ img{display:block;}
   font-size:12px;cursor:pointer;font-family:inherit;
 }
 #dqBar button:disabled{opacity:.5;}
+/* new-build toast: bottom-center, tap reloads */
+#newBuild{
+  position:fixed;bottom:96px;left:50%;transform:translateX(-50%);z-index:88;display:none;
+  padding:10px 16px;background:rgba(10,10,10,.95);cursor:pointer;
+  border:1px solid rgba(141,141,141,.5);color:var(--accent);font-size:12.5px;
+}
+#newBuild.show{display:block;}
+document.getElementById("newBuild").onclick=()=>location.reload();
+
 /* version chip: bottom-right, tap opens settings update section */
 #verChip{
   position:fixed;bottom:18px;right:18px;z-index:84;
@@ -520,6 +529,7 @@ input[type=range]::-webkit-slider-thumb{
 <div id="flash"></div>
 <div id="syncpill"><span class="syncdot bad" id="syncDot"></span><span id="syncTxt">connecting…</span></div>
 <div id="verChip">#v.…</div>
+<div id="newBuild">build baru — tap buat refresh</div>
 <button id="dqBtn" title="ask a question" style="padding:10px 12px;font-size:15px;">💬</button>
 <div id="dqPanel">
   <div class="dq-rs n"></div><div class="dq-rs s"></div><div class="dq-rs e"></div><div class="dq-rs w"></div>
@@ -2556,7 +2566,11 @@ setInterval(pull,30000);
 let sseDebounce=null;
 try{
   const es=new EventSource(apiURL("/events"));
-  es.onmessage=()=>{
+  es.onmessage=(ev)=>{
+    if(ev.data==="version"){
+      document.getElementById("newBuild").classList.add("show");
+      return;
+    }
     clearTimeout(sseDebounce);
     sseDebounce=setTimeout(pull,150);
   };
