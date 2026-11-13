@@ -1961,20 +1961,32 @@ function dqRestore(){
     ren.type="button";ren.className="dq-hbtn";ren.textContent="✎";ren.title="rename";
     ren.onclick=(ev)=>{ev.stopPropagation();
       const cur=(titles&&titles[id])||first.slice(0,32);
-      const t=prompt("rename sesi:",cur);
-      if(t&&t.trim()){const st=dqStore();st.meta=st.meta||{};st.meta.titles=st.meta.titles||{};
-        st.meta.titles[id]=t.trim();
-        try{localStorage.setItem(dqStoreKey,JSON.stringify(st));}catch(e){}
-        dqRestore();}
+      modal(`<h3>rename sesi</h3>
+        <input id="dqRenIn" value="${esc(cur)}" style="width:100%;">
+        <div class="modal-actions"><button data-close>cancel</button><button class="primary" id="dqRenOk">rename</button></div>`,
+        ()=>{const ok=()=>{const t=document.getElementById("dqRenIn").value.trim();
+            if(!t)return;
+            const st=dqStore();st.meta=st.meta||{};st.meta.titles=st.meta.titles||{};
+            st.meta.titles[id]=t;
+            try{localStorage.setItem(dqStoreKey,JSON.stringify(st));}catch(e){}
+            closeModal();dqRestore();};
+          document.getElementById("dqRenOk").onclick=ok;
+          document.getElementById("dqRenIn").onkeydown=e=>{if(e.key==="Enter")ok();};
+          document.getElementById("dqRenIn").focus();
+        });
     };
     const del=document.createElement("button");
     del.type="button";del.className="dq-hbtn";del.textContent="✕";del.title="hapus";
     del.onclick=(ev)=>{ev.stopPropagation();
-      if(!confirm("hapus sesi ini?"))return;
-      const st=dqStore();delete st.chats[id];
-      if(st.meta&&st.meta.titles)delete st.meta.titles[id];
-      try{localStorage.setItem(dqStoreKey,JSON.stringify(st));}catch(e){}
-      dqRestore();
+      modal(`<h3>hapus sesi?</h3>
+        <div class="t-label" style="font-size:13px;color:var(--fg);">chat ini + tag tokennya ilang permanen.</div>
+        <div class="modal-actions"><button data-close>cancel</button><button class="primary" id="dqDelOk" style="color:var(--red,#e5484d);">hapus</button></div>`,
+        ()=>{document.getElementById("dqDelOk").onclick=()=>{
+            const st=dqStore();delete st.chats[id];
+            if(st.meta&&st.meta.titles)delete st.meta.titles[id];
+            try{localStorage.setItem(dqStoreKey,JSON.stringify(st));}catch(e){}
+            closeModal();dqRestore();
+          };});
     };
     row.append(b,ren,del);
     log.append(row);
