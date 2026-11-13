@@ -467,6 +467,10 @@ class Handler(SimpleHTTPRequestHandler):
                     effort = max(1, min(600, int(payload.get("effort", 180))))
                 except (TypeError, ValueError):
                     effort = 180
+                # hermes startup alone takes ~5-10s; tiny efforts just guarantee
+                # a cut. floor short casual prompts at 45s so greetings answer.
+                if effort < 45:
+                    effort = 45
                 if not prompt:
                     self._json(400, {"error": "empty prompt"})
                     return
