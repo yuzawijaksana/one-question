@@ -144,6 +144,14 @@ img{display:block;}
 }
 #dqClose{margin-left:auto;background:none;border:none;color:var(--muted);
   font-size:14px;cursor:pointer;font-family:inherit;}
+.dq-tab{padding:2px 10px;cursor:pointer;color:var(--muted);font-size:12.5px;}
+.dq-tab+.dq-tab{margin-left:8px;}
+.dq-tab.active{color:var(--accent);border-bottom:1px solid var(--accent);}
+.dq-day{padding:9px 12px;font-size:13px;color:var(--fg);cursor:pointer;
+  border:1px solid var(--line);text-align:left;}
+.dq-day:active{border-color:rgba(141,141,141,.7);}
+.dq-back{margin-bottom:8px;padding:6px 10px;font-size:12px;color:var(--muted);
+  background:none;border:1px solid var(--line);cursor:pointer;font-family:inherit;}
 #dqLog{
   flex:1;overflow-y:auto;scrollbar-width:none;padding:12px;
   display:flex;flex-direction:column;gap:8px;
@@ -464,7 +472,7 @@ input[type=range]::-webkit-slider-thumb{
 <div id="verChip">#v.…</div>
 <button id="dqBtn">daily question</button>
 <div id="dqPanel">
-  <div id="dqHead"><span>daily question</span><button id="dqClose">✕</button></div>
+  <div id="dqHead"><span class="dq-tab active" data-t="chat">chat</span><span class="dq-tab" data-t="history">history</span><button id="dqClose">✕</button></div>
   <div id="dqLog"></div>
   <div id="dqBar">
     <input id="dqIn" placeholder="tanya apa aja…" autocomplete="off">
@@ -1823,8 +1831,55 @@ async function ensureSholat(){
   }
 }
 
-/* daily question: CS-style hermes chat (ephemeral, not synced) */
-let dqBusy=false,dqOpen=false;
+/* daily question: CS-style hermes chat (persisted per-day in localStorage) */
+let dqBusy=false,dqOpen=false,dqView="chat",dqDay=null;
+const dqStoreKey="oqDqChat";
+function dqStore(){try{return JSON.parse(localStorage.getItem(dqStoreKey)||"{}");}catch(e){return{};}}
+function dqSave(cls,txt){
+  const day=new Date().toISOString().slice(0,10);
+  const s=dqStore();(s[day]=s[day]||[]).push({c:cls,t:txt,ts:Date.now()});
+  // keep last 30 days
+  const days=Object.keys(s).sort();while(days.length>30)delete s[days.shift()];
+  try{localStorage.setItem(dqStoreKey,JSON.stringify(s));}catch(e){}
+}
+function dqRestore(){
+  const s=dqStore(),log=document.getElementById("dqLog");
+  log.innerHTML="";
+  const days=Object.keys(s).filter(d=>d!=="meta").sort();
+  if(!days.length){dqPush("bot","belum ada history.");return;}
+  for(const d of days){
+    const b=document.createElement("button");
+    b.type="button";b.className="dq-day";
+    b.textContent=d+" ("+s[d].length+" msg)";
+    b.onclick=()=>{dqOpenDay(d);};
+    log.append(b);
+  }
+}
+function dqOpenDay(d){
+  dqDay=d;dqView="chat";
+  document.querySelectorAll(".dq-tab").forEach(t=>t.classList.toggle("active",t.dataset.t==="chat"));
+  const log=document.getElementById("dqLog");
+  log.innerHTML="";
+  const back=document.createElement("button");
+  back.type="button";back.className="dq-back";back.textContent="← kembali ke chat";
+  back.onclick=()=>{dqDay=null;dqSetView("chat");};
+  log.append(back);
+  for(const m of (dqStore()[d]||[]))dqPush(m.c==="you"?"you":"bot",m.t);
+  document.getElementById("dqIn").focus();
+}
+function dqSetView(v){
+  dqView=v;
+  if(v!=="chat")dqDay=null;
+  document.querySelectorAll(".dq-tab").forEach(t=>t.classList.toggle("active",t.dataset.t===v));
+  if(v==="history")dqRestore();
+  else{
+    const log=document.getElementById("dqLog");
+    log.innerHTML="";
+    dqPush("bot","halo 👋 tanya apa aja — ini hermes di vps.");
+    document.getElementById("dqIn").focus();
+  }
+}
+document.querySelectorAll(".dq-tab").forEach(t=>t.onclick=()=>dqSetView(t.dataset.t));
 function dqFmt(t){
   const esc=document.createElement("div");esc.textContent=t;
   return esc.innerHTML.replace(/\*\*([^*\n]+)\*\*/g,"<strong>$1</strong>");
@@ -1842,7 +1897,7 @@ document.getElementById("dqBtn").onclick=()=>{
   document.getElementById("dqPanel").classList.toggle("open",dqOpen);
   document.getElementById("dqBtn").style.display=dqOpen?"none":"";
   if(dqOpen){
-    if(!document.getElementById("dqLog").children.length)
+    if(dqView==="chat"&&!document.getElementById("dqLog").children.length)
       dqPush("bot","halo 👋 tanya apa aja — ini hermes di vps.");
     document.getElementById("dqIn").focus();
   }
@@ -1855,18 +1910,51 @@ async function dqAsk(q){
   if(dqBusy||!q)return;
   dqBusy=true;
   document.getElementById("dqSend").disabled=true;
-  dqPush("you",q);
+  dqPush("you",q);dqSave("you",q);
   const th=dqPush("bot think","");
   th.innerHTML='<span>( </span><span class="dots"></span><span> )</span>';
+  const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),120000);
+  // interactive: one hermes session per day, so it remembers the conversation
+  const day=new Date().toISOString().slice(0,10);
+  const sess=(dqStore().meta||{})[day]||("dq-"+day+"-"+Math.random().toString(36).slice(2,8));
+  const sm=dqStore();sm.meta=sm.meta||{};sm.meta[day]=sess;
+  try{localStorage.setItem(dqStoreKey,JSON.stringify(sm));}catch(e){}
+  const doFetch=()=>fetch(apiURL("/hermes"),{method:"POST",signal:ac.signal,
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({prompt:q,session:sess})});
   try{
-    const r=await fetch(apiURL("/hermes"),{method:"POST",
-      headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt:q})});
-    const d=await r.json();
-    th.innerHTML=dqFmt(d.reply||d.error||"(no reply)");
-    th.classList.remove("think");
+    let r;
+    try{r=await doFetch();}
+    catch(e1){await new Promise(res=>setTimeout(res,1200));r=await doFetch();} // retry once on transient drop
+    const d=await (r.ok?r.json():Promise.resolve({error:"server error "+r.status}));
+    let reply=d.reply||d.error||"(no reply)";
+    let choices=null;
+    const cm=reply.match(/CHOICES?:([^\n]+)\n?/i);
+    if(cm){
+      choices=cm[1].split(",").map(x=>x.trim()).filter(Boolean);
+      reply=reply.replace(cm[0],"").trim();
+    }
+    th.innerHTML=dqFmt(reply);
+    if(dqView!=="chat"||dqDay){dqSetView("chat");const l=document.getElementById("dqLog");l.append(th);l.scrollTop=l.scrollHeight;}
+    else th.classList.remove("think");
+    dqSave("bot",reply);
+    if(choices&&choices.length){
+      const l=document.getElementById("dqLog");
+      for(const c of choices){
+        const b=document.createElement("button");
+        b.type="button";b.className="dq-choice";b.textContent=c;
+        b.onclick=()=>{b.disabled=true;b.style.opacity=".4";dqAsk(c);};
+        l.append(b);
+      }
+      l.scrollTop=l.scrollHeight;
+    }
   }catch(e){
-    th.textContent="offline — coba lagi nanti";th.classList.remove("think");
+    const m=e&&e.name==="AbortError"?"server lama bales — coba lagi":"offline — coba lagi nanti";
+    th.textContent=m;th.classList.remove("think");
+    if(dqView!=="chat"||dqDay){dqSetView("chat");const l=document.getElementById("dqLog");l.append(th);l.scrollTop=l.scrollHeight;}
+    dqSave("bot",m);
   }
+  clearTimeout(tm);
   document.getElementById("dqSend").disabled=false;
   dqBusy=false;
 }
@@ -1882,7 +1970,7 @@ document.getElementById("dqIn").addEventListener("keydown",e=>{
 /* version chip: bottom-right — shows short version (#v1.12), tap → settings update section.
    Version scheme: APP_VER="0.115" — XXX is a running counter bumped on every feature commit; the chip falls back to
    a hash-derived pair (yy*12+month . day) when served build differs from constant. */
-const APP_VER="0.116";
+const APP_VER="0.118";
 (function(){
   const chip=document.getElementById("verChip");
   if(!chip)return;
