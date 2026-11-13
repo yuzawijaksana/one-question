@@ -1927,7 +1927,7 @@ function dqSave(cls,txt,meta){
   if(!id)return;
   const m={c:cls,t:txt,ts:Date.now()};
   if(meta)m.meta=meta;
-  s.chats[id].push(m);
+  (s.chats[id]=s.chats[id]||[]).push(m);
   // keep last 40 sessions
   const ids=Object.keys(s.chats||{}).sort((a,b)=>(s.chats[b][0]?.ts||0)-(s.chats[a][0]?.ts||0));
   while(ids.length>40){const old=ids.pop();delete s.chats[old];if(s.meta.titles)delete s.meta.titles[old];}
