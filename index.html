@@ -779,7 +779,7 @@ input[type=range]::-webkit-slider-thumb{
 <script>
 "use strict";
 
-const APP_VER="0.150";
+const APP_VER="0.151";
 /* ═══════════════ owl web — one file, no build step ═══════════════
    reads/writes the same /api/state as the phone widget + old web app */
 
@@ -2225,7 +2225,7 @@ const tm=dqSecs>0?setTimeout(()=>ac.abort(),Math.max(dqSecs+5,110)*1000):null;
     if(th._cd)clearInterval(th._cd);
     th.innerHTML=dqFmt(reply);
     if(d.model){const m=document.createElement("div");m.className="dq-meta";
-      m.textContent=(d.session==="flash"?"⚡ flash":"🤖 "+d.model)+" · ⇥"+fmtTok((d.usage||{}).in)+" ⇤"+fmtTok((d.usage||{}).out)+" tok";
+      m.textContent=(d.session==="flash"?"⚡ flash":"🤖 "+d.model)+" · ↑"+fmtTok((d.usage||{}).in)+"　↓"+fmtTok((d.usage||{}).out)+" tok";
       th.append(m);}
     if(dqView!=="chat"||dqDay){dqSetView("chat");const l=document.getElementById("dqLog");l.append(th);l.scrollTop=l.scrollHeight;}
     else th.classList.remove("think");
