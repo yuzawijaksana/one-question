@@ -473,7 +473,7 @@
       }
     },
     "oneQuestionSchedule": {
-      "updatedAt": 1794555855509,
+      "updatedAt": 1794555878471,
       "value": [
         {
           "start": 240,
@@ -516,6 +516,12 @@
           "end": 1380,
           "label": "game/social",
           "color": "#9c8d7c"
+        },
+        {
+          "start": 720,
+          "end": 840,
+          "label": "work on anything",
+          "color": "#7c9c95"
         }
       ]
     },
@@ -1025,5 +1031,5 @@
       ]
     }
   },
-  "updatedAt": 1794555855989
+  "updatedAt": 1794555878835
 }
