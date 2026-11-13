@@ -2054,10 +2054,10 @@ async function dqAsk(q){
   dqPush("you",q.split("\n\n[attached")[0]);dqSave("you",q.split("\n\n[attached")[0]);
   const th=dqPush("bot think","");
   th.innerHTML='<span>( </span><span class="dots"></span><span> )</span>';
-  const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),Math.max(dqSecs+3,100)*1000);
   // interactive: one hermes session per day, so it remembers the conversation
   const dqTier=(DQ_EFFORTS.find(e=>e.id===dqEffort)||DQ_EFFORTS[1]);
   const dqSecs=dqTier.secs;
+  const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),Math.max(dqSecs+3,100)*1000);
   const sm=dqStore();sm.meta=sm.meta||{};
   let sess=sm.meta.current;
   if(!sess){
