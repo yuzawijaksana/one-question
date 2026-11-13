@@ -1868,13 +1868,14 @@ async function ensureSholat(){
 
 /* thinking effort: max detik hermes boleh mikir (server timeout = effort) */
 const DQ_EFFORTS=[
-  {id:"flash",secs:15,desc:"jawaban 10 kata · nama/tanggal/ya-tidak"},
-  {id:"quick",secs:30,desc:"jawaban singkat · tanyaan santai"},
-  {id:"medium",secs:60,desc:"2 kalimat · perlu dikit mikir"},
-  {id:"thinking",secs:180,desc:"boleh panjang · tool calls"},
-  {id:"max",secs:300,desc:"full power · desain/riset"}
+  {id:"flash",secs:30,desc:"jawaban 10 kata · nama/tanggal/ya-tidak"},
+  {id:"quick",secs:45,desc:"jawaban singkat · tanyaan santai"},
+  {id:"reasonable",secs:75,desc:"jawaban wajar · dikit konteks"},
+  {id:"explanation",secs:120,desc:"ada penjelasan · perlu mikir"},
+  {id:"thinking",secs:180,desc:"dalem · tool calls"},
+  {id:"max",secs:0,desc:"no limit · full power"}
 ];
-let dqEffort="quick";
+let dqEffort="flash";
 try{const sv=localStorage.getItem("oqDqEffort");if(DQ_EFFORTS.some(e=>e.id===sv))dqEffort=sv;}catch(e){}
 (function(){
   const btn=document.getElementById("dqEffort"),menu=document.getElementById("dqEffortMenu");
@@ -2057,7 +2058,8 @@ async function dqAsk(q){
   // interactive: one hermes session per day, so it remembers the conversation
   const dqTier=(DQ_EFFORTS.find(e=>e.id===dqEffort)||DQ_EFFORTS[1]);
   const dqSecs=dqTier.secs;
-  const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),Math.max(dqSecs+3,100)*1000);
+  const ac=new AbortController();
+const tm=dqSecs>0?setTimeout(()=>ac.abort(),Math.max(dqSecs+5,110)*1000):null;
   const sm=dqStore();sm.meta=sm.meta||{};
   let sess=sm.meta.current;
   if(!sess){
@@ -2084,7 +2086,7 @@ async function dqAsk(q){
     catch(e3){d={error:"server error "+r.status+" — server PC lama, update dulu"};}
     // kepotong + effort pendek → auto-retry sekali di 90s (hermes start-up ~5-10s,
     // jadi effort 15-30s suka kepotong padahal pertanyaan simpel)
-    if(d.ok===false&&/kepotong/.test(d.reply||"")&&(dqEffort==="flash"||dqEffort==="quick")){
+    if(d.ok===false&&/kepotong/.test(d.reply||"")&&(dqEffort==="flash"||dqEffort==="quick"||dqEffort==="reasonable")){
       th.innerHTML='<span>⏳ hermes sibuk — retry 90s </span><span class="dots"></span>';
       try{
         const r2=await doFetch(apiURL("/hermes"),90);
@@ -2128,7 +2130,7 @@ async function dqAsk(q){
     if(dqView!=="chat"||dqDay){dqSetView("chat");const l=document.getElementById("dqLog");l.append(th);l.scrollTop=l.scrollHeight;}
     dqSave("bot",m);
   }
-  clearTimeout(tm);
+  if(tm)clearTimeout(tm);
   document.getElementById("dqSend").disabled=false;
   dqBusy=false;
   if(dqQueue.length){
@@ -2154,9 +2156,9 @@ document.getElementById("dqIn").addEventListener("keydown",e=>{
 });
 
 /* version chip: bottom-right — shows short version (#v1.12), tap → settings update section.
-   Version scheme: APP_VER="0.115" — XXX is a running counter bumped on every feature commit; the chip falls back to
+   Version scheme: APP_VER="0.XXX" — XXX is a running counter bumped on every feature commit; the chip falls back to
    a hash-derived pair (yy*12+month . day) when served build differs from constant. */
-const APP_VER="0.125";
+const APP_VER="0.135";
 (function(){
   const chip=document.getElementById("verChip");
   if(!chip)return;
