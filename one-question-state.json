@@ -473,7 +473,7 @@
       }
     },
     "oneQuestionSchedule": {
-      "updatedAt": 1794555912888,
+      "updatedAt": 1794555933489,
       "value": [
         {
           "start": 240,
@@ -519,7 +519,7 @@
         },
         {
           "start": 720,
-          "end": 840,
+          "end": 810,
           "label": "work on anything",
           "color": "#7c9c95"
         }
@@ -1031,5 +1031,5 @@
       ]
     }
   },
-  "updatedAt": 1794555913283
+  "updatedAt": 1794555933913
 }
