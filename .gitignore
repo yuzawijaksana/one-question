@@ -1,2 +1,4 @@
-__pycache__/
-.hermes-tmp.*
+# one-question runtime data (synced to VPS via brain-sync, NOT tracked in git)
+one-question-state.json
+one-question-state-shared.json
+settings export/one-question-backup-latest.json
