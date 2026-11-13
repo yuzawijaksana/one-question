@@ -164,6 +164,7 @@ img{display:block;}
 .dq-msg.bot{align-self:flex-start;background:rgba(245,197,66,.05);
   border:1px solid rgba(245,197,66,.22);border-left:2px solid var(--gold);color:var(--fg);}
 .dq-msg.think{color:var(--muted);font-style:italic;}
+.dq-msg .dq-cd{color:var(--muted);font-size:11px;margin-left:4px;}
 .dq-msg.think .dots::after{
   content:"";animation:dqdots 1.2s steps(4,end) infinite;
 }
@@ -762,7 +763,7 @@ input[type=range]::-webkit-slider-thumb{
 <script>
 "use strict";
 
-const APP_VER="0.138";
+const APP_VER="0.139";
 /* ═══════════════ owl web — one file, no build step ═══════════════
    reads/writes the same /api/state as the phone widget + old web app */
 
@@ -2056,7 +2057,12 @@ async function dqAsk(q){
   q=full;
   dqPush("you",q.split("\n\n[attached")[0]);dqSave("you",q.split("\n\n[attached")[0]);
   const th=dqPush("bot think","");
-  th.innerHTML='<span>( </span><span class="dots"></span><span> )</span>';
+  th.innerHTML='<span>( </span><span class="dots"></span><span> )</span><span class="dq-cd"></span>';
+  const t0=Date.now();
+  th._cd=setInterval(()=>{
+    const el=th.querySelector(".dq-cd");
+    if(el)el.textContent=" "+Math.round((Date.now()-t0)/1000)+"s";
+  },500);
   // interactive: one hermes session per day, so it remembers the conversation
   const dqTier=(DQ_EFFORTS.find(e=>e.id===dqEffort)||DQ_EFFORTS[1]);
   const dqSecs=dqTier.secs;
@@ -2089,6 +2095,7 @@ const tm=dqSecs>0?setTimeout(()=>ac.abort(),Math.max(dqSecs+5,110)*1000):null;
     // kepotong + effort pendek → auto-retry sekali di 90s (hermes start-up ~5-10s,
     // jadi effort 15-30s suka kepotong padahal pertanyaan simpel)
     if(d.ok===false&&/kepotong/.test(d.reply||"")&&(dqEffort==="flash"||dqEffort==="quick"||dqEffort==="reasonable")){
+      if(th._cd)clearInterval(th._cd);
       th.innerHTML='<span>⏳ hermes sibuk — retry 90s </span><span class="dots"></span>';
       try{
         const r2=await doFetch(apiURL("/hermes"),90);
@@ -2112,6 +2119,7 @@ const tm=dqSecs>0?setTimeout(()=>ac.abort(),Math.max(dqSecs+5,110)*1000):null;
       choices=cm[1].split(",").map(x=>x.trim()).filter(Boolean);
       reply=reply.replace(cm[0],"").trim();
     }
+    if(th._cd)clearInterval(th._cd);
     th.innerHTML=dqFmt(reply);
     if(dqView!=="chat"||dqDay){dqSetView("chat");const l=document.getElementById("dqLog");l.append(th);l.scrollTop=l.scrollHeight;}
     else th.classList.remove("think");
@@ -2127,6 +2135,7 @@ const tm=dqSecs>0?setTimeout(()=>ac.abort(),Math.max(dqSecs+5,110)*1000):null;
       l.scrollTop=l.scrollHeight;
     }
   }catch(e){
+    if(th._cd)clearInterval(th._cd);
     const m=e&&e.name==="AbortError"?"server lama bales — coba lagi":"offline — coba lagi nanti";
     th.textContent=m;th.classList.remove("think");
     if(dqView!=="chat"||dqDay){dqSetView("chat");const l=document.getElementById("dqLog");l.append(th);l.scrollTop=l.scrollHeight;}
