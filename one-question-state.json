@@ -848,7 +848,7 @@
       ]
     },
     "oneQuestionDeadlines": {
-      "updatedAt": 1794241720788,
+      "updatedAt": 1794547869031,
       "value": [
         {
           "id": "02c566ad-71f8-4fd7-8ce1-b725cc4a85e7",
@@ -869,19 +869,7 @@
               "importance": "none",
               "done": false,
               "collapsed": false,
-              "children": [
-                {
-                  "id": "62bdd717-f33c-4202-9afb-45ebf7ab9675",
-                  "title": "Cari Jurnal/Sitasi/Referensi/Laporan dengan Keyword",
-                  "date": "2026-10-21",
-                  "time": "",
-                  "note": "PR : Cari dan Baca 10 jurnal/laporan/skripsi yang relevan dengan GDLC,Unity,Pertarungan,etc.",
-                  "importance": "red",
-                  "done": false,
-                  "collapsed": false,
-                  "children": []
-                }
-              ]
+              "children": []
             },
             {
               "id": "3d6366a2-8651-40a2-9aae-eac76b6010fb",
@@ -1054,5 +1042,5 @@
       ]
     }
   },
-  "updatedAt": 1794497973633
+  "updatedAt": 1794547869380
 }
