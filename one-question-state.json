@@ -848,7 +848,7 @@
       ]
     },
     "oneQuestionDeadlines": {
-      "updatedAt": 1794547869031,
+      "updatedAt": 1794547877986,
       "value": [
         {
           "id": "02c566ad-71f8-4fd7-8ce1-b725cc4a85e7",
@@ -860,17 +860,6 @@
           "done": false,
           "collapsed": false,
           "children": [
-            {
-              "id": "74b56cc5-02d5-4c89-984e-13fdfb8cbd11",
-              "title": "Bimbingan /w taigaa",
-              "date": "2026-10-20",
-              "time": "",
-              "note": "",
-              "importance": "none",
-              "done": false,
-              "collapsed": false,
-              "children": []
-            },
             {
               "id": "3d6366a2-8651-40a2-9aae-eac76b6010fb",
               "title": "Bimbingan 1",
@@ -1042,5 +1031,5 @@
       ]
     }
   },
-  "updatedAt": 1794547869380
+  "updatedAt": 1794547878315
 }

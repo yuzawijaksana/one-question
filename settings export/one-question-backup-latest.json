@@ -1,7 +1,7 @@
 {
   "format": "one-question-zen-backup",
   "version": "2.21.3",
-  "exportedAt": "2026-11-13T05:31:09Z",
+  "exportedAt": "2026-11-13T05:31:18Z",
   "data": {
     "questions": [
       [
@@ -799,17 +799,6 @@
         "done": false,
         "collapsed": false,
         "children": [
-          {
-            "id": "74b56cc5-02d5-4c89-984e-13fdfb8cbd11",
-            "title": "Bimbingan /w taigaa",
-            "date": "2026-10-20",
-            "time": "",
-            "note": "",
-            "importance": "none",
-            "done": false,
-            "collapsed": false,
-            "children": []
-          },
           {
             "id": "3d6366a2-8651-40a2-9aae-eac76b6010fb",
             "title": "Bimbingan 1",
