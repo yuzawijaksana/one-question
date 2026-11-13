@@ -470,6 +470,9 @@ class Handler(SimpleHTTPRequestHandler):
                 if len(prompt) > 4000:
                     self._json(400, {"error": "prompt too long (max 4000)"})
                     return
+                # keep widget answers short: prepend a style directive
+                prompt = ("Jawab SINGKAT (1-3 kalimat, max ~80 kata), gaya santai. "
+                          "Gak perlu tambah penjelasan panjang.\n\n" + prompt)
                 cmd = ["hermes", "--cli", "-z", prompt]
                 if session:
                     cmd += ["--resume", session]

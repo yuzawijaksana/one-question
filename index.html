@@ -152,9 +152,9 @@ img{display:block;}
 .dq-msg{padding:8px 12px;font-size:13px;line-height:1.65;max-width:88%;
   white-space:pre-wrap;word-break:break-word;text-align:left;}
 .dq-msg.you{align-self:flex-end;background:rgba(236,236,236,.08);
-  border:1px solid var(--line);color:var(--fg);}
-.dq-msg.bot{align-self:flex-start;background:rgba(141,141,141,.1);
-  border:1px solid rgba(141,141,141,.35);color:var(--fg);}
+  border:1px solid var(--line-strong);color:var(--fg);}
+.dq-msg.bot{align-self:flex-start;background:rgba(245,197,66,.05);
+  border:1px solid rgba(245,197,66,.22);border-left:2px solid var(--gold);color:var(--fg);}
 .dq-msg.think{color:var(--muted);font-style:italic;}
 .dq-msg.think .dots::after{
   content:"";animation:dqdots 1.2s steps(4,end) infinite;
@@ -1825,10 +1825,15 @@ async function ensureSholat(){
 
 /* daily question: CS-style hermes chat (ephemeral, not synced) */
 let dqBusy=false,dqOpen=false;
+function dqFmt(t){
+  const esc=document.createElement("div");esc.textContent=t;
+  return esc.innerHTML.replace(/\*\*([^*\n]+)\*\*/g,"<strong>$1</strong>");
+}
 function dqPush(cls,txt){
   const log=document.getElementById("dqLog");
   const el=document.createElement("div");
-  el.className="dq-msg "+cls;el.textContent=txt;
+  el.className="dq-msg "+cls;
+  if(txt)el.innerHTML=dqFmt(txt);
   log.append(el);log.scrollTop=log.scrollHeight;
   return el;
 }
@@ -1851,13 +1856,13 @@ async function dqAsk(q){
   dqBusy=true;
   document.getElementById("dqSend").disabled=true;
   dqPush("you",q);
-  const th=dqPush("think","");
+  const th=dqPush("bot think","");
   th.innerHTML='<span>( </span><span class="dots"></span><span> )</span>';
   try{
     const r=await fetch(apiURL("/hermes"),{method:"POST",
       headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt:q})});
     const d=await r.json();
-    th.textContent=d.reply||d.error||"(no reply)";
+    th.innerHTML=dqFmt(d.reply||d.error||"(no reply)");
     th.classList.remove("think");
   }catch(e){
     th.textContent="offline — coba lagi nanti";th.classList.remove("think");
