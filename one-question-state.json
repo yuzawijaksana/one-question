@@ -2,7 +2,7 @@
   "version": 1,
   "keys": {
     "oneQuestionSettings": {
-      "updatedAt": 1794303365315,
+      "updatedAt": 1794369042215,
       "value": {
         "widgetGuides": [
           {
@@ -129,24 +129,24 @@
               {
                 "id": "s2442792",
                 "text": "tempat",
-                "done": true,
+                "done": false,
                 "choices": [
                   "kampus",
                   "perpus"
                 ],
-                "pick": "kampus"
+                "pick": null
               },
               {
                 "id": "s2549059",
                 "text": "remove distraction",
-                "done": true,
+                "done": false,
                 "choices": [
                   "game",
                   "anime",
                   "scrolling",
                   "discord"
                 ],
-                "pick": "scrolling"
+                "pick": null
               },
               {
                 "id": "s2626073",
@@ -473,7 +473,7 @@
       }
     },
     "oneQuestionSchedule": {
-      "updatedAt": 1793933707114,
+      "updatedAt": 1794555849174,
       "value": [
         {
           "start": 240,
@@ -494,8 +494,8 @@
           "color": "#9c8d7c"
         },
         {
-          "start": 720,
-          "end": 900,
+          "start": 840,
+          "end": 960,
           "label": "sleep",
           "color": "#7c9c95"
         },
@@ -848,7 +848,7 @@
       ]
     },
     "oneQuestionDeadlines": {
-      "updatedAt": 1794241720788,
+      "updatedAt": 1794547877986,
       "value": [
         {
           "id": "02c566ad-71f8-4fd7-8ce1-b725cc4a85e7",
@@ -860,29 +860,6 @@
           "done": false,
           "collapsed": false,
           "children": [
-            {
-              "id": "74b56cc5-02d5-4c89-984e-13fdfb8cbd11",
-              "title": "Bimbingan /w taigaa",
-              "date": "2026-10-20",
-              "time": "",
-              "note": "",
-              "importance": "none",
-              "done": false,
-              "collapsed": false,
-              "children": [
-                {
-                  "id": "62bdd717-f33c-4202-9afb-45ebf7ab9675",
-                  "title": "Cari Jurnal/Sitasi/Referensi/Laporan dengan Keyword",
-                  "date": "2026-10-21",
-                  "time": "",
-                  "note": "PR : Cari dan Baca 10 jurnal/laporan/skripsi yang relevan dengan GDLC,Unity,Pertarungan,etc.",
-                  "importance": "red",
-                  "done": false,
-                  "collapsed": false,
-                  "children": []
-                }
-              ]
-            },
             {
               "id": "3d6366a2-8651-40a2-9aae-eac76b6010fb",
               "title": "Bimbingan 1",
@@ -922,16 +899,16 @@
       ]
     },
     "oneQuestionSholat": {
-      "updatedAt": 1794311929179,
+      "updatedAt": 1794497972303,
       "value": {
         "lat": -6.2088,
         "lon": 106.8456,
         "city": "jakarta (default)",
-        "date": "2026-11-10",
+        "date": "2026-11-12",
         "times": {
           "subuh": [
             4,
-            4
+            3
           ],
           "dzuhur": [
             11,
@@ -939,7 +916,7 @@
           ],
           "ashar": [
             14,
-            57
+            58
           ],
           "maghrib": [
             17,
@@ -947,7 +924,7 @@
           ],
           "isya": [
             19,
-            1
+            2
           ]
         },
         "bounds": {
@@ -957,7 +934,7 @@
           ],
           "dzuhur": [
             14,
-            57
+            58
           ],
           "ashar": [
             17,
@@ -965,7 +942,7 @@
           ],
           "maghrib": [
             19,
-            1
+            2
           ],
           "isya": [
             23,
@@ -985,21 +962,6 @@
           "q": "what is the hostname of this machine? answer in 3 words",
           "a": "It is galpratamaserver",
           "ts": 1794293413100
-        },
-        {
-          "q": "test",
-          "a": "Halo! Ada yang bisa saya bantu?",
-          "ts": 1794302151518
-        },
-        {
-          "q": "kalau gw nanya kaya gini tadi start awalnya cmdnya muncul ya",
-          "a": "Bisa. Kalau gw jalanin perintah lewat terminal/tools nya (bukan chat langsung), dapet shell prompt / cmd-nya muncul dulu — itu cuma bagian dari environment yang ngeksekusi perintah, bukan output dari command yang gw minta.\n\nIntinya: munculnya `cmd`/prompt di awal adalah mekanisme runtime (bash di Windows), bukan bagian dari jawaban yang gw kirim.",
-          "ts": 1794302187572
-        },
-        {
-          "q": "btw gw gabisa bedain mana chat gw sama chat dari hermes tolong tampilannya diubah lagi",
-          "a": "timed out (180s)",
-          "ts": 1794302222907
         },
         {
           "q": "aku bisa ngapain aja di sini",
@@ -1069,5 +1031,5 @@
       ]
     }
   },
-  "updatedAt": 1794312751329
+  "updatedAt": 1794555849594
 }

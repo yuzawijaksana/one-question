@@ -1,7 +1,7 @@
 {
   "format": "one-question-zen-backup",
   "version": "2.21.3",
-  "exportedAt": "2026-11-10T12:12:31Z",
+  "exportedAt": "2026-11-13T07:44:09Z",
   "data": {
     "questions": [
       [
@@ -317,24 +317,24 @@
             {
               "id": "s2442792",
               "text": "tempat",
-              "done": true,
+              "done": false,
               "choices": [
                 "kampus",
                 "perpus"
               ],
-              "pick": "kampus"
+              "pick": null
             },
             {
               "id": "s2549059",
               "text": "remove distraction",
-              "done": true,
+              "done": false,
               "choices": [
                 "game",
                 "anime",
                 "scrolling",
                 "discord"
               ],
-              "pick": "scrolling"
+              "pick": null
             },
             {
               "id": "s2626073",
@@ -453,8 +453,8 @@
         "color": "#9c8d7c"
       },
       {
-        "start": 720,
-        "end": 900,
+        "start": 840,
+        "end": 960,
         "label": "sleep",
         "color": "#7c9c95"
       },
@@ -799,29 +799,6 @@
         "done": false,
         "collapsed": false,
         "children": [
-          {
-            "id": "74b56cc5-02d5-4c89-984e-13fdfb8cbd11",
-            "title": "Bimbingan /w taigaa",
-            "date": "2026-10-20",
-            "time": "",
-            "note": "",
-            "importance": "none",
-            "done": false,
-            "collapsed": false,
-            "children": [
-              {
-                "id": "62bdd717-f33c-4202-9afb-45ebf7ab9675",
-                "title": "Cari Jurnal/Sitasi/Referensi/Laporan dengan Keyword",
-                "date": "2026-10-21",
-                "time": "",
-                "note": "PR : Cari dan Baca 10 jurnal/laporan/skripsi yang relevan dengan GDLC,Unity,Pertarungan,etc.",
-                "importance": "red",
-                "done": false,
-                "collapsed": false,
-                "children": []
-              }
-            ]
-          },
           {
             "id": "3d6366a2-8651-40a2-9aae-eac76b6010fb",
             "title": "Bimbingan 1",
