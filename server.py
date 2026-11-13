@@ -464,7 +464,7 @@ class Handler(SimpleHTTPRequestHandler):
                 prompt = str(payload.get("prompt", "")).strip()
                 session = str(payload.get("session", "")).strip() or None
                 raw = payload.get("effort", 180)
-                tiers = {"flash": 30, "quick": 45, "reasonable": 75,
+                tiers = {"flash": 15, "quick": 30, "reasonable": 75,
                          "explanation": 120, "thinking": 180, "max": 0}
                 if isinstance(raw, str) and raw in tiers:
                     effort = tiers[raw]
@@ -475,10 +475,48 @@ class Handler(SimpleHTTPRequestHandler):
                         effort = 180
                 if effort == 0:
                     effort = None  # no limit
-                # hermes startup alone takes ~5-10s; tiny efforts just guarantee
-                # a cut. floor short casual prompts at 45s so greetings answer.
                 elif effort < 45:
                     effort = 45
+                # FLASH fast-path: skip the agent entirely — direct LLM call
+                # (no tools/session spawn), answers in ~2-5s
+                if raw == "flash":
+                    try:
+                        import urllib.request
+                        env_path = Path.home() / ".hermes" / ".env"
+                        api_key = ""
+                        if env_path.exists():
+                            for line in env_path.read_text().splitlines():
+                                if line.startswith("ZAI_API_KEY="):
+                                    api_key = line.split("=", 1)[1].strip()
+                                    break
+                        if api_key:
+                            body = json.dumps({
+                                "model": "glm-5.3-flash",
+                                "messages": [
+                                    {"role": "system", "content":
+                                        "Kamu asisten widget chat. Jawab SANGAT SINGKAT: "
+                                        "max 10 kata, 1 kalimat, bahasa santai. "
+                                        "Tanpa penjelasan, tanpa format."},
+                                    {"role": "user", "content": prompt},
+                                ],
+                            }).encode()
+                            req = urllib.request.Request(
+                                "https://api.z.ai/api/coding/paas/v4/chat/completions",
+                                data=body,
+                                headers={"Content-Type": "application/json",
+                                         "Authorization": f"Bearer {api_key}"},
+                            )
+                            with urllib.request.urlopen(req, timeout=20) as resp:
+                                out = json.loads(resp.read().decode())
+                            text = (out.get("choices") or [{}])[0].get("message", {}).get("content", "")
+                            if text:
+                                self._json(200, {"ok": True, "reply": text.strip()[-1000:],
+                                                 "session": "flash"})
+                                return
+                        # no key or empty answer -> fall through to hermes
+                    except Exception as flash_exc:
+                        print(f"[flash] fast-path failed, fallback to hermes: {flash_exc}",
+                              flush=True)
                 if not prompt:
                     self._json(400, {"error": "empty prompt"})
                     return
