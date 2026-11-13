@@ -1867,22 +1867,27 @@ async function ensureSholat(){
 }
 
 /* thinking effort: max detik hermes boleh mikir (server timeout = effort) */
-const DQ_EFFORTS=[15,30,60,180,300];
-let dqEffort=+(localStorage.getItem("oqDqEffort")||30);
-if(![15,30,60,180,300].includes(dqEffort))dqEffort=30;
+const DQ_EFFORTS=[
+  {id:"flash",secs:15,desc:"jawaban 10 kata · nama/tanggal/ya-tidak"},
+  {id:"quick",secs:30,desc:"jawaban singkat · tanyaan santai"},
+  {id:"medium",secs:60,desc:"2 kalimat · perlu dikit mikir"},
+  {id:"thinking",secs:180,desc:"boleh panjang · tool calls"},
+  {id:"max",secs:300,desc:"full power · desain/riset"}
+];
+let dqEffort="quick";
+try{const sv=localStorage.getItem("oqDqEffort");if(DQ_EFFORTS.some(e=>e.id===sv))dqEffort=sv;}catch(e){}
 (function(){
   const btn=document.getElementById("dqEffort"),menu=document.getElementById("dqEffortMenu");
   function label(){
-    btn.textContent="⏱ "+(dqEffort>=60?(dqEffort/60)+"m":dqEffort+"s");
+    btn.textContent="⚡ "+dqEffort;
   }
-  const DQ_LABELS={15:"15s · simple — nama, tanggal, ya/tidak",30:"30s · santai ★ — tanyaan biasa",60:"1m · mikir — perlu tool calls",180:"3m · berat — analisis panjang",300:"5m · max — desain/riset"};
   function render(){
     menu.innerHTML="";
     for(const e of DQ_EFFORTS){
       const b=document.createElement("button");
-      b.textContent=DQ_LABELS[e]||e+"s";
-      if(e===dqEffort)b.style.color="var(--accent)";
-      b.onclick=()=>{dqEffort=e;localStorage.setItem("oqDqEffort",e);label();menu.classList.remove("open");};
+      b.textContent=e.id+" — "+e.desc;
+      if(e.id===dqEffort)b.style.color="var(--accent)";
+      b.onclick=()=>{dqEffort=e.id;localStorage.setItem("oqDqEffort",e.id);label();menu.classList.remove("open");};
       menu.append(b);
     }
   }
@@ -2049,8 +2054,10 @@ async function dqAsk(q){
   dqPush("you",q.split("\n\n[attached")[0]);dqSave("you",q.split("\n\n[attached")[0]);
   const th=dqPush("bot think","");
   th.innerHTML='<span>( </span><span class="dots"></span><span> )</span>';
-  const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),Math.max(dqEffort+3,100)*1000);
+  const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),Math.max(dqSecs+3,100)*1000);
   // interactive: one hermes session per day, so it remembers the conversation
+  const dqTier=(DQ_EFFORTS.find(e=>e.id===dqEffort)||DQ_EFFORTS[1]);
+  const dqSecs=dqTier.secs;
   const sm=dqStore();sm.meta=sm.meta||{};
   let sess=sm.meta.current;
   if(!sess){
@@ -2060,7 +2067,7 @@ async function dqAsk(q){
   }
   const doFetch=(url,eff)=>fetch(url,{method:"POST",signal:ac.signal,
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({prompt:q,session:sess,effort:eff||dqEffort})});
+      body:JSON.stringify({prompt:q,session:sess,effort:eff||dqSecs})});
   try{
     let r;
     try{r=await doFetch(apiURL("/hermes"));}
@@ -2077,7 +2084,7 @@ async function dqAsk(q){
     catch(e3){d={error:"server error "+r.status+" — server PC lama, update dulu"};}
     // kepotong + effort pendek → auto-retry sekali di 90s (hermes start-up ~5-10s,
     // jadi effort 15-30s suka kepotong padahal pertanyaan simpel)
-    if(d.ok===false&&/kepotong/.test(d.reply||"")&&dqEffort<=60){
+    if(d.ok===false&&/kepotong/.test(d.reply||"")&&(dqEffort==="flash"||dqEffort==="quick")){
       th.innerHTML='<span>⏳ hermes sibuk — retry 90s </span><span class="dots"></span>';
       try{
         const r2=await doFetch(apiURL("/hermes"),90);
@@ -2090,7 +2097,7 @@ async function dqAsk(q){
             headers:{"Content-Type":"application/json"},
             body:JSON.stringify({prompt:q,session:sess,effort:90})});
           d=await r2.json();
-        }catch(e5){d={ok:false,reply:"kepotong di 90s — naikin effort (⏱) atau tanya lebih simpel"};}
+        }catch(e5){d={ok:false,reply:"kepotong — naikin effort (⚡medium+) atau tanya lebih simpel"};}
         clearTimeout(tm2);
       }
     }

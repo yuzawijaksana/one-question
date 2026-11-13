@@ -463,10 +463,16 @@ class Handler(SimpleHTTPRequestHandler):
                 payload = json.loads(self.rfile.read(length) or b"{}")
                 prompt = str(payload.get("prompt", "")).strip()
                 session = str(payload.get("session", "")).strip() or None
-                try:
-                    effort = max(1, min(600, int(payload.get("effort", 180))))
-                except (TypeError, ValueError):
-                    effort = 180
+                raw = payload.get("effort", 180)
+                tiers = {"flash": 15, "quick": 30, "medium": 60,
+                         "thinking": 180, "max": 300}
+                if isinstance(raw, str) and raw in tiers:
+                    effort = tiers[raw]
+                else:
+                    try:
+                        effort = max(1, min(600, int(raw)))
+                    except (TypeError, ValueError):
+                        effort = 180
                 # hermes startup alone takes ~5-10s; tiny efforts just guarantee
                 # a cut. floor short casual prompts at 45s so greetings answer.
                 if effort < 45:
