@@ -189,6 +189,7 @@ img{display:block;}
 .dq-effort-menu button{
   padding:8px 14px;background:none;border:none;border-bottom:1px solid rgba(141,141,141,.2);
   color:var(--fg);font-size:12px;cursor:pointer;font-family:inherit;text-align:left;
+  white-space:nowrap;
 }
 .dq-effort-menu button:hover{background:rgba(141,141,141,.15);color:var(--accent);}
 .dq-filechip{
@@ -1866,18 +1867,20 @@ async function ensureSholat(){
 }
 
 /* thinking effort: max detik hermes boleh mikir (server timeout = effort) */
-const DQ_EFFORTS=[1,5,10,30,60,180];
-let dqEffort=+(localStorage.getItem("oqDqEffort")||10);
+const DQ_EFFORTS=[15,30,60,180,300];
+let dqEffort=+(localStorage.getItem("oqDqEffort")||30);
+if(![15,30,60,180,300].includes(dqEffort))dqEffort=30;
 (function(){
   const btn=document.getElementById("dqEffort"),menu=document.getElementById("dqEffortMenu");
   function label(){
     btn.textContent="⏱ "+(dqEffort>=60?(dqEffort/60)+"m":dqEffort+"s");
   }
+  const DQ_LABELS={15:"15s · simple — nama, tanggal, ya/tidak",30:"30s · santai ★ — tanyaan biasa",60:"1m · mikir — perlu tool calls",180:"3m · berat — analisis panjang",300:"5m · max — desain/riset"};
   function render(){
     menu.innerHTML="";
     for(const e of DQ_EFFORTS){
       const b=document.createElement("button");
-      b.textContent=e>=60?(e/60)+"m — thinking panjang":e+"s — effort "+(e<=10?"cepat":e<=30?"sedang":"dalem");
+      b.textContent=DQ_LABELS[e]||e+"s";
       if(e===dqEffort)b.style.color="var(--accent)";
       b.onclick=()=>{dqEffort=e;localStorage.setItem("oqDqEffort",e);label();menu.classList.remove("open");};
       menu.append(b);
