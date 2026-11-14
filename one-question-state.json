@@ -909,12 +909,12 @@
       ]
     },
     "oneQuestionSholat": {
-      "updatedAt": 1794578175667,
+      "updatedAt": 1794616158275,
       "value": {
         "lat": -6.2088,
         "lon": 106.8456,
         "city": "jakarta (default)",
-        "date": "2026-11-13",
+        "date": "2026-11-14",
         "times": {
           "subuh": [
             4,
@@ -926,7 +926,7 @@
           ],
           "ashar": [
             14,
-            58
+            59
           ],
           "maghrib": [
             17,
@@ -944,7 +944,7 @@
           ],
           "dzuhur": [
             14,
-            58
+            59
           ],
           "ashar": [
             17,
@@ -1041,5 +1041,5 @@
       ]
     }
   },
-  "updatedAt": 1794589770354
+  "updatedAt": 1794616159312
 }
