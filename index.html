@@ -242,6 +242,12 @@ img{display:block;}
 }
 .dq-filechip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .dq-filechip .rm{cursor:pointer;color:var(--muted);font-size:12px;}
+/* tombol push di bubble queued: keluarkan pertanyaan dari antrian & kirim duluan */
+.dq-pushbtn{
+  margin-top:4px;padding:2px 8px;font-size:10px;font-family:inherit;cursor:pointer;
+  background:none;border:1px solid var(--line);color:var(--accent);
+}
+.dq-pushbtn:hover{border-color:var(--accent);}
 .dq-filemsg{align-self:flex-end;padding:6px 10px;font-size:11.5px;color:var(--muted);
   border:1px dashed rgba(141,141,141,.4);}
 .dq-queued{align-self:flex-end;padding:5px 10px;font-size:11px;color:var(--muted);
@@ -625,6 +631,7 @@ input[type=range]::-webkit-slider-thumb{
     <button id="dqAttach" title="attach file" style="background:none;border:1px solid var(--line);color:var(--muted);cursor:pointer;font-family:inherit;padding:10px 12px;font-size:13px;">↑</button>
     <input id="dqFile" type="file" accept=".txt,.md,.json,.csv,.js,.py,.html,.css,.log,.owl,.yml,.yaml,.xml,.pdf,image/*" style="display:none;" multiple>
     <button id="dqSend">➤</button>
+    <button id="dqStop" title="stop — batalkan pertanyaan yang lagi jalan" style="display:none;background:none;border:1px solid var(--red,#e5484d);color:var(--red,#e5484d);cursor:pointer;font-family:inherit;padding:10px 12px;font-size:13px;">■</button>
   </div>
   <div id="dqFiles" style="display:none;padding:0 10px 6px;display:flex;gap:6px;flex-wrap:wrap;"></div>
 </div>
@@ -2369,16 +2376,47 @@ document.getElementById("dqClose").onclick=()=>{
 function fmtTok(n){n=+n||0;return n>=1000?(n/1000).toFixed(1).replace(/\.0$/,"")+"k":String(n);}
 /* queue: ketika hermes masih mikir, pertanyaan berikutnya masuk antrian */
 const dqQueue=[];
+let dqActive=null; // {ac,tm,th} pertanyaan yang lagi jalan — buat tombol stop
+function dqSetBusy(b){
+  dqBusy=b;
+  document.getElementById("dqSend").style.display=b?"none":"";
+  document.getElementById("dqStop").style.display=b?"":"none";
+}
+function dqStopActive(){
+  if(!dqActive)return;
+  try{dqActive.ac.abort();}catch(e){}
+}
+document.getElementById("dqStop").onclick=dqStopActive;
 async function dqAsk(q){
   try{
   if(!q)return;
   if(dqBusy){
     const qe=dqPush("dq-queued","⏳ queued: "+q.slice(0,40));
+    // tombol push: keluarkan dari antrian & langsung kirim sekarang
+    const pb=document.createElement("button");
+    pb.type="button";pb.className="dq-pushbtn";pb.textContent="push ▶";
+    pb.title="push — kirim pertanyaan ini sekarang (depan antrian)";
+    pb.onclick=(ev)=>{
+      ev.stopPropagation();
+      const ix=dqQueue.findIndex(x=>x.qe===qe);
+      if(ix<0)return;
+      dqQueue.splice(ix,1);
+      qe.textContent="▶ pushed: "+q.slice(0,40);
+      if(dqBusy){
+        // masih sibuk → majuin ke depan antrian, jalan duluan pas giliran
+        dqQueue.unshift({q,qe});
+      }else{
+        pb.remove();
+        setTimeout(()=>dqAsk(q),100);
+      }
+    };
+    qe.append(document.createElement("br"),pb);
     dqQueue.push({q,qe});
     return;
   }
-  dqBusy=true;
-  document.getElementById("dqSend").disabled=true;
+  dqSetBusy(true);
+  const ac=new AbortController();
+  dqActive={ac,tm:null,th:null};
   let full=q;
   if(dqFiles.length){
     const blocks=dqFiles.map(f=>"\n\n=== file: "+f.name+" ===\n"+f.text+"\n=== end "+f.name+" ===").join("");
@@ -2407,8 +2445,8 @@ async function dqAsk(q){
   // interactive: one hermes session per day, so it remembers the conversation
   const dqTier=(DQ_EFFORTS.find(e=>e.id===dqEffort)||DQ_EFFORTS[1]);
   const dqSecs=dqTier.secs;
-  const ac=new AbortController();
-const tm=dqSecs>0?setTimeout(()=>ac.abort(),Math.max(dqSecs+5,110)*1000):null;
+  const tm=dqSecs>0?setTimeout(()=>ac.abort(),Math.max(dqSecs+5,110)*1000):null;
+  dqActive.tm=tm;
   const sm=dqStore();sm.meta=sm.meta||{};
   let sess=sm.meta.current;
   if(!sess){
@@ -2491,16 +2529,19 @@ const tm=dqSecs>0?setTimeout(()=>ac.abort(),Math.max(dqSecs+5,110)*1000):null;
     dqSave("bot",m);
   }
   if(tm)clearTimeout(tm);
-  document.getElementById("dqSend").disabled=false;
-  dqBusy=false;
+  dqSetBusy(false);
+  dqActive=null;
   if(dqQueue.length){
     const next=dqQueue.shift();
     next.qe.textContent="▶ "+next.qe.textContent.replace("⏳ queued: ","");
+    const pb=next.qe.querySelector(".dq-pushbtn");
+    if(pb)pb.remove();
     setTimeout(()=>dqAsk(next.q),400);
   }
   }catch(err){
     console.error("dqAsk error:",err);
-    dqBusy=false;
+    dqSetBusy(false);
+    dqActive=null;
     const lg=document.getElementById("dqLog");
     if(lg)dqPush("bot","⚠ error internal: "+err.message+" — hard refresh (Ctrl+Shift+R)");
   }
@@ -2509,7 +2550,6 @@ document.getElementById("dqSend").onclick=()=>{
   const i=document.getElementById("dqIn");
   const q=i.value.trim();if(!q)return;
   i.value="";dqAsk(q);
-  if(dqBusy)document.getElementById("dqSend").disabled=false;
 };
 const dqInEl=document.getElementById("dqIn");
 function dqAutosize(){
@@ -2517,6 +2557,42 @@ function dqAutosize(){
   dqInEl.style.height=Math.min(dqInEl.scrollHeight,120)+"px";
 }
 dqInEl.addEventListener("input",dqAutosize);
+/* Ctrl+V image dari clipboard → simpan ke server (images/paste-*.png),
+   lalu path-nya disisip ke prompt supaya hermes bisa lihat via vision */
+async function dqPasteImage(item){
+  const blob=item.getAsFile();
+  if(!blob)return false;
+  try{
+    const dataurl=await new Promise((res,rej)=>{
+      const r=new FileReader();
+      r.onload=()=>res(r.result);r.onerror=()=>rej(new Error("read fail"));
+      r.readAsDataURL(blob);
+    });
+    const r=await fetch(apiURL("/img"),{method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({data:dataurl})});
+    const d=await r.json();
+    if(!d.ok||!d.path){dqPush("bot","⚠ gagal simpan image: "+(d.error||r.status));return true;}
+    dqFiles.push({name:"clipboard-image",text:"[image file: "+d.path+" — lihat pakai vision]"});
+    renderFileChips();
+    return true;
+  }catch(e){dqPush("bot","⚠ paste image gagal: "+e.message);return true;}
+}
+dqInEl.addEventListener("paste",e=>{
+  const items=e.clipboardData&&e.clipboardData.items;
+  if(!items)return;
+  for(const it of items){
+    if(it.type&&it.type.startsWith("image/")){
+      e.preventDefault();
+      dqPasteImage(it);
+      return;
+    }
+  }
+});
+/* abort via Ctrl+Shift+X juga (selain tombol ■) */
+document.addEventListener("keydown",e=>{
+  if(e.ctrlKey&&e.shiftKey&&(e.key==="X"||e.key==="x"))dqStopActive();
+});
 dqInEl.addEventListener("keydown",e=>{
   if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){
     e.preventDefault();
