@@ -306,6 +306,7 @@ UPDATE_DATA_EXCLUDES = [
     ":!one-question-state.json",
     ":!one-question-state-shared.json",
     ":!settings export",
+    ":!images",
 ]
 
 
@@ -519,6 +520,36 @@ class Handler(SimpleHTTPRequestHandler):
                 return
             try:
                 self._json(200, self_update_from_git())
+            except Exception as exc:
+                self._json(500, {"ok": False, "error": str(exc)})
+            return
+        if self.path == "/api/img":
+            # paste image dari clipboard (web): simpan ke ROOT/images supaya
+            # hermes (yang jalan di mesin yang sama) bisa lihat via vision.
+            # NOTE: kalau ONE_QUESTION_HERMES_SSH aktif, file ada di sini tapi
+            # hermes jalan remote — path gak akan kebaca di sana.
+            if not self._authorized():
+                self._json(401, {"error": "unauthorized"})
+                return
+            try:
+                import base64
+                length = int(self.headers.get("Content-Length", "0"))
+                payload = json.loads(self.rfile.read(length) or b"{}")
+                data = str(payload.get("data", ""))
+                m = re.match(r"^data:image/(png|jpeg|jpg|webp|gif);base64,(.+)$",
+                             data, re.S)
+                if not m:
+                    self._json(400, {"ok": False, "error": "bukan dataURL image"})
+                    return
+                if len(m.group(2)) > 8_000_000:
+                    self._json(400, {"ok": False, "error": "image kegedean (max ~6MB)"})
+                    return
+                imgdir = ROOT / "images"
+                imgdir.mkdir(exist_ok=True)
+                ext = "jpg" if m.group(1) in ("jpeg", "jpg") else m.group(1)
+                path = imgdir / ("paste-%d.%s" % (int(time.time() * 1000), ext))
+                path.write_bytes(base64.b64decode(m.group(2)))
+                self._json(200, {"ok": True, "path": str(path)})
             except Exception as exc:
                 self._json(500, {"ok": False, "error": str(exc)})
             return
