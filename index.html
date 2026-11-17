@@ -137,6 +137,16 @@ img{display:block;}
   flex-direction:column;overflow:hidden;min-width:280px;min-height:220px;max-width:96vw;max-height:96vh;
 }
 #dqPanel.open{display:flex;}
+/* focus chat: stroke putih aja (tanpa glow) — tandain esc bakal nutup chat, bukan view */
+#dqPanel.focus-chat{
+  border-color:rgba(255,255,255,.85);
+  box-shadow:0 12px 40px rgba(0,0,0,.6);
+}
+/* dibuka dari view menu: fullscreen overlay biar nyaman chat di dalam app */
+#dqPanel.dq-max{
+  left:0!important;top:0!important;width:100vw;height:100vh;
+  max-width:100vw;max-height:100vh;border:none;
+}
 /* grip resize custom: 8 sisi — 4 pojok + 4 tengah sisi */
 .dq-rs{position:absolute;z-index:5;touch-action:none;}
 .dq-rs.n{left:8px;right:8px;top:-3px;height:7px;cursor:ns-resize;}
@@ -311,7 +321,12 @@ img{display:block;}
   background:none;
 }
 .back-bottom:active{color:var(--fg);border-color:rgba(141,141,141,.5);}
-.view.on .back-bottom{display:inline-block;}
+.view.on .back-bottom{display:inline-flex;flex-direction:row;align-items:center;gap:7px;}
+/* keycap "esc" di kiri tulisan back — hint shortcut */
+.back-bottom .keycap{
+  font-size:9px;letter-spacing:1px;padding:1px 7px;border-radius:4px;
+  border:1px solid var(--line);color:var(--muted);line-height:1.5;
+}
 /* "+ add something" pinned at the bottom, above the back pill */
 .add-bottom{
   position:fixed;bottom:64px;left:50%;transform:translateX(-50%);
@@ -365,6 +380,59 @@ input[type=range]::-webkit-slider-thumb{
   padding:24px 20px;
 }
 .card.tap:active{background:var(--card-hover);}
+/* stroke draw on hover: the border re-traces itself around EVERY bordered box */
+:is(.card,#menuSholat,.dq-msg,.set-btn,.checkbox,.dq-filechip,.dq-day,
+.dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
+.flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
+#dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom){
+  position:relative;
+}
+:is(.card,#menuSholat,.dq-msg,.set-btn,.checkbox,.dq-filechip,.dq-day,
+.dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
+.flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
+#dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom)::before,
+:is(.card,#menuSholat,.dq-msg,.set-btn,.checkbox,.dq-filechip,.dq-day,
+.dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
+.flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
+#dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom)::after{
+  content:"";position:absolute;pointer-events:none;width:0;height:0;opacity:0;
+}
+:is(.card,#menuSholat,.dq-msg,.set-btn,.checkbox,.dq-filechip,.dq-day,
+.dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
+.flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
+#dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom)::before{
+  top:-1px;left:-1px;border-top:1px solid var(--accent);border-left:1px solid var(--accent);
+}
+:is(.card,#menuSholat,.dq-msg,.set-btn,.checkbox,.dq-filechip,.dq-day,
+.dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
+.flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
+#dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom)::after{
+  bottom:-1px;right:-1px;border-bottom:1px solid var(--accent);border-right:1px solid var(--accent);
+}
+@media(hover:hover){
+  :is(.card,#menuSholat,.dq-msg,.set-btn,.checkbox,.dq-filechip,.dq-day,
+  .dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
+  .flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
+  #dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom):hover::before,
+  :is(.card,#menuSholat,.dq-msg,.set-btn,.checkbox,.dq-filechip,.dq-day,
+  .dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
+  .flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
+  #dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom):hover::after{
+    width:calc(100% + 2px);height:calc(100% + 2px);opacity:1;
+  }
+  :is(.card,#menuSholat,.dq-msg,.set-btn,.checkbox,.dq-filechip,.dq-day,
+  .dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
+  .flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
+  #dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom):hover::after{
+    transition:width .3s ease .12s,height .3s ease,opacity .2s;
+  }
+  :is(.card,#menuSholat,.dq-msg,.set-btn,.checkbox,.dq-filechip,.dq-day,
+  .dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
+  .flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
+  #dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom):hover::before{
+    transition:width .3s ease,height .3s ease .12s,opacity .2s;
+  }
+}
 /* ── pills ── */
 .pills{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px;}
 .pill{
@@ -578,7 +646,7 @@ input[type=range]::-webkit-slider-thumb{
   <!-- ═══════ QUOTES ═══════ -->
   <div class="view" id="v-quotes">
     <div class="top">
-      <button class="back-bottom" data-go="menu">‹ back</button>
+      <button class="back-bottom" data-go="menu"><span class="keycap">esc</span>back</button>
       <div class="tt"><div class="t-title">quotes</div><div class="t-label" id="qtCount"></div></div></div>
     <div class="spacer"></div>
     <div class="card tap" id="qtCard" style="text-align:left;">
@@ -599,7 +667,7 @@ input[type=range]::-webkit-slider-thumb{
   <!-- ═══════ REMEMBER (stickies) ═══════ -->
   <div class="view" id="v-stickies">
     <div class="top">
-      <button class="back-bottom" data-go="menu">‹ back</button>
+      <button class="back-bottom" data-go="menu"><span class="keycap">esc</span>back</button>
       <div class="tt"><div class="t-title">remember wall</div><div class="t-label" id="stCount"></div></div></div>
     <div class="pills" id="stPills"></div>
     <div class="spacer"></div>
@@ -619,7 +687,7 @@ input[type=range]::-webkit-slider-thumb{
   <!-- ═══════ DAY CIRCLE (schedule) ═══════ -->
   <div class="view" id="v-sched">
     <div class="top">
-      <button class="back-bottom" data-go="menu">‹ back</button>
+      <button class="back-bottom" data-go="menu"><span class="keycap">esc</span>back</button>
       <div class="tt"><div class="t-title">day circle</div><div class="t-label" id="scCount"></div></div></div>
     <div class="tabs" style="justify-content:flex-end;margin-top:18px;">
       <button id="scTabActs" class="on">[ aktivitas ]</button>
@@ -638,7 +706,7 @@ input[type=range]::-webkit-slider-thumb{
   <!-- ═══════ DEADLINES ═══════ -->
   <div class="view" id="v-deadlines">
     <div class="top">
-      <button class="back-bottom" data-go="menu">‹ back</button>
+      <button class="back-bottom" data-go="menu"><span class="keycap">esc</span>back</button>
       <div class="tt"><div class="t-title">deadlines</div><div class="t-label" id="dlCount"></div></div></div>
     <div id="dlList"></div>
     <button class="add-bottom" id="dlAdd">+ add deadline</button>
@@ -647,7 +715,7 @@ input[type=range]::-webkit-slider-thumb{
   <!-- ═══════ DEADLINE DETAIL (fullscreen, all levels) ═══════ -->
   <div class="view" id="v-dlview">
     <div class="top">
-      <button class="back-bottom" id="dlvBack">‹ back</button>
+      <button class="back-bottom" id="dlvBack"><span class="keycap">esc</span>back</button>
       <div class="tt"><div class="t-title" id="dlvTitle"></div><div class="t-label" id="dlvSub"></div></div></div>
     <div id="dlvBody"></div>
   </div>
@@ -655,7 +723,7 @@ input[type=range]::-webkit-slider-thumb{
   <!-- ═══════ JOURNAL ═══════ -->
   <div class="view" id="v-journal">
     <div class="top">
-      <button class="back-bottom" data-go="menu">‹ back</button>
+      <button class="back-bottom" data-go="menu"><span class="keycap">esc</span>back</button>
       <div class="tt"><div class="t-title">journal</div><div class="t-label" id="jCount"></div></div></div>
     <div id="jList"></div>
     <button class="add-bottom" id="jAdd">+ new chapter</button>
@@ -664,7 +732,7 @@ input[type=range]::-webkit-slider-thumb{
   <!-- ═══════ JOURNAL CHAPTER (fullscreen) ═══════ -->
   <div class="view" id="v-jrview">
     <div class="top">
-      <button class="back-bottom" id="jrvBack">‹ back</button>
+      <button class="back-bottom" id="jrvBack"><span class="keycap">esc</span>back</button>
       <div class="tt"><div class="t-title" id="jrvTitle"></div><div class="t-label" id="jrvSub"></div></div></div>
     <input id="jrvTitleIn" placeholder="title" style="margin-bottom:8px;">
     <input id="jrvCat" placeholder="category" style="margin-bottom:10px;">
@@ -675,7 +743,7 @@ input[type=range]::-webkit-slider-thumb{
   <!-- ═══════ DAILY GUIDE (fullscreen flowchart) ═══════ -->
   <div class="view" id="v-gview">
     <div class="top">
-      <button class="back-bottom" id="gvBack">‹ back</button>
+      <button class="back-bottom" id="gvBack"><span class="keycap">esc</span>back</button>
       <div class="tt"><div class="t-title" id="gvTitle"></div><div class="t-label" id="gvSub"></div></div></div>
     <div id="gvFlow"></div>
   </div>
@@ -683,7 +751,7 @@ input[type=range]::-webkit-slider-thumb{
   <!-- ═══════ DAILY GUIDE ═══════ -->
   <div class="view" id="v-guide">
     <div class="top">
-      <button class="back-bottom" data-go="menu">‹ back</button>
+      <button class="back-bottom" data-go="menu"><span class="keycap">esc</span>back</button>
       <div class="tt"><div class="t-title">daily guide</div><div class="t-label" id="gCount"></div></div></div>
     <div id="gList"></div>
     <button class="add-bottom" id="gAdd">+ new guide</button>
@@ -692,7 +760,7 @@ input[type=range]::-webkit-slider-thumb{
   <!-- ═══════ SETTINGS ═══════ -->
   <div class="view" id="v-settings">
     <div class="top">
-      <button class="back-bottom" data-go="menu">‹ back</button>
+      <button class="back-bottom" data-go="menu"><span class="keycap">esc</span>back</button>
       <div class="tt"><div class="t-title">settings</div><div class="t-label">one question · owl web</div></div></div>
     <div class="row"><span class="syncdot" id="syncDot2" style="position:static;"></span><span class="t-label" id="syncTxt2" style="flex:1;">connecting…</span>
       <button class="set-ghost" id="syncNowBtn" style="font-size:13px;padding:5px 10px;">[ sync now ]</button>
@@ -814,7 +882,7 @@ input[type=range]::-webkit-slider-thumb{
 <script>
 "use strict";
 
-const APP_VER="0.160";
+const APP_VER="0.161";;
 /* ═══════════════ owl web — one file, no build step ═══════════════
    reads/writes the same /api/state as the phone widget + old web app */
 
@@ -914,8 +982,60 @@ function go(v,fromPop){
 }
 document.body.addEventListener("click",e=>{
   const b=e.target.closest("[data-go]");
-  if(b)go(b.dataset.go);
+  if(!b)return;
+  if(b.dataset.go==="chat"){
+    /* chat hermes via menu: buka panel fullscreen (bukan view baru — satu logika chat) */
+    document.getElementById("dqBtn").click();
+    document.getElementById("dqPanel").classList.add("dq-max");
+    return;
+  }
+  go(b.dataset.go);
 });
+
+/* sistem focus: "chat" kalau chat panel lagi aktif (klik di dalam panel),
+   "view" kalau lagi fokus ke view di belakang. esc nurut focus:
+   focus chat → tutup chat, focus view → back dari view (chat tetep kebuka) */
+let uiFocus="view";
+const dqPanelEl=document.getElementById("dqPanel");
+dqPanelEl.addEventListener("pointerdown",()=>{setUiFocus("chat");},true);
+dqPanelEl.addEventListener("focusin",()=>{setUiFocus("chat");});
+function setUiFocus(f){
+  if(uiFocus===f)return;
+  uiFocus=f;
+  dqPanelEl.classList.toggle("focus-chat",f==="chat");
+  document.body.classList.toggle("ui-focus-view",f==="view");
+}
+/* klik di luar panel (di view mana pun) → pindah focus ke view */
+document.addEventListener("pointerdown",e=>{
+  if(!dqPanelEl.contains(e.target))setUiFocus("view");
+},true);
+/* esc nurut focus */
+document.addEventListener("keydown",e=>{
+  if(e.key!=="Escape")return;
+  if(e.altKey||e.ctrlKey||e.metaKey)return;
+  const p=document.getElementById("dqPanel");
+  if(uiFocus==="chat"&&p&&p.classList.contains("open")){
+    e.preventDefault();e.stopPropagation();
+    document.getElementById("dqClose").click();
+    return;
+  }
+  /* focus di view: kalau chat kebuka, jangan ditutup — back dari view aja */
+  if(p&&p.classList.contains("open")&&cur&&cur!=="menu"){
+    e.preventDefault();e.stopPropagation();
+    if(cur==="dlview"){$("dlvBack").click();return;}
+    if(cur==="jrview"){$("jrvBack").click();return;}
+    if(cur==="gview"){$("gvBack").click();return;}
+    go("menu");return;
+  }
+  /* view fullscreen yang punya back sendiri */
+  if(cur==="dlview"){e.stopPropagation();$("dlvBack").click();return;}
+  if(cur==="jrview"){e.stopPropagation();$("jrvBack").click();return;}
+  if(cur==="gview"){e.stopPropagation();$("gvBack").click();return;}
+  if(cur&&cur!=="menu"){
+    e.preventDefault();e.stopPropagation();
+    go("menu");
+  }
+},true);
 
 /* ═══════ MENU ═══════ */
 function secTitle(id,def){
@@ -984,13 +1104,15 @@ function renderMenu(){
     +(sholatHtml?`<div id="menuSholat">${sholatHtml}</div>`:"");
   const sd=$("menuSholat");
   if(sd){
-    const align=localStorage.getItem("oqSholatPos")||"left";
-    sd.style.textAlign=align==="right"?"right":align==="center"?"center":"left";
-    // horizontal placement via menuStatus flex (robust under zoom/media rules)
+    // horizontal placement: sholat card only — the activity line above it
+    // stays left-aligned and is never affected by the sholat position
     $("menuStatus").style.display="flex";
     $("menuStatus").style.flexDirection="column";
     $("menuStatus").style.gap="12px";
-    $("menuStatus").style.alignItems=align==="right"?"flex-end":align==="center"?"center":"flex-start";
+    $("menuStatus").style.alignItems="flex-start";
+    const align=localStorage.getItem("oqSholatPos")||"left";
+    sd.style.textAlign=align==="right"?"right":align==="center"?"center":"left";
+    sd.style.alignSelf=align==="right"?"flex-end":align==="center"?"center":"flex-start";
     // gold styling ONLY while the prayer window is active and not done yet
     const gold=window.__sholatGold===true;
     sd.style.maxWidth="300px";
@@ -1392,7 +1514,7 @@ function renderDlv(){
   cur="dlview";
   const sholatCard=document.getElementById("menuSholat");
   if(sholatCard)sholatCard.style.display="none";
-  $("dlvBack").textContent=par?("‹ "+par.title):"‹ deadlines";
+  $("dlvBack").firstChild.textContent=par?("‹ "+par.title):"‹ deadlines";
   $("dlvTitle").textContent=it.title;
   $("dlvSub").textContent=(it.date?leftTxtFor(it.date):"no date")+(it.time?" · "+it.time:"");
   let h="";
@@ -2177,17 +2299,24 @@ function dqPush(cls,txt){
 })();
 document.getElementById("dqBtn").onclick=()=>{
   dqOpen=!dqOpen;
-  document.getElementById("dqPanel").classList.toggle("open",dqOpen);
+  const p=document.getElementById("dqPanel");
+  p.classList.toggle("open",dqOpen);
+  if(typeof setUiFocus==="function")setUiFocus(dqOpen?"chat":"view");
+  /* kalau dibuka dari tombol floating biasa (bukan via menu), pastikan bukan mode fullscreen */
+  if(dqOpen&&cur!=="menu")p.classList.remove("dq-max");
   document.getElementById("dqBtn").style.display=dqOpen?"none":"";
   if(dqOpen){
-    const p=document.getElementById("dqPanel");
     if(!p.style.left){/* first open: taruh kanan-bawah */
       p.style.left=Math.max(8,window.innerWidth-p.offsetWidth-18)+"px";
       p.style.top=Math.max(8,window.innerHeight-p.offsetHeight-56)+"px";
     }
     clampPos();/* layar beda (rotate/ganti device): panel jangan nyangkut di luar layar */
-    if(dqView==="chat"&&!document.getElementById("dqLog").children.length)
-      dqPush("bot","halo 👋 tanya apa aja — ini hermes di vps.");
+    if(dqView==="chat"&&!document.getElementById("dqLog").children.length){
+      /* on open: load last history chat (sesi terakhir), kalau gak ada baru sapa */
+      const st=dqStore(),cur=st.meta&&st.meta.current,has=(st.chats||{})[cur];
+      if(has&&has.length)dqOpenSession(cur);
+      else dqPush("bot","halo 👋 tanya apa aja — ini hermes di vps.");
+    }
     document.getElementById("dqIn").focus();
   }
 };
@@ -2231,7 +2360,10 @@ document.getElementById("dqNew").onclick=()=>{
   dqPush("bot","🆕 sesi baru — kontek kosong lagi.");
 };
 document.getElementById("dqClose").onclick=()=>{
-  dqOpen=false;document.getElementById("dqPanel").classList.remove("open");
+  dqOpen=false;
+  if(typeof setUiFocus==="function")setUiFocus("view");
+  const p=document.getElementById("dqPanel");
+  p.classList.remove("open","dq-max");
   document.getElementById("dqBtn").style.display="";
 };
 function fmtTok(n){n=+n||0;return n>=1000?(n/1000).toFixed(1).replace(/\.0$/,"")+"k":String(n);}
