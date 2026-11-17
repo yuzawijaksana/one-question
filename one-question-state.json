@@ -2,7 +2,7 @@
   "version": 1,
   "keys": {
     "oneQuestionSettings": {
-      "updatedAt": 1794369042216,
+      "updatedAt": 1794907721995,
       "value": {
         "widgetGuides": [
           {
@@ -189,8 +189,95 @@
                 "pick": null
               }
             ]
+          },
+          {
+            "id": "g2711188",
+            "title": "how to wake up",
+            "steps": [
+              {
+                "id": "s2711181",
+                "text": "malam: mau bangun jam berapa?",
+                "done": false,
+                "choices": [
+                  "03:30",
+                  "04:00",
+                  "subuh - 15 menit"
+                ],
+                "pick": null
+              },
+              {
+                "id": "s2711182",
+                "text": "kenapa harus bangun? (ini niatmu)",
+                "done": false,
+                "choices": [
+                  "karena Allah",
+                  "biar hari ini ga cuma rebahan",
+                  "punya target yang nunggu"
+                ],
+                "pick": null
+              },
+              {
+                "id": "s2711183",
+                "text": "sebelum tidur: niat + doa tidur, hp dijauh, lampu mati",
+                "done": false
+              },
+              {
+                "id": "s2711184",
+                "text": "alarm pertama bunyi = duduk. ga ada snooze",
+                "done": false,
+                "choices": [
+                  "duduk + berdoa dulu",
+                  "langsung minum air",
+                  "kaki turun dari kasur dulu"
+                ],
+                "pick": null
+              },
+              {
+                "id": "s2711185",
+                "text": "ucap niatnya: \"aku bangun karena Allah, bukan karena dipaksa alarm\"",
+                "done": false
+              },
+              {
+                "id": "s2711186",
+                "text": "wudhu — air dingin buat matiin ngantuk yang sisa",
+                "done": false
+              },
+              {
+                "id": "s2711187",
+                "text": "subuh di awal waktu, ga ditunda",
+                "done": false
+              },
+              {
+                "id": "s2711188",
+                "text": "masih ngantuk berat?",
+                "done": false,
+                "choices": [
+                  "jalan dikit / cuci muka",
+                  "inget: pagi ini cuma ada sekali",
+                  "istighfar, lanjut jalan"
+                ],
+                "pick": null
+              },
+              {
+                "id": "s2711189",
+                "text": "kelewat bangun?",
+                "done": false,
+                "choices": [
+                  "ga self-hate, besok coba lagi",
+                  "tetep bangun sekarang, telat ga apa2",
+                  "cari kenapa: tidur telat / alarm jauh"
+                ],
+                "pick": null
+              },
+              {
+                "id": "s2711190",
+                "text": "tulis niat utama besok di journal biar ga hilang",
+                "done": false
+              }
+            ]
           }
-        ]
+        ],
+        "stickyCategories": []
       }
     },
     "oneQuestionQuestionBank": {
@@ -473,7 +560,7 @@
       }
     },
     "oneQuestionSchedule": {
-      "updatedAt": 1794555933489,
+      "updatedAt": 1794907625613,
       "value": [
         {
           "start": 240,
@@ -489,15 +576,21 @@
         },
         {
           "start": 540,
-          "end": 690,
+          "end": 720,
           "label": "work on anything",
           "color": "#9c8d7c"
         },
         {
-          "start": 840,
-          "end": 960,
+          "start": 720,
+          "end": 900,
           "label": "sleep",
           "color": "#7c9c95"
+        },
+        {
+          "start": 900,
+          "end": 1080,
+          "label": "work on anything",
+          "color": "#9c8d7c"
         },
         {
           "start": 1080,
@@ -516,17 +609,11 @@
           "end": 1380,
           "label": "game/social",
           "color": "#9c8d7c"
-        },
-        {
-          "start": 720,
-          "end": 810,
-          "label": "work on anything",
-          "color": "#7c9c95"
         }
       ]
     },
     "oneQuestionStickies": {
-      "updatedAt": 1794587549305,
+      "updatedAt": 1794907623790,
       "value": [
         {
           "id": "9573ce75-e5f7-4256-88bf-63dd5183bea1",
@@ -761,7 +848,7 @@
       ]
     },
     "oneQuestionNote": {
-      "updatedAt": 1794589770349,
+      "updatedAt": 1794905729240,
       "value": "sse-probe-1794587513832"
     },
     "oneQuestionJournal": {
@@ -769,9 +856,10 @@
       "value": []
     },
     "oneQuestionBook": {
-      "updatedAt": 1794306504849,
+      "updatedAt": 1794907741557,
       "value": {
         "title": "",
+        "activeId": "534bcc1c-33b1-4f83-a5a2-145f8e361e11",
         "chapters": [
           {
             "id": "534bcc1c-33b1-4f83-a5a2-145f8e361e11",
@@ -804,14 +892,13 @@
             "text": "underestimate yourself : \nhari ini aku gabakal bisa kelar riset paper seharian -> otw \ngabakal ketemu paper yang relevan -> ketemu\ngabakal bisa nulis latar belakang dalam waktu sehari -> lanjut besok\ngabisa lanjutin rumusan masalah tanpa latar belakang masalah -> buktinya ada 1\ngabakal bisa lanjutin bab 2 dan bab 3 -> 😭\n\nhttps://journal.untar.ac.id/index.php/computatio/article/view/6048/4051\n\"PEMBUATAN GAME FIGHTING “BRAWLMANIA”\n\n1. dari papernya, baru tau kalau main ada time limit, kalau ga di buat nanti malah ga bakal beres2 dong wkwk\n2. ide baru soal changing maps (implementasiin ke game)\n3. ide dari papernya = game mode (arcade, versus, practice)\n\n4. bedanya paper itu sama laporan \n   - Arcade = \"Sepuluh player dengan score tertinggi akan terdaftar dalam menu High Score\" \n   - tema = \"Ada delapan karakter yang dapat dimainkan. Setiap karakter mewakili fakultas yang ada di\nUniversitas Tarumanagara dan memiliki gerakan kombo dan keunikan sendiri\" \n5. papernya game respondennya 30, noted\n6. reminder kalau paper ini paper pembuatan bukan pengembangan, jadi latar belakang masalah harus di matengin lagi\n\ndaftar pustaka\ngame (Game adalah sebuah aktivitas atau kontes secara fisik ataupun mental yang memilikisebuah aturan dan dilakukan oleh orang-orang untuk kesenangannya [1]) (Merriam-Webster, Game | Definition of game by Merriam-Webster, http://www.merriamwebster.com/dictionary/game, 22 Februari 2019.)",
             "date": "2026-11-10",
             "html": "<p>underestimate yourself : <br>hari ini aku gabakal bisa kelar riset paper seharian -&gt; otw <br>gabakal ketemu paper yang relevan -&gt; ketemu<br>gabakal bisa nulis latar belakang dalam waktu sehari -&gt; lanjut besok<br>gabisa lanjutin rumusan masalah tanpa latar belakang masalah -&gt; buktinya ada 1<br>gabakal bisa lanjutin bab 2 dan bab 3 -&gt; 😭</p><p>https://journal.untar.ac.id/index.php/computatio/article/view/6048/4051<br>&quot;PEMBUATAN GAME FIGHTING “BRAWLMANIA”</p><p>1. dari papernya, baru tau kalau main ada time limit, kalau ga di buat nanti malah ga bakal beres2 dong wkwk<br>2. ide baru soal changing maps (implementasiin ke game)<br>3. ide dari papernya = game mode (arcade, versus, practice)</p><p>4. bedanya paper itu sama laporan <br>   - Arcade = &quot;Sepuluh player dengan score tertinggi akan terdaftar dalam menu High Score&quot; <br>   - tema = &quot;Ada delapan karakter yang dapat dimainkan. Setiap karakter mewakili fakultas yang ada di<br>Universitas Tarumanagara dan memiliki gerakan kombo dan keunikan sendiri&quot; <br>5. papernya game respondennya 30, noted<br>6. reminder kalau paper ini paper pembuatan bukan pengembangan, jadi latar belakang masalah harus di matengin lagi</p><p>daftar pustaka<br>game (Game adalah sebuah aktivitas atau kontes secara fisik ataupun mental yang memilikisebuah aturan dan dilakukan oleh orang-orang untuk kesenangannya [1]) (Merriam-Webster, Game | Definition of game by Merriam-Webster, http://www.merriamwebster.com/dictionary/game, 22 Februari 2019.)</p>",
-            "updatedAt": 1794306504849
+            "updatedAt": 1794907720402
           }
-        ],
-        "activeId": "cmuw7xntnaj4q"
+        ]
       }
     },
     "oneQuestionQuotes": {
-      "updatedAt": 1794589770340,
+      "updatedAt": 1794907611286,
       "value": [
         {
           "id": "793d7d20-9493-43f6-9f7f-64f71142260e",
@@ -909,32 +996,37 @@
       ]
     },
     "oneQuestionSholat": {
-      "updatedAt": 1794616158275,
+      "updatedAt": 1794907856984,
       "value": {
         "lat": -6.2088,
         "lon": 106.8456,
         "city": "jakarta (default)",
-        "date": "2026-11-14",
+        "mode": "auto",
+        "date": "2026-11-17",
         "times": {
           "subuh": [
             4,
             3
           ],
+          "terbit": [
+            5,
+            25
+          ],
           "dzuhur": [
             11,
-            37
+            38
           ],
           "ashar": [
-            14,
-            59
+            15,
+            1
           ],
           "maghrib": [
             17,
-            49
+            50
           ],
           "isya": [
             19,
-            2
+            4
           ]
         },
         "bounds": {
@@ -942,17 +1034,21 @@
             5,
             25
           ],
+          "terbit": [
+            11,
+            38
+          ],
           "dzuhur": [
-            14,
-            59
+            15,
+            1
           ],
           "ashar": [
             17,
-            49
+            50
           ],
           "maghrib": [
             19,
-            2
+            4
           ],
           "isya": [
             23,
@@ -1041,5 +1137,5 @@
       ]
     }
   },
-  "updatedAt": 1794616159312
+  "updatedAt": 1794907857138
 }

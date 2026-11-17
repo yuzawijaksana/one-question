@@ -386,58 +386,29 @@ input[type=range]::-webkit-slider-thumb{
   padding:24px 20px;
 }
 .card.tap:active{background:var(--card-hover);}
-/* stroke draw on hover: the border re-traces itself around EVERY bordered box */
+/* stroke fade in/out on hover: full outline fades in on enter, fades out on leave —
+   no line-running animation, just a soft opacity crossfade */
 :is(.card,#menuSholat,.dq-msg,.set-btn,.checkbox,.dq-filechip,.dq-day,
 .dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
 .flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
 #dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom){
   position:relative;
 }
-:is(.card,#menuSholat,.dq-msg,.set-btn,.checkbox,.dq-filechip,.dq-day,
-.dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
-.flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
-#dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom)::before,
-:is(.card,#menuSholat,.dq-msg,.set-btn,.checkbox,.dq-filechip,.dq-day,
-.dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
-.flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
-#dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom)::after{
-  content:"";position:absolute;pointer-events:none;width:0;height:0;opacity:0;
-}
+/* elemen fixed tetap fixed — jangan kena position:relative di atas */
+#dqBtn,#dqPanel,#verChip,#newBuild{position:fixed !important;}
 :is(.card,#menuSholat,.dq-msg,.set-btn,.checkbox,.dq-filechip,.dq-day,
 .dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
 .flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
 #dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom)::before{
-  top:-1px;left:-1px;border-top:1px solid var(--accent);border-left:1px solid var(--accent);
-}
-:is(.card,#menuSholat,.dq-msg,.set-btn,.checkbox,.dq-filechip,.dq-day,
-.dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
-.flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
-#dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom)::after{
-  bottom:-1px;right:-1px;border-bottom:1px solid var(--accent);border-right:1px solid var(--accent);
+  content:"";position:absolute;inset:-1px;pointer-events:none;
+  border:1px solid var(--accent);opacity:0;
+  transition:opacity .35s ease;
 }
 @media(hover:hover){
   :is(.card,#menuSholat,.dq-msg,.set-btn,.checkbox,.dq-filechip,.dq-day,
-  .dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
-  .flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
-  #dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom):hover::before,
-  :is(.card,#menuSholat,.dq-msg,.set-btn,.checkbox,.dq-filechip,.dq-day,
-  .dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
-  .flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
-  #dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom):hover::after{
-    width:calc(100% + 2px);height:calc(100% + 2px);opacity:1;
-  }
-  :is(.card,#menuSholat,.dq-msg,.set-btn,.checkbox,.dq-filechip,.dq-day,
-  .dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
-  .flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
-  #dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom):hover::after{
-    transition:width .3s ease .12s,height .3s ease,opacity .2s;
-  }
-  :is(.card,#menuSholat,.dq-msg,.set-btn,.checkbox,.dq-filechip,.dq-day,
-  .dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
-  .flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
-  #dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom):hover::before{
-    transition:width .3s ease,height .3s ease .12s,opacity .2s;
-  }
+.dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
+.flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
+#dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom):hover::before{opacity:1;}
 }
 /* ── pills ── */
 .pills{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px;}
