@@ -2039,6 +2039,8 @@ let dqTargetMode=localStorage.getItem("oqDqTarget")||"hermes";
   function paint(){
     t.textContent=dqTargetMode==="instinct"?"🟢 instinct":"🤖 hermes";
     t.classList.toggle("instinct",dqTargetMode==="instinct");
+    const eb=document.getElementById("dqEffort");
+    if(eb)eb.style.display=dqTargetMode==="instinct"?"none":"";
   }
   t.onclick=()=>{
     dqTargetMode=dqTargetMode==="hermes"?"instinct":"hermes";
