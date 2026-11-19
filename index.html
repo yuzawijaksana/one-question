@@ -2059,7 +2059,9 @@ let dqTargetMode=localStorage.getItem("oqDqTarget")||"hermes";
           meta.className="dq-meta";
           meta.textContent="📩 dari instinct · "+new Date(m.ts||Date.now()).toLocaleTimeString("id-ID");
           const lg=document.getElementById("dqLog");
-          lg.insertBefore(meta,el.nextSibling);lg.scrollTop=lg.scrollHeight;
+          el.append(meta);
+          const lgq=document.getElementById("dqLog");
+          lgq.scrollTop=lgq.scrollHeight;
           dqSave("bot","[DARI INSTINCT] "+m.text);
         });
       }).catch(()=>{});
@@ -2092,8 +2094,9 @@ setInterval(()=>{
       const meta=document.createElement("div");
       meta.className="dq-meta";
       meta.textContent="📩 dari instinct · "+new Date(m.ts||Date.now()).toLocaleTimeString("id-ID");
+      el.append(meta);
       const lg=document.getElementById("dqLog");
-      lg.insertBefore(meta,el.nextSibling);lg.scrollTop=lg.scrollHeight;
+      lg.scrollTop=lg.scrollHeight;
       dqSave("bot","[DARI INSTINCT] "+m.text);
     });
   }).catch(()=>{});
@@ -2465,7 +2468,7 @@ async function dqAsk(q){
         meta.className="dq-meta you-meta";
         meta.textContent="⚡ relay · ✓✓ terkirim · "+q.length+" char";
         const lg=document.getElementById("dqLog");
-        lg.insertBefore(meta,ub.nextSibling);lg.scrollTop=lg.scrollHeight;
+        ub.append(meta);
         dqSave("meta","⚡ relay · ✓✓ terkirim · "+q.length+" char");
       }else{
         ub.style.borderColor="var(--red,#e5484d)";
@@ -2473,7 +2476,7 @@ async function dqAsk(q){
         meta.className="dq-meta";
         meta.textContent="⚡ relay · ✕ gagal kirim";
         const lg=document.getElementById("dqLog");
-        lg.insertBefore(meta,ub.nextSibling);lg.scrollTop=lg.scrollHeight;
+        ub.append(meta);
         dqSave("bot","✕ gagal kirim: "+(d.error||"?"));
       }
     }catch(e){
@@ -2548,13 +2551,47 @@ async function dqAsk(q){
   }
   dqStage("thinking");
   if(dqTargetMode==="instinct"){
-    dqPush("you",q);dqSave("you",q);
-    try{
-      const r=await fetch(apiURL("/relay/send"),{method:"POST",
-        headers:{"Content-Type":"application/json"},body:JSON.stringify({text:q})});
-      const d=await r.json();
-      dqPush("bot",d.ok?"✓ terkirim ke Instinct":"✕ gagal: "+(d.error||"?"));
-    }catch(e){dqPush("bot","✕ offline");}
+    // files (images) first — sent as real media via bridge
+    for(const f of dqFiles){
+      if(!f.fileObj)continue;
+      try{
+        const b64=await new Promise(res=>{
+          const rd=new FileReader();
+          rd.onload=()=>res(String(rd.result).split(",")[1]);
+          rd.readAsDataURL(f.fileObj);
+        });
+        const ext=(f.name.split(".").pop()||"jpg").toLowerCase();
+        const rr=await fetch(apiURL("/relay/media"),{method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({data:b64,ext})});
+        const dd=await rr.json();
+        const ubf=dqPush("you","🖼 "+f.name);
+        if(dd.ok){const ck=document.createElement("span");ck.className="dq-check";ck.textContent=" ✓✓";ubf.append(ck);}
+        dqSave("you","🖼 "+f.name+(dd.ok?" ✓✓":" ✕"));
+      }catch(e){dqPush("bot","✕ gagal kirim "+f.name);}
+    }
+    dqFiles=[];renderFileChips();
+    if(q){
+      const ub=dqPush("you",q);dqSave("you",q);
+      try{
+        const r=await fetch(apiURL("/relay/send"),{method:"POST",
+          headers:{"Content-Type":"application/json"},body:JSON.stringify({text:q})});
+        const d=await r.json();
+        if(d.ok){
+          const meta=document.createElement("div");meta.className="dq-meta";
+          meta.textContent="⚡ relay · ✓✓ terkirim · "+q.length+" char";
+          ub.append(meta);dqSave("you",q+" ✓✓");
+        }else{
+          ub.style.borderColor="var(--red,#e5484d)";
+          const meta=document.createElement("div");meta.className="dq-meta";
+          meta.textContent="⚡ relay · ✕ gagal kirim";
+          ub.append(meta);
+        }
+      }catch(e){
+        ub.style.borderColor="var(--red,#e5484d)";
+        dqPush("bot","✕ offline");
+      }
+    }
     document.getElementById("dqSend").disabled=false;dqBusy=false;
     return;
   }
