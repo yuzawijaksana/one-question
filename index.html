@@ -2076,7 +2076,7 @@ try{
   let changed=false;
   for(const id in (st.chats||{})){
     const before=st.chats[id].length;
-    st.chats[id]=st.chats[id].filter(m=>!(m.t||"").includes("(media/non-teks)")&&!(m.t||"").startsWith("[DARI INSTINCT] (media"));
+    st.chats[id]=st.chats[id].filter(m=>!(m.t||"").includes("(media/non-teks)")&&!(m.t||"").startsWith("[DARI INSTINCT] (media")&&!(m.t||"").startsWith("⚡ relay ·")&&!(m.t||"").startsWith("[DARI INSTINCT] ⚡ relay"));
     if(st.chats[id].length!==before)changed=true;
   }
   if(changed)localStorage.setItem("oqDqChat",JSON.stringify(st));
@@ -2238,6 +2238,8 @@ function dqSetView(v){
   dqView=v;
   if(v==="history")dqDay=null;
   document.querySelectorAll(".dq-tab").forEach(t=>t.classList.toggle("active",t.dataset.t===v));
+  const eb=document.getElementById("dqEffort");
+  if(eb)eb.style.display=v==="instinct"?"none":"";
   if(v==="history")dqRestore();
   else{
     // reopen CURRENT session (not reset!) so switching tabs doesn't lose context
