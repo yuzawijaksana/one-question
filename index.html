@@ -2364,7 +2364,7 @@ document.getElementById("dqFile").onchange=async e=>{
     }else{
       try{text=await f.text();}catch(err){dqPush("bot","gagal baca "+f.name);continue;}
     }
-    dqFiles.push({name:f.name,text});
+    dqFiles.push({name:f.name,text,fileObj:(f.type&&f.type.startsWith("image/"))?f:null});
   }
   e.target.value="";
   renderFileChips();
@@ -2405,6 +2405,27 @@ async function dqAsk(q){
   if(!q)return;
   // INSTINCT relay: kirim langsung via bridge, tanpa AI, tanpa antrian/thinking
   if(dqTargetMode==="instinct"){
+    // kirim file gambar dulu (kalau ada) via /api/relay/media
+    for(const f of dqFiles){
+      if(!f.fileObj)continue;
+      try{
+        const b64=await new Promise(res=>{
+          const rd=new FileReader();
+          rd.onload=()=>res(String(rd.result).split(",")[1]);
+          rd.readAsDataURL(f.fileObj);
+        });
+        const ext=(f.name.split(".").pop()||"jpg").toLowerCase();
+        const rr=await fetch(apiURL("/relay/media"),{method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({data:b64,ext})});
+        const dd=await rr.json();
+        if(dd.ok){const ub2=dqPush("you","🖼 "+f.name);ub2.append(Object.assign(document.createElement("span"),{className:"dq-check",textContent:" ✓✓"}));dqSave("you","🖼 "+f.name);}
+        else dqPush("bot","✕ gagal kirim "+f.name+": "+(dd.error||"?"));
+      }catch(e){dqPush("bot","✕ gagal kirim "+f.name);}
+    }
+    dqFiles=[];renderFileChips();
+    // jika tidak ada teks, selesai setelah file
+    if(!q){document.getElementById("dqSend").disabled=false;dqBusy=false;return;}
     const ub=dqPush("you",q);dqSave("you",q);
     try{
       const r=await fetch(apiURL("/relay/send"),{method:"POST",

@@ -603,6 +603,34 @@ class Handler(SimpleHTTPRequestHandler):
             except Exception as exc:
                 self._json(500, {"ok": False, "error": str(exc)})
             return
+        if self.path == "/api/relay/media":
+            if not self._authorized():
+                self._json(401, {"error": "unauthorized"})
+                return
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+                payload = json.loads(self.rfile.read(length) or b"{}")
+                data_b64 = str(payload.get("data", ""))
+                ext = str(payload.get("ext", "jpg"))
+                if not data_b64:
+                    self._json(400, {"error": "empty data"})
+                    return
+                import urllib.request, base64, tempfile
+                img_bytes = base64.b64decode(data_b64)
+                tmp = Path("/tmp") / ("relay-" + str(int(time.time() * 1000)) + "." + ext)
+                tmp.write_bytes(img_bytes)
+                body = json.dumps({"chatId": "16508702892@s.whatsapp.net",
+                                   "filePath": str(tmp),
+                                   "mediaType": "image/" + ("jpeg" if ext == "jpg" else ext)}).encode()
+                req = urllib.request.Request("http://127.0.0.1:3000/send-media", data=body,
+                                             headers={"Content-Type": "application/json"})
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    out = json.loads(resp.read().decode())
+                tmp.unlink(missing_ok=True)
+                self._json(200, {"ok": True, "result": out})
+            except Exception as exc:
+                self._json(500, {"ok": False, "error": str(exc)})
+            return
         if self.path == "/api/relay/send":
             if not self._authorized():
                 self._json(401, {"error": "unauthorized"})
