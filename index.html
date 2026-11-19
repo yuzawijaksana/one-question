@@ -187,7 +187,8 @@ img{display:block;}
 .dq-msg.think{color:var(--muted);font-style:italic;
   background:none;border:none;padding:2px 12px;}
 .dq-msg .dq-cd{color:var(--muted);font-size:11px;margin-left:4px;}
-.dq-msg .dq-meta{color:var(--muted);font-size:10px;margin-top:6px;opacity:.75;}
+.dq-msg .dq-meta{color:var(--muted);font-size:10px;margin-top:2px;opacity:.75;align-self:flex-start;}
+.dq-meta.you-meta{align-self:flex-end;margin-top:-4px;margin-bottom:6px;}
 /* warna border bubble bot ngikutin effort jawabannya */
 .dq-msg.bot[data-eff="flash"]{border-left-color:#7ee787;}
 .dq-msg.bot[data-eff="quick"]{border-left-color:#a5d6ff;}
@@ -2042,6 +2043,8 @@ let dqTargetMode=localStorage.getItem("oqDqTarget")||"hermes";
     t.classList.toggle("instinct",dqTargetMode==="instinct");
     const eb=document.getElementById("dqEffort");
     if(eb)eb.style.display=dqTargetMode==="instinct"?"none":"";
+    // guard: re-hide after any re-render that may recreate the button
+    setTimeout(()=>{const e2=document.getElementById("dqEffort");if(e2)e2.style.display=dqTargetMode==="instinct"?"none":"";},300);
   }
   t.onclick=()=>{
     dqTargetMode=dqTargetMode==="hermes"?"instinct":"hermes";
@@ -2064,6 +2067,18 @@ let dqTargetMode=localStorage.getItem("oqDqTarget")||"hermes";
   };
   paint();
 })();
+
+/* purge placeholder junk dari store lama */
+try{
+  const st=JSON.parse(localStorage.getItem("oqDqChat")||"{}");
+  let changed=false;
+  for(const id in (st.chats||{})){
+    const before=st.chats[id].length;
+    st.chats[id]=st.chats[id].filter(m=>!(m.t||"").includes("(media/non-teks)")&&!(m.t||"").startsWith("[DARI INSTINCT] (media"));
+    if(st.chats[id].length!==before)changed=true;
+  }
+  if(changed)localStorage.setItem("oqDqChat",JSON.stringify(st));
+}catch(e){}
 
 /* instinct inbox poller: saat panel kebuka & mode instinct, tarik inbox tiap 5s */
 let dqInboxTs=0;
@@ -2447,7 +2462,7 @@ async function dqAsk(q){
       if(d.ok){
         // meta line below bubble: status + panjang pesan (gak ada token — relay murni)
         const meta=document.createElement("div");
-        meta.className="dq-meta";
+        meta.className="dq-meta you-meta";
         meta.textContent="⚡ relay · ✓✓ terkirim · "+q.length+" char";
         const lg=document.getElementById("dqLog");
         lg.insertBefore(meta,ub.nextSibling);lg.scrollTop=lg.scrollHeight;
