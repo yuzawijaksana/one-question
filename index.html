@@ -211,6 +211,7 @@ img{display:block;}
   75%{content:". . .";}
   100%{content:". . .";}
 }
+.dq-effort.instinct{color:var(--green,#25d366);}
 .dq-effort{
   padding:4px 8px;font-size:11px;color:var(--muted);
   border:1px solid rgba(141,141,141,.4);background:none;cursor:pointer;
@@ -386,58 +387,29 @@ input[type=range]::-webkit-slider-thumb{
   padding:24px 20px;
 }
 .card.tap:active{background:var(--card-hover);}
-/* stroke draw on hover: the border re-traces itself around EVERY bordered box */
+/* stroke fade in/out on hover: full outline fades in on enter, fades out on leave —
+   no line-running animation, just a soft opacity crossfade */
 :is(.card,#menuSholat,.dq-msg,.set-btn,.checkbox,.dq-filechip,.dq-day,
 .dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
 .flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
 #dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom){
   position:relative;
 }
-:is(.card,#menuSholat,.dq-msg,.set-btn,.checkbox,.dq-filechip,.dq-day,
-.dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
-.flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
-#dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom)::before,
-:is(.card,#menuSholat,.dq-msg,.set-btn,.checkbox,.dq-filechip,.dq-day,
-.dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
-.flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
-#dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom)::after{
-  content:"";position:absolute;pointer-events:none;width:0;height:0;opacity:0;
-}
+/* elemen fixed tetap fixed — jangan kena position:relative di atas */
+#dqBtn,#dqPanel,#verChip,#newBuild{position:fixed !important;}
 :is(.card,#menuSholat,.dq-msg,.set-btn,.checkbox,.dq-filechip,.dq-day,
 .dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
 .flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
 #dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom)::before{
-  top:-1px;left:-1px;border-top:1px solid var(--accent);border-left:1px solid var(--accent);
-}
-:is(.card,#menuSholat,.dq-msg,.set-btn,.checkbox,.dq-filechip,.dq-day,
-.dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
-.flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
-#dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom)::after{
-  bottom:-1px;right:-1px;border-bottom:1px solid var(--accent);border-right:1px solid var(--accent);
+  content:"";position:absolute;inset:-1px;pointer-events:none;
+  border:1px solid var(--accent);opacity:0;
+  transition:opacity .35s ease;
 }
 @media(hover:hover){
   :is(.card,#menuSholat,.dq-msg,.set-btn,.checkbox,.dq-filechip,.dq-day,
-  .dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
-  .flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
-  #dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom):hover::before,
-  :is(.card,#menuSholat,.dq-msg,.set-btn,.checkbox,.dq-filechip,.dq-day,
-  .dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
-  .flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
-  #dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom):hover::after{
-    width:calc(100% + 2px);height:calc(100% + 2px);opacity:1;
-  }
-  :is(.card,#menuSholat,.dq-msg,.set-btn,.checkbox,.dq-filechip,.dq-day,
-  .dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
-  .flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
-  #dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom):hover::after{
-    transition:width .3s ease .12s,height .3s ease,opacity .2s;
-  }
-  :is(.card,#menuSholat,.dq-msg,.set-btn,.checkbox,.dq-filechip,.dq-day,
-  .dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
-  .flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
-  #dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom):hover::before{
-    transition:width .3s ease,height .3s ease .12s,opacity .2s;
-  }
+.dq-effort,.dq-effort-menu,.dq-hbtn,.back-bottom,.sholat-row.active,
+.flow-box,.modal-box,.modal-actions button,.pill.on,#dqBtn,#dqPanel,
+#dqBar input,#dqBar button,#verChip,#newBuild,.dq-back,.tabs button.on,.add-bottom):hover::before{opacity:1;}
 }
 /* ── pills ── */
 .pills{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px;}
@@ -626,6 +598,7 @@ input[type=range]::-webkit-slider-thumb{
   <div id="dqBar" style="position:relative;">
     <div class="dq-effort-menu" id="dqEffortMenu"></div>
     <button class="dq-effort" id="dqEffort" title="thinking effort — max waktu jawab">⚡ flash</button>
+    <button class="dq-effort" id="dqTarget" title="chat target">🤖 hermes</button>
     <button id="dqNew" title="new chat" style="background:none;border:1px solid var(--line);color:var(--muted);cursor:pointer;font-family:inherit;padding:10px 12px;font-size:15px;">+</button>
     <textarea id="dqIn" rows="1" placeholder="tanya apa aja…" autocomplete="off"></textarea>
     <button id="dqAttach" title="attach file" style="background:none;border:1px solid var(--line);color:var(--muted);cursor:pointer;font-family:inherit;padding:10px 12px;font-size:13px;">↑</button>
@@ -889,7 +862,7 @@ input[type=range]::-webkit-slider-thumb{
 <script>
 "use strict";
 
-const APP_VER="0.162";
+const APP_VER="0.164";
 /* ═══════════════ owl web — one file, no build step ═══════════════
    reads/writes the same /api/state as the phone widget + old web app */
 
@@ -2058,6 +2031,29 @@ async function ensureSholat(){
   }
 }
 
+/* chat target: hermes (AI) vs instinct (relay ke WA) */
+let dqTargetMode=localStorage.getItem("oqDqTarget")||"hermes";
+(function(){
+  const t=document.getElementById("dqTarget");
+  if(!t)return;
+  function paint(){
+    t.textContent=dqTargetMode==="instinct"?"🟢 instinct":"🤖 hermes";
+    t.classList.toggle("instinct",dqTargetMode==="instinct");
+  }
+  t.onclick=()=>{
+    dqTargetMode=dqTargetMode==="hermes"?"instinct":"hermes";
+    localStorage.setItem("oqDqTarget",dqTargetMode);
+    paint();
+    if(dqTargetMode==="instinct"){
+      // pull any waiting instinct messages into the chat
+      fetch(apiURL("/relay/inbox")).then(r=>r.json()).then(d=>{
+        (d.items||[]).forEach(m=>dqPush("bot","[DARI INSTINCT] "+m.text));
+      }).catch(()=>{});
+    }
+  };
+  paint();
+})();
+
 /* thinking effort: max detik hermes boleh mikir (server timeout = effort) */
 /* tiap tier ada warnanya sendiri biar gampang bedain */
 const DQ_EFFORTS=[
@@ -2455,6 +2451,17 @@ async function dqAsk(q){
     try{localStorage.setItem(dqStoreKey,JSON.stringify(sm));}catch(e){}
   }
   dqStage("thinking");
+  if(dqTargetMode==="instinct"){
+    dqPush("you",q);dqSave("you",q);
+    try{
+      const r=await fetch(apiURL("/relay/send"),{method:"POST",
+        headers:{"Content-Type":"application/json"},body:JSON.stringify({text:q})});
+      const d=await r.json();
+      dqPush("bot",d.ok?"✓ terkirim ke Instinct":"✕ gagal: "+(d.error||"?"));
+    }catch(e){dqPush("bot","✕ offline");}
+    document.getElementById("dqSend").disabled=false;dqBusy=false;
+    return;
+  }
   const doFetch=(url,eff)=>fetch(url,{method:"POST",signal:ac.signal,
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({prompt:q,session:sess,effort:eff||dqEffort})});

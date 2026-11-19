@@ -2,7 +2,7 @@
   "version": 1,
   "keys": {
     "oneQuestionSettings": {
-      "updatedAt": 1794369042216,
+      "updatedAt": 1795051195334,
       "value": {
         "widgetGuides": [
           {
@@ -189,8 +189,44 @@
                 "pick": null
               }
             ]
+          },
+          {
+            "id": "g2047912",
+            "title": "how to wake up",
+            "steps": [
+              {
+                "id": "s2089900",
+                "text": "sleep early",
+                "done": false
+              },
+              {
+                "id": "s2096397",
+                "text": "wake up",
+                "done": false,
+                "choices": [
+                  "comfortable",
+                  "wudhu"
+                ]
+              },
+              {
+                "id": "s2148228",
+                "text": "stand up and do nothing",
+                "done": false
+              },
+              {
+                "id": "s2176342",
+                "text": "stand up and walk a bit",
+                "done": false
+              },
+              {
+                "id": "s2186649",
+                "text": "stand up working",
+                "done": false
+              }
+            ]
           }
-        ]
+        ],
+        "stickyCategories": []
       }
     },
     "oneQuestionQuestionBank": {
@@ -473,7 +509,7 @@
       }
     },
     "oneQuestionSchedule": {
-      "updatedAt": 1794555933489,
+      "updatedAt": 1794983189743,
       "value": [
         {
           "start": 240,
@@ -482,51 +518,15 @@
           "color": "#7c829c"
         },
         {
-          "start": 360,
-          "end": 540,
-          "label": "morning routine",
-          "color": "#7d8c7c"
-        },
-        {
-          "start": 540,
-          "end": 690,
-          "label": "work on anything",
-          "color": "#9c8d7c"
-        },
-        {
-          "start": 840,
-          "end": 960,
-          "label": "sleep",
-          "color": "#7c9c95"
-        },
-        {
-          "start": 1080,
-          "end": 1200,
-          "label": "rest",
-          "color": "#7c9c95"
-        },
-        {
           "start": 240,
           "end": 360,
           "label": "work or game",
           "color": "#9c8d7c"
-        },
-        {
-          "start": 1200,
-          "end": 1380,
-          "label": "game/social",
-          "color": "#9c8d7c"
-        },
-        {
-          "start": 720,
-          "end": 810,
-          "label": "work on anything",
-          "color": "#7c9c95"
         }
       ]
     },
     "oneQuestionStickies": {
-      "updatedAt": 1794587549305,
+      "updatedAt": 1794907623790,
       "value": [
         {
           "id": "9573ce75-e5f7-4256-88bf-63dd5183bea1",
@@ -761,7 +761,7 @@
       ]
     },
     "oneQuestionNote": {
-      "updatedAt": 1794589770349,
+      "updatedAt": 1794905729240,
       "value": "sse-probe-1794587513832"
     },
     "oneQuestionJournal": {
@@ -769,9 +769,10 @@
       "value": []
     },
     "oneQuestionBook": {
-      "updatedAt": 1794306504849,
+      "updatedAt": 1794970476096,
       "value": {
         "title": "",
+        "activeId": "534bcc1c-33b1-4f83-a5a2-145f8e361e11",
         "chapters": [
           {
             "id": "534bcc1c-33b1-4f83-a5a2-145f8e361e11",
@@ -804,14 +805,13 @@
             "text": "underestimate yourself : \nhari ini aku gabakal bisa kelar riset paper seharian -> otw \ngabakal ketemu paper yang relevan -> ketemu\ngabakal bisa nulis latar belakang dalam waktu sehari -> lanjut besok\ngabisa lanjutin rumusan masalah tanpa latar belakang masalah -> buktinya ada 1\ngabakal bisa lanjutin bab 2 dan bab 3 -> 😭\n\nhttps://journal.untar.ac.id/index.php/computatio/article/view/6048/4051\n\"PEMBUATAN GAME FIGHTING “BRAWLMANIA”\n\n1. dari papernya, baru tau kalau main ada time limit, kalau ga di buat nanti malah ga bakal beres2 dong wkwk\n2. ide baru soal changing maps (implementasiin ke game)\n3. ide dari papernya = game mode (arcade, versus, practice)\n\n4. bedanya paper itu sama laporan \n   - Arcade = \"Sepuluh player dengan score tertinggi akan terdaftar dalam menu High Score\" \n   - tema = \"Ada delapan karakter yang dapat dimainkan. Setiap karakter mewakili fakultas yang ada di\nUniversitas Tarumanagara dan memiliki gerakan kombo dan keunikan sendiri\" \n5. papernya game respondennya 30, noted\n6. reminder kalau paper ini paper pembuatan bukan pengembangan, jadi latar belakang masalah harus di matengin lagi\n\ndaftar pustaka\ngame (Game adalah sebuah aktivitas atau kontes secara fisik ataupun mental yang memilikisebuah aturan dan dilakukan oleh orang-orang untuk kesenangannya [1]) (Merriam-Webster, Game | Definition of game by Merriam-Webster, http://www.merriamwebster.com/dictionary/game, 22 Februari 2019.)",
             "date": "2026-11-10",
             "html": "<p>underestimate yourself : <br>hari ini aku gabakal bisa kelar riset paper seharian -&gt; otw <br>gabakal ketemu paper yang relevan -&gt; ketemu<br>gabakal bisa nulis latar belakang dalam waktu sehari -&gt; lanjut besok<br>gabisa lanjutin rumusan masalah tanpa latar belakang masalah -&gt; buktinya ada 1<br>gabakal bisa lanjutin bab 2 dan bab 3 -&gt; 😭</p><p>https://journal.untar.ac.id/index.php/computatio/article/view/6048/4051<br>&quot;PEMBUATAN GAME FIGHTING “BRAWLMANIA”</p><p>1. dari papernya, baru tau kalau main ada time limit, kalau ga di buat nanti malah ga bakal beres2 dong wkwk<br>2. ide baru soal changing maps (implementasiin ke game)<br>3. ide dari papernya = game mode (arcade, versus, practice)</p><p>4. bedanya paper itu sama laporan <br>   - Arcade = &quot;Sepuluh player dengan score tertinggi akan terdaftar dalam menu High Score&quot; <br>   - tema = &quot;Ada delapan karakter yang dapat dimainkan. Setiap karakter mewakili fakultas yang ada di<br>Universitas Tarumanagara dan memiliki gerakan kombo dan keunikan sendiri&quot; <br>5. papernya game respondennya 30, noted<br>6. reminder kalau paper ini paper pembuatan bukan pengembangan, jadi latar belakang masalah harus di matengin lagi</p><p>daftar pustaka<br>game (Game adalah sebuah aktivitas atau kontes secara fisik ataupun mental yang memilikisebuah aturan dan dilakukan oleh orang-orang untuk kesenangannya [1]) (Merriam-Webster, Game | Definition of game by Merriam-Webster, http://www.merriamwebster.com/dictionary/game, 22 Februari 2019.)</p>",
-            "updatedAt": 1794306504849
+            "updatedAt": 1794907720402
           }
-        ],
-        "activeId": "cmuw7xntnaj4q"
+        ]
       }
     },
     "oneQuestionQuotes": {
-      "updatedAt": 1794589770340,
+      "updatedAt": 1795051278648,
       "value": [
         {
           "id": "793d7d20-9493-43f6-9f7f-64f71142260e",
@@ -854,11 +854,17 @@
           "text": "lebih sering jurnaling secara struktur udah paham, utamanya materinya diperdalam, bab 3 teori karena sumber ilmunya dari situ",
           "author": "abiiseka",
           "created": 1793551850321
+        },
+        {
+          "id": "e9262e0d-78e7-426d-ab55-2e9174e8713b",
+          "text": "making you stressed out makes you get used to it(?)",
+          "author": "kyouta",
+          "created": 1795051278626
         }
       ]
     },
     "oneQuestionDeadlines": {
-      "updatedAt": 1794547877986,
+      "updatedAt": 1795051806377,
       "value": [
         {
           "id": "02c566ad-71f8-4fd7-8ce1-b725cc4a85e7",
@@ -878,6 +884,50 @@
               "note": "- Fokus laporan jadi penelitian = Tujuan S1 \n- Kalau bikin aplikasi = selesai = D3\n\nInput: Perhatiin garis merah antara latar belakang masalah dengan rumusan masalah, tujuan penelitian, batasan masalah, manfaat penelitian.\nAnalysis: dosen bilang kalau yang dipermasalahin itu bagian latar belakang masalah karena engga faktor pendukung + daftar pustakanya dikit bangeeet\nAnswer: minta bantu kalau bingung (taiga, or someone else)\n\nInput : apa yang di bahas di latar belakang masalah diperjelas lagi di kajian pustaka. (benang merah dari latar belakang)\nAnalysis:\nAnswer:\n\nInput: menambah kuisioner di bagian akhir metodologi penelitian.\nAnalysis: \nAnswer: \n\nInput: sama buka gemini lagi kemarin soal cara penulisan dan apa aja yang dibahas (bareng sama dosen) \nAnalysis: \nAnswer:",
               "importance": "red",
               "done": true,
+              "collapsed": false,
+              "children": []
+            },
+            {
+              "id": "a90c52a3-00de-43c5-9fdb-c4279921bed7",
+              "title": "Next Bimbingan",
+              "date": "2026-11-21",
+              "time": "",
+              "note": "tanggal dari Notion, 21 Nov 2026",
+              "importance": "red",
+              "done": false,
+              "collapsed": false,
+              "children": []
+            },
+            {
+              "id": "9d696503-a223-4b4d-8c2e-09392899f99c",
+              "title": "Kartu Bimbingan",
+              "date": "2026-11-27",
+              "time": "",
+              "note": "fleksibel, lebih cepat lebih baik",
+              "importance": "blue",
+              "done": false,
+              "collapsed": false,
+              "children": []
+            },
+            {
+              "id": "1bce195c-0d7c-4665-bd3c-6cff9a46e1c9",
+              "title": "Daftar Sidang",
+              "date": "2027-01-20",
+              "time": "",
+              "note": "SEMENTARA dari Notion - tanggal asli masih perlu ditanyakan",
+              "importance": "blue",
+              "done": false,
+              "collapsed": false,
+              "children": []
+            },
+            {
+              "id": "8bd0a934-88f0-48eb-9a29-fd1be70dc18a",
+              "title": "Akhir Semester",
+              "date": "2027-02-20",
+              "time": "",
+              "note": "",
+              "importance": "red",
+              "done": false,
               "collapsed": false,
               "children": []
             }
@@ -905,20 +955,69 @@
               "children": []
             }
           ]
+        },
+        {
+          "id": "dl-1794989673210-next b",
+          "title": "Next Bimbingan",
+          "date": "2026-11-21",
+          "time": "",
+          "note": "",
+          "importance": "red",
+          "done": false,
+          "collapsed": false,
+          "children": []
+        },
+        {
+          "id": "dl-1794989673210-kartu ",
+          "title": "Kartu Bimbingan",
+          "date": "2026-11-27",
+          "time": "",
+          "note": "fleksibel — lebih cepat lebih baik",
+          "importance": "red",
+          "done": false,
+          "collapsed": false,
+          "children": []
+        },
+        {
+          "id": "dl-1794989673210-daftar",
+          "title": "Daftar Sidang",
+          "date": "2027-01-20",
+          "time": "",
+          "note": "sementara — tanggal asli masih perlu ditanyakan",
+          "importance": "red",
+          "done": false,
+          "collapsed": false,
+          "children": []
+        },
+        {
+          "id": "dl-1794989673210-akhir ",
+          "title": "Akhir Semester",
+          "date": "2027-02-20",
+          "time": "",
+          "note": "",
+          "importance": "red",
+          "done": false,
+          "collapsed": false,
+          "children": []
         }
       ]
     },
     "oneQuestionSholat": {
-      "updatedAt": 1794877707983,
+      "updatedAt": 1795040237923,
       "value": {
         "lat": -6.2088,
         "lon": 106.8456,
         "city": "jakarta (default)",
-        "date": "2026-11-17",
+        "mode": "auto",
+        "date": "2026-11-19",
         "times": {
           "subuh": [
             4,
             3
+          ],
+          "terbit": [
+            5,
+            26
           ],
           "dzuhur": [
             11,
@@ -940,7 +1039,11 @@
         "bounds": {
           "subuh": [
             5,
-            25
+            26
+          ],
+          "terbit": [
+            11,
+            38
           ],
           "dzuhur": [
             15,
@@ -1041,5 +1144,5 @@
       ]
     }
   },
-  "updatedAt": 1794877708033
+  "updatedAt": 1795051806517
 }

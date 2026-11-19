@@ -152,10 +152,39 @@ def sse_broadcast(event="state"):
             pass
 
 
+STATE_MTIME = 0  # last seen mtime of STATE_FILE
+
+
+def _check_disk_reload():
+    """If someone edited STATE_FILE directly (e.g. another agent via SSH),
+    reload it into memory so the API serves fresh data. Skipped if we wrote
+    it ourselves since our own writes update STATE_MTIME."""
+    global STATE, STATE_MTIME
+    try:
+        mt = STATE_FILE.stat().st_mtime_ns
+    except FileNotFoundError:
+        return
+    if mt != STATE_MTIME and STATE_MTIME != 0:
+        with STATE_LOCK:
+            try:
+                STATE = json.loads(STATE_FILE.read_text(encoding="utf-8"))
+                STATE_MTIME = STATE_FILE.stat().st_mtime_ns
+                print("[state] reloaded from disk (external edit detected)", flush=True)
+            except Exception as exc:
+                print(f"[state] disk reload failed: {exc}", flush=True)
+    elif STATE_MTIME == 0:
+        STATE_MTIME = mt
+
+
 def save_state(state):
+    global STATE_MTIME
     tmp = STATE_FILE.with_suffix(".tmp")
     tmp.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
     os.replace(tmp, STATE_FILE)
+    try:
+        STATE_MTIME = STATE_FILE.stat().st_mtime_ns
+    except FileNotFoundError:
+        pass
     export_snapshot()
     sse_broadcast()
 
@@ -426,7 +455,27 @@ class Handler(SimpleHTTPRequestHandler):
                 with SSE_LOCK:
                     SSE_CLIENTS.discard(q)
             return
+        _check_disk_reload()
+        if self.path == "/api/relay/inbox":
+            if not self._authorized():
+                self._json(401, {"error": "unauthorized"})
+                return
+            try:
+                p = Path("/root/.hermes/scripts/instinct_inbox.json")
+                items = json.loads(p.read_text()) if p.exists() else []
+                p.write_text("[]")
+                self._json(200, {"ok": True, "items": items})
+            except Exception as exc:
+                self._json(500, {"ok": False, "error": str(exc)})
+            return
         if self.path == "/api/state":
+            if not self._authorized():
+                self._json(401, {"error": "unauthorized"})
+                return
+            with STATE_LOCK:
+                payload = json.loads(json.dumps(STATE))
+            self._json(200, payload)
+            return
             if not self._authorized():
                 self._json(401, {"error": "unauthorized"})
                 return
@@ -469,6 +518,7 @@ class Handler(SimpleHTTPRequestHandler):
         if not self._authorized():
             self._json(401, {"error": "unauthorized"})
             return
+        _check_disk_reload()
         try:
             length = int(self.headers.get("Content-Length", "0"))
             payload = json.loads(self.rfile.read(length) or b"{}")
@@ -550,6 +600,27 @@ class Handler(SimpleHTTPRequestHandler):
                 path = imgdir / ("paste-%d.%s" % (int(time.time() * 1000), ext))
                 path.write_bytes(base64.b64decode(m.group(2)))
                 self._json(200, {"ok": True, "path": str(path)})
+            except Exception as exc:
+                self._json(500, {"ok": False, "error": str(exc)})
+            return
+        if self.path == "/api/relay/send":
+            if not self._authorized():
+                self._json(401, {"error": "unauthorized"})
+                return
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+                payload = json.loads(self.rfile.read(length) or b"{}")
+                text = str(payload.get("text", "")).strip()
+                if not text:
+                    self._json(400, {"error": "empty text"})
+                    return
+                import urllib.request
+                body = json.dumps({"chatId": "16508702892@s.whatsapp.net", "message": text[:2000]}).encode()
+                req = urllib.request.Request("http://127.0.0.1:3000/send", data=body,
+                                             headers={"Content-Type": "application/json"})
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    out = json.loads(resp.read().decode())
+                self._json(200, {"ok": True, "messageId": out.get("messageId")})
             except Exception as exc:
                 self._json(500, {"ok": False, "error": str(exc)})
             return
