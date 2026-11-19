@@ -236,6 +236,8 @@ img{display:block;}
   color:var(--muted);cursor:pointer;font-size:12px;font-family:inherit;
 }
 .dq-hbtn:active{color:var(--fg);border-color:rgba(141,141,141,.7);}
+.dq-check{color:var(--accent);font-size:11px;}
+.dq-msg.you .dq-check{color:#4ade80;}
 .dq-filechip{
   padding:4px 8px;font-size:11px;color:var(--accent);
   border:1px solid rgba(141,141,141,.45);background:rgba(141,141,141,.12);
@@ -593,12 +595,11 @@ input[type=range]::-webkit-slider-thumb{
 <div id="dqPanel">
   <div class="dq-rs n"></div><div class="dq-rs s"></div><div class="dq-rs e"></div><div class="dq-rs w"></div>
   <div class="dq-rs nw"></div><div class="dq-rs sw"></div><div class="dq-rs se"></div><div class="dq-rs ne"></div>
-  <div id="dqHead"><span class="dq-tab active" data-t="chat">chat</span><span class="dq-tab" data-t="history">history</span><button id="dqClose">✕</button></div>
+  <div id="dqHead"><span class="dq-tab active" data-t="chat">chat</span><span class="dq-tab" data-t="instinct">instinct</span><span class="dq-tab" data-t="history">history</span><button id="dqClose">✕</button></div>
   <div id="dqLog"></div>
   <div id="dqBar" style="position:relative;">
     <div class="dq-effort-menu" id="dqEffortMenu"></div>
     <button class="dq-effort" id="dqEffort" title="thinking effort — max waktu jawab">⚡ flash</button>
-    <button class="dq-effort" id="dqTarget" title="chat target">🤖 hermes</button>
     <button id="dqNew" title="new chat" style="background:none;border:1px solid var(--line);color:var(--muted);cursor:pointer;font-family:inherit;padding:10px 12px;font-size:15px;">+</button>
     <textarea id="dqIn" rows="1" placeholder="tanya apa aja…" autocomplete="off"></textarea>
     <button id="dqAttach" title="attach file" style="background:none;border:1px solid var(--line);color:var(--muted);cursor:pointer;font-family:inherit;padding:10px 12px;font-size:13px;">↑</button>
@@ -2404,14 +2405,25 @@ async function dqAsk(q){
   if(!q)return;
   // INSTINCT relay: kirim langsung via bridge, tanpa AI, tanpa antrian/thinking
   if(dqTargetMode==="instinct"){
-    dqPush("you",q);dqSave("you",q);
+    const ub=dqPush("you",q);dqSave("you",q);
     try{
       const r=await fetch(apiURL("/relay/send"),{method:"POST",
         headers:{"Content-Type":"application/json"},body:JSON.stringify({text:q})});
       const d=await r.json();
-      dqPush("bot",d.ok?"✓ terkirim ke instinct":"✕ gagal: "+(d.error||"?"));
-      if(d.ok)dqSave("bot","✓ terkirim ke instinct");
-    }catch(e){dqPush("bot","✕ offline");dqSave("bot","✕ offline");}
+      if(d.ok){
+        // WhatsApp-style: double check on the user's own bubble
+        const ck=document.createElement("span");
+        ck.className="dq-check";ck.textContent=" ✓✓";
+        ck.title="terkirim";
+        ub.append(ck);dqSave("you",q+" ✓✓");
+      }else{
+        ub.style.borderColor="var(--red,#e5484d)";
+        dqPush("bot","✕ gagal kirim: "+(d.error||"?"));
+      }
+    }catch(e){
+      ub.style.borderColor="var(--red,#e5484d)";
+      dqPush("bot","✕ offline");
+    }
     return;
   }
   if(dqBusy){
