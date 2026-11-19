@@ -862,7 +862,7 @@ input[type=range]::-webkit-slider-thumb{
 <script>
 "use strict";
 
-const APP_VER="0.164";
+const APP_VER="0.165";
 /* ═══════════════ owl web — one file, no build step ═══════════════
    reads/writes the same /api/state as the phone widget + old web app */
 
@@ -2054,6 +2054,20 @@ let dqTargetMode=localStorage.getItem("oqDqTarget")||"hermes";
   paint();
 })();
 
+/* instinct inbox poller: saat panel kebuka & mode instinct, tarik inbox tiap 5s */
+let dqInboxTs=0;
+setInterval(()=>{
+  if(!dqOpen||dqTargetMode!=="instinct")return;
+  fetch(apiURL("/relay/inbox")).then(r=>r.json()).then(d=>{
+    (d.items||[]).forEach(m=>{
+      if(m.ts&&m.ts<=dqInboxTs)return;
+      dqInboxTs=m.ts||Date.now();
+      dqPush("bot","[DARI INSTINCT] "+m.text);
+      dqSave("bot","[DARI INSTINCT] "+m.text);
+    });
+  }).catch(()=>{});
+},5000);
+
 /* thinking effort: max detik hermes boleh mikir (server timeout = effort) */
 /* tiap tier ada warnanya sendiri biar gampang bedain */
 const DQ_EFFORTS=[
@@ -2386,6 +2400,18 @@ document.getElementById("dqStop").onclick=dqStopActive;
 async function dqAsk(q){
   try{
   if(!q)return;
+  // INSTINCT relay: kirim langsung via bridge, tanpa AI, tanpa antrian/thinking
+  if(dqTargetMode==="instinct"){
+    dqPush("you",q);dqSave("you",q);
+    try{
+      const r=await fetch(apiURL("/relay/send"),{method:"POST",
+        headers:{"Content-Type":"application/json"},body:JSON.stringify({text:q})});
+      const d=await r.json();
+      dqPush("bot",d.ok?"✓ terkirim ke instinct":"✕ gagal: "+(d.error||"?"));
+      if(d.ok)dqSave("bot","✓ terkirim ke instinct");
+    }catch(e){dqPush("bot","✕ offline");dqSave("bot","✕ offline");}
+    return;
+  }
   if(dqBusy){
     const qe=dqPush("dq-queued","⏳ queued: "+q.slice(0,40));
     // tombol push: keluarkan dari antrian & langsung kirim sekarang
