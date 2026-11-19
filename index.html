@@ -864,7 +864,7 @@ input[type=range]::-webkit-slider-thumb{
 <script>
 "use strict";
 
-const APP_VER="0.176";
+const APP_VER="0.177";
 /* ═══════════════ owl web — one file, no build step ═══════════════
    reads/writes the same /api/state as the phone widget + old web app */
 
@@ -2054,14 +2054,17 @@ let dqTargetMode=localStorage.getItem("oqDqTarget")||"hermes";
       // pull any waiting instinct messages into the chat
       fetch(apiURL("/relay/inbox")).then(r=>r.json()).then(d=>{
         (d.items||[]).forEach(m=>{
+          // replace waiting "instinct typing" bubble with real reply
+          const wb=window._dqInstinctBubble;
+          if(wb){if(wb._cd)clearInterval(wb._cd);if(wb.parentNode)wb.remove();window._dqInstinctBubble=null;}
           const el=dqPush("bot",m.text);
           const meta=document.createElement("div");
           meta.className="dq-meta";
           meta.textContent="📩 dari instinct · "+new Date(m.ts||Date.now()).toLocaleTimeString("id-ID");
-          const lg=document.getElementById("dqLog");
           el.append(meta);
-          const lgq=document.getElementById("dqLog");
-          lgq.scrollTop=lgq.scrollHeight;
+          dqSave("bot",m.text,{relay:"recv",target:"instinct",tag:"📩 dari instinct · "+new Date(m.ts||Date.now()).toLocaleTimeString("id-ID")});
+          const lg=document.getElementById("dqLog");
+          lg.scrollTop=lg.scrollHeight;
           dqSave("bot",m.text,{relay:"recv",instinct:true,tag:"📩 dari instinct · "+new Date(m.ts||Date.now()).toLocaleTimeString("id-ID")});
         });
       }).catch(()=>{});
@@ -2466,13 +2469,21 @@ async function dqAsk(q){
     dqFiles=[];renderFileChips();
     // jika tidak ada teks, selesai setelah file
     if(!q){document.getElementById("dqSend").disabled=false;dqBusy=false;return;}
-    const ub=dqPush("you",q);dqSave("you",q,{relay:"sent",tag:"⚡ relay · ✓✓ terkirim · "+q.length+" char"});
+    const ub=dqPush("you",q);dqSave("you",q,{relay:"sent",target:"instinct",tag:"⚡ relay · ✓✓ terkirim · "+q.length+" char"});
+    // "instinct is typing" indicator — diganti beneran pas balesan masuk via inbox poller
+    const th=dqPush("bot think","");
+    th.innerHTML='<span>(instinct typing. . )</span><span class="dq-cd"></span>';
+    const t0=Date.now();
+    th._cd=setInterval(()=>{
+      const el=th.querySelector(".dq-cd");
+      if(el)el.textContent=" "+Math.round((Date.now()-t0)/1000)+"s";
+    },500);
+    window._dqInstinctBubble=th;
     try{
       const r=await fetch(apiURL("/relay/send"),{method:"POST",
         headers:{"Content-Type":"application/json"},body:JSON.stringify({text:q})});
       const d=await r.json();
       if(d.ok){
-        // meta line below bubble: status + panjang pesan (gak ada token — relay murni)
         const meta=document.createElement("div");
         meta.className="dq-meta you-meta";
         meta.textContent="⚡ relay · ✓✓ terkirim · "+q.length+" char";
@@ -2487,10 +2498,13 @@ async function dqAsk(q){
         const lg=document.getElementById("dqLog");
         ub.append(meta);
         dqSave("bot","✕ gagal kirim: "+(d.error||"?"));
+        if(th._cd)clearInterval(th._cd);
+        th.innerHTML='<span>(✕ gagal kirim)</span>';
       }
     }catch(e){
+      if(th._cd)clearInterval(th._cd);
       ub.style.borderColor="var(--red,#e5484d)";
-      dqPush("bot","✕ offline");
+      th.innerHTML='<span>(✕ offline)</span>';
     }
     return;
   }
