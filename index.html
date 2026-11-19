@@ -2050,7 +2050,15 @@ let dqTargetMode=localStorage.getItem("oqDqTarget")||"hermes";
     if(dqTargetMode==="instinct"){
       // pull any waiting instinct messages into the chat
       fetch(apiURL("/relay/inbox")).then(r=>r.json()).then(d=>{
-        (d.items||[]).forEach(m=>dqPush("bot","[DARI INSTINCT] "+m.text));
+        (d.items||[]).forEach(m=>{
+          const el=dqPush("bot",m.text);
+          const meta=document.createElement("div");
+          meta.className="dq-meta";
+          meta.textContent="📩 dari instinct · "+new Date(m.ts||Date.now()).toLocaleTimeString("id-ID");
+          const lg=document.getElementById("dqLog");
+          lg.insertBefore(meta,el.nextSibling);lg.scrollTop=lg.scrollHeight;
+          dqSave("bot","[DARI INSTINCT] "+m.text);
+        });
       }).catch(()=>{});
     }
   };
@@ -2065,7 +2073,12 @@ setInterval(()=>{
     (d.items||[]).forEach(m=>{
       if(m.ts&&m.ts<=dqInboxTs)return;
       dqInboxTs=m.ts||Date.now();
-      dqPush("bot","[DARI INSTINCT] "+m.text);
+      const el=dqPush("bot",m.text);
+      const meta=document.createElement("div");
+      meta.className="dq-meta";
+      meta.textContent="📩 dari instinct · "+new Date(m.ts||Date.now()).toLocaleTimeString("id-ID");
+      const lg=document.getElementById("dqLog");
+      lg.insertBefore(meta,el.nextSibling);lg.scrollTop=lg.scrollHeight;
       dqSave("bot","[DARI INSTINCT] "+m.text);
     });
   }).catch(()=>{});
@@ -2432,14 +2445,21 @@ async function dqAsk(q){
         headers:{"Content-Type":"application/json"},body:JSON.stringify({text:q})});
       const d=await r.json();
       if(d.ok){
-        // WhatsApp-style: double check on the user's own bubble
-        const ck=document.createElement("span");
-        ck.className="dq-check";ck.textContent=" ✓✓";
-        ck.title="terkirim";
-        ub.append(ck);dqSave("you",q+" ✓✓");
+        // meta line below bubble: status + panjang pesan (gak ada token — relay murni)
+        const meta=document.createElement("div");
+        meta.className="dq-meta";
+        meta.textContent="⚡ relay · ✓✓ terkirim · "+q.length+" char";
+        const lg=document.getElementById("dqLog");
+        lg.insertBefore(meta,ub.nextSibling);lg.scrollTop=lg.scrollHeight;
+        dqSave("meta","⚡ relay · ✓✓ terkirim · "+q.length+" char");
       }else{
         ub.style.borderColor="var(--red,#e5484d)";
-        dqPush("bot","✕ gagal kirim: "+(d.error||"?"));
+        const meta=document.createElement("div");
+        meta.className="dq-meta";
+        meta.textContent="⚡ relay · ✕ gagal kirim";
+        const lg=document.getElementById("dqLog");
+        lg.insertBefore(meta,ub.nextSibling);lg.scrollTop=lg.scrollHeight;
+        dqSave("bot","✕ gagal kirim: "+(d.error||"?"));
       }
     }catch(e){
       ub.style.borderColor="var(--red,#e5484d)";
