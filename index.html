@@ -864,7 +864,7 @@ input[type=range]::-webkit-slider-thumb{
 <script>
 "use strict";
 
-const APP_VER="0.165";
+const APP_VER="0.176";
 /* ═══════════════ owl web — one file, no build step ═══════════════
    reads/writes the same /api/state as the phone widget + old web app */
 
@@ -2062,7 +2062,7 @@ let dqTargetMode=localStorage.getItem("oqDqTarget")||"hermes";
           el.append(meta);
           const lgq=document.getElementById("dqLog");
           lgq.scrollTop=lgq.scrollHeight;
-          dqSave("bot","[DARI INSTINCT] "+m.text);
+          dqSave("bot",m.text,{relay:"recv",instinct:true,tag:"📩 dari instinct · "+new Date(m.ts||Date.now()).toLocaleTimeString("id-ID")});
         });
       }).catch(()=>{});
     }
@@ -2097,7 +2097,7 @@ setInterval(()=>{
       el.append(meta);
       const lg=document.getElementById("dqLog");
       lg.scrollTop=lg.scrollHeight;
-      dqSave("bot","[DARI INSTINCT] "+m.text);
+      dqSave("bot",m.text,{relay:"recv",instinct:true,tag:"📩 dari instinct · "+new Date(m.ts||Date.now()).toLocaleTimeString("id-ID")});
     });
   }).catch(()=>{});
 },5000);
@@ -2223,6 +2223,7 @@ function dqOpenSession(id){
   const st=dqStore();
   for(const m of ((st.chats||{})[id]||[])){
     const el=dqPush(m.c==="you"?"you":"bot",m.t);
+    if(m.meta&&m.meta.tag){const tg=document.createElement("div");tg.className="dq-meta";tg.textContent=m.meta.tag;el.append(tg);}
     if(m.c!=="you"&&m.meta)el.dataset.eff=m.meta.effort||"";
     if(m.meta&&m.meta.model&&m.c==="bot"){
       const tag=document.createElement("div");tag.className="dq-meta";
@@ -2249,7 +2250,13 @@ function dqSetView(v){
     if(id&&s.chats&&s.chats[id]){
       for(const m of s.chats[id]){
         const el=dqPush(m.c==="you"?"you":"bot",m.t);
+    if(m.meta&&m.meta.tag){const tg=document.createElement("div");tg.className="dq-meta";tg.textContent=m.meta.tag;el.append(tg);}
         if(m.c!=="you"&&m.meta)el.dataset.eff=m.meta.effort||"";
+        if(m.meta&&m.meta.relay&&m.c==="you"){
+          const tag=document.createElement("div");tag.className="dq-meta";
+          tag.textContent="⚡ relay · ✓✓ terkirim";
+          el.append(tag);
+        }
         if(m.meta&&m.meta.model&&m.c==="bot"){
           const tag=document.createElement("div");tag.className="dq-meta";
           tag.textContent=(m.meta.session==="flash"?"⚡ flash":m.meta.effort==="max"?"🔥 max":"🤖 "+m.meta.model)
@@ -2459,7 +2466,7 @@ async function dqAsk(q){
     dqFiles=[];renderFileChips();
     // jika tidak ada teks, selesai setelah file
     if(!q){document.getElementById("dqSend").disabled=false;dqBusy=false;return;}
-    const ub=dqPush("you",q);dqSave("you",q);
+    const ub=dqPush("you",q);dqSave("you",q,{relay:"sent",tag:"⚡ relay · ✓✓ terkirim · "+q.length+" char"});
     try{
       const r=await fetch(apiURL("/relay/send"),{method:"POST",
         headers:{"Content-Type":"application/json"},body:JSON.stringify({text:q})});
